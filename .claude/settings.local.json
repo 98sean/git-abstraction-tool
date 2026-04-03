@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/98sea/git_abstraction_tool/**)",
+      "Bash(npm run:*)",
+      "Bash(npm remove:*)",
+      "Bash(npm install:*)",
+      "Bash(npm pkg:*)"
+    ]
+  }
+}

@@ -1,0 +1,107 @@
+.panel {
+  border-top: 1px solid var(--border);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg);
+}
+
+.messageRow {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.messageInput {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: 13px;
+  resize: none;
+  line-height: 1.4;
+  transition: border-color var(--transition);
+  min-height: 38px;
+  max-height: 80px;
+}
+.messageInput::placeholder { color: var(--text-muted); }
+.messageInput:focus { border-color: var(--border-focus); }
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.saveBtn {
+  flex: 1;
+  padding: 9px 16px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background var(--transition);
+}
+.saveBtn:hover:not(:disabled) { background: var(--accent-hover); }
+.saveBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.syncBtn {
+  padding: 9px 14px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition);
+}
+.syncBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.syncBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.statusBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.syncIndicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.aheadBehind { font-variant-numeric: tabular-nums; }
+
+.errorBanner {
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--error) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--error) 30%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--error);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.dismissBtn {
+  background: none;
+  color: var(--error);
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}

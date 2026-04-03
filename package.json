@@ -1,0 +1,39 @@
+{
+  "name": "git-abstraction-tool",
+  "version": "0.1.0",
+  "description": "A user-friendly Git abstraction tool for non-technical users",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "typecheck": "tsc --noEmit",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "test": "vitest run",
+    "package": "electron-vite build && electron-builder"
+  },
+  "dependencies": {
+    "@electron-toolkit/preload": "^3.0.0",
+    "@electron-toolkit/utils": "^3.0.0",
+    "chokidar": "^3.6.0",
+    "electron-store": "^8.2.0",
+    "simple-git": "^3.27.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
+    "@types/node": "^20.11.5",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "@types/uuid": "^9.0.7",
+    "@vitejs/plugin-react": "^4.2.1",
+    "electron": "^29.0.1",
+    "electron-builder": "^25.1.8",
+    "electron-vite": "^2.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.12",
+    "vitest": "^1.6.0"
+  }
+}

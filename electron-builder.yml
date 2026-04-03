@@ -1,0 +1,44 @@
+appId: com.gitabstractiontool.app
+productName: Git Abstraction Tool
+copyright: Copyright © 2024
+
+directories:
+  output: dist
+  buildResources: resources
+
+files:
+  - out/**/*
+  - node_modules/**/*
+  - package.json
+
+# Windows — NSIS installer
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: resources/icon.ico
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+
+# macOS — DMG
+mac:
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  icon: resources/icon.icns
+  category: public.app-category.developer-tools
+
+dmg:
+  title: Git Abstraction Tool
+
+# Linux — AppImage
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+  icon: resources/icon.png
+  category: Development
