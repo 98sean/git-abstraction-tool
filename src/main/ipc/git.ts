@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron'
 import { getGitService, removeGitService } from '../git'
-import { getCachedStatus, setCachedStatus } from '../db/statusCache'
+import { getCachedStatus, setCachedStatus, invalidateCache } from '../db/statusCache'
 import { getGithubToken } from '../db/credentials'
 import { GitError } from '../git/types'
 
@@ -28,17 +28,23 @@ export function registerGitHandlers(): void {
     })
   })
 
-  ipcMain.handle('git:stage', (_event, project_id: string, paths: string[]) =>
-    run(() => getGitService(project_id).stage(paths))
-  )
+  ipcMain.handle('git:stage', async (_event, project_id: string, paths: string[]) => {
+    const result = await run(() => getGitService(project_id).stage(paths))
+    invalidateCache(project_id)
+    return result
+  })
 
-  ipcMain.handle('git:unstage', (_event, project_id: string, paths: string[]) =>
-    run(() => getGitService(project_id).unstage(paths))
-  )
+  ipcMain.handle('git:unstage', async (_event, project_id: string, paths: string[]) => {
+    const result = await run(() => getGitService(project_id).unstage(paths))
+    invalidateCache(project_id)
+    return result
+  })
 
-  ipcMain.handle('git:commit', (_event, project_id: string, message: string) =>
-    run(() => getGitService(project_id).commit(message))
-  )
+  ipcMain.handle('git:commit', async (_event, project_id: string, message: string) => {
+    const result = await run(() => getGitService(project_id).commit(message))
+    invalidateCache(project_id)
+    return result
+  })
 
   ipcMain.handle('git:push', (_event, project_id: string) => {
     const token = getGithubToken() ?? undefined

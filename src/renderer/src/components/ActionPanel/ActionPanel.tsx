@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { GitError, GitStatus } from '../../types'
+import { DeviceFlowState } from '../../hooks/useAuth'
 import { ConnectGitHub } from '../ConnectGitHub/ConnectGitHub'
 import { Spinner } from '../shared/Spinner'
 import styles from './ActionPanel.module.css'
@@ -11,12 +12,15 @@ interface Props {
   messageTemplate: string
   tokenExists: boolean | null
   forceShowConnect?: boolean
+  deviceFlow: DeviceFlowState | null
   onCommit: (message: string) => void
   onPush: () => void
   onPull: () => void
   onClearError: () => void
   onConnectGitHub: (token: string) => Promise<void>
   onOpenGitHubDocs: () => void
+  onStartDeviceFlow: () => Promise<void>
+  onCancelDeviceFlow: () => Promise<void>
 }
 
 export function ActionPanel({
@@ -26,12 +30,15 @@ export function ActionPanel({
   messageTemplate,
   tokenExists,
   forceShowConnect = false,
+  deviceFlow,
   onCommit,
   onPush,
   onPull,
   onClearError,
   onConnectGitHub,
-  onOpenGitHubDocs
+  onOpenGitHubDocs,
+  onStartDeviceFlow,
+  onCancelDeviceFlow
 }: Props): JSX.Element {
   const [message, setMessage] = useState(messageTemplate)
 
@@ -48,7 +55,13 @@ export function ActionPanel({
     <div className={styles.panel}>
       {/* Show GitHub connect prompt when auth fails, no token is stored, or sidebar button was clicked */}
       {(error?.code === 'AUTH_FAILED' || tokenExists === false || forceShowConnect) && (
-        <ConnectGitHub onConnect={onConnectGitHub} onOpenGitHub={onOpenGitHubDocs} />
+        <ConnectGitHub
+          onConnect={onConnectGitHub}
+          onOpenGitHub={onOpenGitHubDocs}
+          deviceFlow={deviceFlow}
+          onStartDeviceFlow={onStartDeviceFlow}
+          onCancelDeviceFlow={onCancelDeviceFlow}
+        />
       )}
 
       {error && error.code !== 'AUTH_FAILED' && (

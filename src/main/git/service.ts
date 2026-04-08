@@ -65,6 +65,7 @@ export class GitService {
       const raw = await this.git.status()
       return parseStatus(raw)
     } catch (err) {
+      console.error('[GAT] git.status() failed:', err)
       throw mapGitError(err)
     }
   }

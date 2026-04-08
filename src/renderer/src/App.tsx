@@ -19,7 +19,7 @@ function Shell(): JSX.Element {
     useProjects()
   const { preferences, setPreference } = usePreferences()
   const { addToast } = useToast()
-  const { tokenExists, saveToken, clearToken } = useAuth()
+  const { tokenExists, deviceFlow, saveToken, clearToken, startDeviceFlow, cancelDeviceFlow } = useAuth()
   const [showGitHubPanel, setShowGitHubPanel] = useState(false)
 
   const { status, loading: statusLoading, error: statusError, fetchStatus, stage, unstage, stageAll, unstageAll, revertFile } =
@@ -129,17 +129,26 @@ function Shell(): JSX.Element {
               messageTemplate={preferences.default_save_message_template}
               tokenExists={tokenExists}
               forceShowConnect={showGitHubPanel}
+              deviceFlow={deviceFlow}
               onCommit={commit}
               onPush={async () => { await push(); addToast('Uploaded to cloud', 'success') }}
               onPull={async () => { await pull(); fetchStatus(); addToast('Updates downloaded', 'success') }}
               onClearError={clearError}
               onConnectGitHub={handleConnectGitHub}
               onOpenGitHubDocs={handleOpenGitHubDocs}
+              onStartDeviceFlow={startDeviceFlow}
+              onCancelDeviceFlow={cancelDeviceFlow}
             />
           </>
         ) : showGitHubPanel && tokenExists !== true ? (
           <div className={styles.emptyMain}>
-            <ConnectGitHub onConnect={handleConnectGitHub} onOpenGitHub={handleOpenGitHubDocs} />
+            <ConnectGitHub
+              onConnect={handleConnectGitHub}
+              onOpenGitHub={handleOpenGitHubDocs}
+              deviceFlow={deviceFlow}
+              onStartDeviceFlow={startDeviceFlow}
+              onCancelDeviceFlow={cancelDeviceFlow}
+            />
           </div>
         ) : (
           <div className={styles.emptyMain}>
