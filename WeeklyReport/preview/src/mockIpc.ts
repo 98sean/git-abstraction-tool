@@ -6,20 +6,22 @@ import {
   DUMMY_REPORT_LAST_WEEK,
   DUMMY_REPORT_EMPTY
 } from './fixtures'
+import { WeeklyReport } from '../../types/weekly-report'
 
-// startDate 기준으로 어떤 더미 데이터를 반환할지 선택
-function selectReport(startDate: string) {
+// startDate 기준으로 어떤 실제 데이터를 반환할지 선택
+// 이 프로젝트의 실제 커밋 분포:
+//   2026-04-07 주 → 커밋 4개 (이번 주)
+//   2026-03-31 주 → 커밋 1개 (지난 주)
+//   그 이전      → 커밋 없음
+function selectReport(startDate: string): WeeklyReport {
   if (startDate === '2026-04-07') return DUMMY_REPORT_THIS_WEEK
   if (startDate === '2026-03-31') return DUMMY_REPORT_LAST_WEEK
-  if (startDate === '2026-03-24') return DUMMY_REPORT_EMPTY
-  // 그 외 주는 빈 리포트 (날짜만 맞춰서 반환)
-  return {
-    ...DUMMY_REPORT_EMPTY,
-    startDate,
-    endDate: new Date(new Date(`${startDate}T00:00:00`).getTime() + 6 * 86400000)
-      .toISOString()
-      .slice(0, 10)
-  }
+
+  // 그 외 주는 날짜만 맞춘 빈 리포트 반환
+  const endDate = new Date(new Date(`${startDate}T00:00:00`).getTime() + 6 * 86400000)
+    .toISOString()
+    .slice(0, 10)
+  return { ...DUMMY_REPORT_EMPTY, startDate, endDate }
 }
 
 export function setupMockIpc(): void {
@@ -37,7 +39,6 @@ export function setupMockIpc(): void {
 
         return null
       },
-      // useFileStatus 등 다른 훅의 이벤트 리스너 — 미리보기에서는 no-op
       on: () => {},
       removeAllListeners: () => {}
     }

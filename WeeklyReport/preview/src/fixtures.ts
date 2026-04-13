@@ -1,164 +1,201 @@
 // WeeklyReport/preview/src/fixtures.ts
-// 브라우저 미리보기용 더미 데이터
+// 이 프로젝트의 실제 git log 데이터를 기반으로 생성
+// git log --format="COMMIT:%H|%aI|%s" --name-status --numstat 실행 결과 반영
 
 import { WeeklyReport } from '../../types/weekly-report'
 
-// 현재 주 (2026-04-07 월 ~ 2026-04-13 일) 기준 더미 데이터
+// ─── 이번 주 (2026-04-07 월 ~ 2026-04-13 일) ─────────────────────────────────
+// 실제 커밋 4개: 48c6f7d · 5ce6be1 · c74ac7a (일요일) + b3cf353 (화요일)
+
 export const DUMMY_REPORT_THIS_WEEK: WeeklyReport = {
   projectId: 'preview-001',
-  projectName: '내 소설 프로젝트',
+  projectName: 'git-abstraction-tool',
   startDate: '2026-04-07',
   endDate:   '2026-04-13',
   summary: {
-    totalCommits: 8,
-    filesAdded: 4,
-    filesModified: 11,
-    filesDeleted: 2,
-    totalInsertions: 412,
-    totalDeletions: 97
+    totalCommits: 4,
+    filesAdded:   19,   // 커밋1:7 + 커밋2:1 + 커밋3:11
+    filesModified: 10,  // 커밋1:1 + 커밋4:9
+    filesDeleted:  0,
+    totalInsertions: 2160, // 441 + 8 + 1359 + 352
+    totalDeletions:    62  // 22  + 0 +    0 +  40
   },
   dailyBreakdown: [
-    { date: '2026-04-07', dayOfWeek: '월', commitCount: 2 },
+    { date: '2026-04-07', dayOfWeek: '월', commitCount: 0 },
     { date: '2026-04-08', dayOfWeek: '화', commitCount: 1 },
-    { date: '2026-04-09', dayOfWeek: '수', commitCount: 3 },
+    { date: '2026-04-09', dayOfWeek: '수', commitCount: 0 },
     { date: '2026-04-10', dayOfWeek: '목', commitCount: 0 },
-    { date: '2026-04-11', dayOfWeek: '금', commitCount: 2 },
+    { date: '2026-04-11', dayOfWeek: '금', commitCount: 0 },
     { date: '2026-04-12', dayOfWeek: '토', commitCount: 0 },
-    { date: '2026-04-13', dayOfWeek: '일', commitCount: 0 }
+    { date: '2026-04-13', dayOfWeek: '일', commitCount: 3 }
   ],
   commits: [
+    // 48c6f7d — 2026-04-13 01:33 (일)
     {
-      hash: 'f3a91bc',
-      date: '2026-04-11T17:05:00+09:00',
-      message: '5장 결말 장면 대폭 수정',
+      hash: '48c6f7d',
+      date: '2026-04-13T01:33:12-07:00',
+      message: 'feat: add standalone browser preview for WeeklyReport dashboard',
       files: [
-        { path: 'chapters/chapter-05.md',       status: 'modified', insertions: 82, deletions: 34 },
-        { path: 'chapters/chapter-05-draft.md',  status: 'deleted',  insertions: 0,  deletions: 210 },
-        { path: 'outline/story-arc.md',          status: 'modified', insertions: 15, deletions: 7  }
+        { path: 'WeeklyReport/preview/index.html',          status: 'added',    insertions: 12,  deletions: 0  },
+        { path: 'WeeklyReport/preview/src/App.tsx',         status: 'added',    insertions: 40,  deletions: 0  },
+        { path: 'WeeklyReport/preview/src/fixtures.ts',     status: 'added',    insertions: 182, deletions: 0  },
+        { path: 'WeeklyReport/preview/src/main.tsx',        status: 'added',    insertions: 15,  deletions: 0  },
+        { path: 'WeeklyReport/preview/src/mockIpc.ts',      status: 'added',    insertions: 45,  deletions: 0  },
+        { path: 'WeeklyReport/preview/src/preview.css',     status: 'added',    insertions: 121, deletions: 0  },
+        { path: 'WeeklyReport/preview/vite.config.ts',      status: 'added',    insertions: 11,  deletions: 0  },
+        { path: 'WeeklyReport/renderer/components/WeeklyReport.css', status: 'modified', insertions: 15, deletions: 22 }
       ]
     },
+    // 5ce6be1 — 2026-04-13 01:27 (일)
     {
-      hash: 'c7d42e1',
-      date: '2026-04-11T10:30:00+09:00',
-      message: '등장인물 프로필 시트 추가',
+      hash: '5ce6be1',
+      date: '2026-04-13T01:27:57-07:00',
+      message: 'chore: add vitest config for WeeklyReport tests',
       files: [
-        { path: 'characters/protagonist.md',     status: 'added',    insertions: 64, deletions: 0  },
-        { path: 'characters/antagonist.md',      status: 'added',    insertions: 51, deletions: 0  },
-        { path: 'characters/README.md',          status: 'modified', insertions: 8,  deletions: 2  }
+        { path: 'WeeklyReport/vitest.config.ts', status: 'added', insertions: 8, deletions: 0 }
       ]
     },
+    // c74ac7a — 2026-04-13 01:16 (일)
     {
-      hash: 'b1e88a4',
-      date: '2026-04-09T21:15:00+09:00',
-      message: '3장 도입부 리듬 다듬기',
+      hash: 'c74ac7a',
+      date: '2026-04-13T01:16:47-07:00',
+      message: 'feat: add weekly report feature (Phase 1)',
       files: [
-        { path: 'chapters/chapter-03.md',        status: 'modified', insertions: 29, deletions: 18 }
+        { path: 'WeeklyReport/main/git-weekly-service.ts',          status: 'added', insertions: 214, deletions: 0 },
+        { path: 'WeeklyReport/main/ipc-weekly.ts',                  status: 'added', insertions: 87,  deletions: 0 },
+        { path: 'WeeklyReport/renderer/components/CommitList.tsx',   status: 'added', insertions: 96,  deletions: 0 },
+        { path: 'WeeklyReport/renderer/components/DailyTimeline.tsx',status: 'added', insertions: 41,  deletions: 0 },
+        { path: 'WeeklyReport/renderer/components/SummaryCards.tsx', status: 'added', insertions: 50,  deletions: 0 },
+        { path: 'WeeklyReport/renderer/components/WeekNavigator.tsx',status: 'added', insertions: 55,  deletions: 0 },
+        { path: 'WeeklyReport/renderer/components/WeeklyReport.css', status: 'added', insertions: 370, deletions: 0 },
+        { path: 'WeeklyReport/renderer/components/WeeklyReport.tsx', status: 'added', insertions: 71,  deletions: 0 },
+        { path: 'WeeklyReport/renderer/hooks/useWeeklyReport.ts',    status: 'added', insertions: 116, deletions: 0 },
+        { path: 'WeeklyReport/tests/weekly-report.test.ts',          status: 'added', insertions: 218, deletions: 0 },
+        { path: 'WeeklyReport/types/weekly-report.ts',               status: 'added', insertions: 41,  deletions: 0 }
       ]
     },
+    // b3cf353 — 2026-04-08 15:36 (화)
     {
-      hash: 'a09f3c7',
-      date: '2026-04-09T15:42:00+09:00',
-      message: '세계관 설정 파일 이름 변경 및 내용 보강',
+      hash: 'b3cf353',
+      date: '2026-04-08T15:36:09-07:00',
+      message: 'Enabled push and pull',
       files: [
-        { path: 'world/world-building.md',       status: 'renamed',  insertions: 43, deletions: 11 },
-        { path: 'world/magic-system.md',         status: 'modified', insertions: 27, deletions: 5  }
-      ]
-    },
-    {
-      hash: '98c120d',
-      date: '2026-04-09T09:08:00+09:00',
-      message: '플롯 타임라인 초안 작성',
-      files: [
-        { path: 'outline/timeline.md',           status: 'added',    insertions: 73, deletions: 0  },
-        { path: 'outline/story-arc.md',          status: 'modified', insertions: 19, deletions: 8  }
-      ]
-    },
-    {
-      hash: '74be5f2',
-      date: '2026-04-08T23:50:00+09:00',
-      message: '6장 첫 문단 초고 작성',
-      files: [
-        { path: 'chapters/chapter-06.md',        status: 'added',    insertions: 38, deletions: 0  }
-      ]
-    },
-    {
-      hash: '5d3a8e9',
-      date: '2026-04-07T19:22:00+09:00',
-      message: '2장 대화 흐름 개선 및 오탈자 수정',
-      files: [
-        { path: 'chapters/chapter-02.md',        status: 'modified', insertions: 22, deletions: 10 },
-        { path: 'chapters/chapter-02-notes.md',  status: 'deleted',  insertions: 0,  deletions: 45 }
-      ]
-    },
-    {
-      hash: '2c7f1a0',
-      date: '2026-04-07T11:04:00+09:00',
-      message: '프로젝트 폴더 구조 정리',
-      files: [
-        { path: 'README.md',                     status: 'modified', insertions: 31, deletions: 4  },
-        { path: '.gitignore',                    status: 'modified', insertions: 10, deletions: 2  }
+        { path: 'src/main/git/index.ts',                                          status: 'modified', insertions: 1,   deletions: 0  },
+        { path: 'src/main/git/service.ts',                                         status: 'modified', insertions: 1,   deletions: 0  },
+        { path: 'src/main/ipc/auth.ts',                                            status: 'modified', insertions: 118, deletions: 4  },
+        { path: 'src/main/ipc/git.ts',                                             status: 'modified', insertions: 16,  deletions: 10 },
+        { path: 'src/renderer/src/App.tsx',                                        status: 'modified', insertions: 11,  deletions: 2  },
+        { path: 'src/renderer/src/components/ActionPanel/ActionPanel.tsx',         status: 'modified', insertions: 15,  deletions: 2  },
+        { path: 'src/renderer/src/components/ConnectGitHub/ConnectGitHub.module.css', status: 'modified', insertions: 72, deletions: 0 },
+        { path: 'src/renderer/src/components/ConnectGitHub/ConnectGitHub.tsx',     status: 'modified', insertions: 70,  deletions: 20 },
+        { path: 'src/renderer/src/hooks/useAuth.ts',                               status: 'modified', insertions: 48,  deletions: 2  }
       ]
     }
   ]
 }
 
-// 이전 주 (2026-03-31 ~ 2026-04-06) 더미 데이터
+// ─── 지난 주 (2026-03-31 월 ~ 2026-04-06 일) ─────────────────────────────────
+// 실제 커밋 1개: 2754509 (수요일, April 2)
+
 export const DUMMY_REPORT_LAST_WEEK: WeeklyReport = {
   projectId: 'preview-001',
-  projectName: '내 소설 프로젝트',
+  projectName: 'git-abstraction-tool',
   startDate: '2026-03-31',
   endDate:   '2026-04-06',
   summary: {
-    totalCommits: 3,
-    filesAdded: 1,
-    filesModified: 5,
-    filesDeleted: 0,
-    totalInsertions: 145,
-    totalDeletions: 38
+    totalCommits: 1,
+    filesAdded:   57,
+    filesModified: 0,
+    filesDeleted:  0,
+    totalInsertions: 10951,
+    totalDeletions:      0
   },
   dailyBreakdown: [
     { date: '2026-03-31', dayOfWeek: '월', commitCount: 0 },
-    { date: '2026-04-01', dayOfWeek: '화', commitCount: 1 },
-    { date: '2026-04-02', dayOfWeek: '수', commitCount: 0 },
-    { date: '2026-04-03', dayOfWeek: '목', commitCount: 2 },
+    { date: '2026-04-01', dayOfWeek: '화', commitCount: 0 },
+    { date: '2026-04-02', dayOfWeek: '수', commitCount: 1 },
+    { date: '2026-04-03', dayOfWeek: '목', commitCount: 0 },
     { date: '2026-04-04', dayOfWeek: '금', commitCount: 0 },
     { date: '2026-04-05', dayOfWeek: '토', commitCount: 0 },
     { date: '2026-04-06', dayOfWeek: '일', commitCount: 0 }
   ],
   commits: [
+    // 2754509 — 2026-04-02 21:41 (수)
     {
-      hash: '1a2b3c4',
-      date: '2026-04-03T20:10:00+09:00',
-      message: '1장 전체 퇴고 완료',
+      hash: '2754509',
+      date: '2026-04-02T21:41:17-07:00',
+      message: 'First draft',
       files: [
-        { path: 'chapters/chapter-01.md', status: 'modified', insertions: 58, deletions: 22 },
-        { path: 'outline/story-arc.md',   status: 'modified', insertions: 12, deletions: 8  }
-      ]
-    },
-    {
-      hash: 'd5e6f7a',
-      date: '2026-04-03T14:35:00+09:00',
-      message: '프롤로그 추가',
-      files: [
-        { path: 'chapters/prologue.md',   status: 'added',    insertions: 47, deletions: 0  },
-        { path: 'chapters/chapter-01.md', status: 'modified', insertions: 20, deletions: 6  }
-      ]
-    },
-    {
-      hash: 'b8c9d0e',
-      date: '2026-04-01T16:00:00+09:00',
-      message: '세계관 배경 메모 정리',
-      files: [
-        { path: 'world/world-building.md', status: 'modified', insertions: 8, deletions: 2 }
+        { path: '.claude/settings.local.json',                                     status: 'added', insertions: 11,   deletions: 0 },
+        { path: '.claude/skills/gat-db/SKILL.md',                                  status: 'added', insertions: 129,  deletions: 0 },
+        { path: '.claude/skills/gat-ui/SKILL.md',                                  status: 'added', insertions: 106,  deletions: 0 },
+        { path: '.gitignore',                                                       status: 'added', insertions: 27,   deletions: 0 },
+        { path: 'README.md',                                                        status: 'added', insertions: 226,  deletions: 0 },
+        { path: 'electron-builder.yml',                                             status: 'added', insertions: 44,   deletions: 0 },
+        { path: 'electron.vite.config.ts',                                          status: 'added', insertions: 20,   deletions: 0 },
+        { path: 'package-lock.json',                                                status: 'added', insertions: 7656, deletions: 0 },
+        { path: 'package.json',                                                     status: 'added', insertions: 39,   deletions: 0 },
+        { path: 'src/main/db/credentials.ts',                                       status: 'added', insertions: 43,   deletions: 0 },
+        { path: 'src/main/db/preferences.ts',                                       status: 'added', insertions: 27,   deletions: 0 },
+        { path: 'src/main/db/projects.ts',                                          status: 'added', insertions: 49,   deletions: 0 },
+        { path: 'src/main/db/statusCache.ts',                                       status: 'added', insertions: 32,   deletions: 0 },
+        { path: 'src/main/git/__tests__/errors.test.ts',                            status: 'added', insertions: 56,   deletions: 0 },
+        { path: 'src/main/git/errors.ts',                                           status: 'added', insertions: 60,   deletions: 0 },
+        { path: 'src/main/git/index.ts',                                            status: 'added', insertions: 23,   deletions: 0 },
+        { path: 'src/main/git/service.ts',                                          status: 'added', insertions: 180,  deletions: 0 },
+        { path: 'src/main/git/types.ts',                                            status: 'added', insertions: 58,   deletions: 0 },
+        { path: 'src/main/index.ts',                                                status: 'added', insertions: 53,   deletions: 0 },
+        { path: 'src/main/ipc/auth.ts',                                             status: 'added', insertions: 19,   deletions: 0 },
+        { path: 'src/main/ipc/dialog.ts',                                           status: 'added', insertions: 14,   deletions: 0 },
+        { path: 'src/main/ipc/git.ts',                                              status: 'added', insertions: 79,   deletions: 0 },
+        { path: 'src/main/ipc/index.ts',                                            status: 'added', insertions: 15,   deletions: 0 },
+        { path: 'src/main/ipc/preferences.ts',                                      status: 'added', insertions: 15,   deletions: 0 },
+        { path: 'src/main/ipc/projects.ts',                                         status: 'added', insertions: 31,   deletions: 0 },
+        { path: 'src/main/ipc/status.ts',                                           status: 'added', insertions: 12,   deletions: 0 },
+        { path: 'src/main/watcher/index.ts',                                        status: 'added', insertions: 57,   deletions: 0 },
+        { path: 'src/preload/index.d.ts',                                           status: 'added', insertions: 7,    deletions: 0 },
+        { path: 'src/preload/index.ts',                                             status: 'added', insertions: 15,   deletions: 0 },
+        { path: 'src/renderer/index.html',                                          status: 'added', insertions: 16,   deletions: 0 },
+        { path: 'src/renderer/src/App.module.css',                                  status: 'added', insertions: 82,   deletions: 0 },
+        { path: 'src/renderer/src/App.tsx',                                         status: 'added', insertions: 164,  deletions: 0 },
+        { path: 'src/renderer/src/components/ActionPanel/ActionPanel.module.css',   status: 'added', insertions: 107,  deletions: 0 },
+        { path: 'src/renderer/src/components/ActionPanel/ActionPanel.tsx',          status: 'added', insertions: 126,  deletions: 0 },
+        { path: 'src/renderer/src/components/ConnectGitHub/ConnectGitHub.module.css', status: 'added', insertions: 93, deletions: 0 },
+        { path: 'src/renderer/src/components/ConnectGitHub/ConnectGitHub.tsx',      status: 'added', insertions: 67,   deletions: 0 },
+        { path: 'src/renderer/src/components/FileManager/FileItem.tsx',             status: 'added', insertions: 49,   deletions: 0 },
+        { path: 'src/renderer/src/components/FileManager/FileManager.module.css',   status: 'added', insertions: 126,  deletions: 0 },
+        { path: 'src/renderer/src/components/FileManager/FileManager.tsx',          status: 'added', insertions: 96,   deletions: 0 },
+        { path: 'src/renderer/src/components/Sidebar/Sidebar.module.css',           status: 'added', insertions: 125,  deletions: 0 },
+        { path: 'src/renderer/src/components/Sidebar/Sidebar.tsx',                  status: 'added', insertions: 91,   deletions: 0 },
+        { path: 'src/renderer/src/components/shared/Spinner.tsx',                   status: 'added', insertions: 11,   deletions: 0 },
+        { path: 'src/renderer/src/components/shared/Toast.tsx',                     status: 'added', insertions: 23,   deletions: 0 },
+        { path: 'src/renderer/src/components/shared/shared.module.css',             status: 'added', insertions: 58,   deletions: 0 },
+        { path: 'src/renderer/src/context/AppContext.tsx',                          status: 'added', insertions: 85,   deletions: 0 },
+        { path: 'src/renderer/src/env.d.ts',                                        status: 'added', insertions: 1,    deletions: 0 },
+        { path: 'src/renderer/src/hooks/useAuth.ts',                                status: 'added', insertions: 37,   deletions: 0 },
+        { path: 'src/renderer/src/hooks/useFileStatus.ts',                          status: 'added', insertions: 87,   deletions: 0 },
+        { path: 'src/renderer/src/hooks/useGitActions.ts',                          status: 'added', insertions: 56,   deletions: 0 },
+        { path: 'src/renderer/src/hooks/usePreferences.ts',                         status: 'added', insertions: 24,   deletions: 0 },
+        { path: 'src/renderer/src/hooks/useProjects.ts',                            status: 'added', insertions: 59,   deletions: 0 },
+        { path: 'src/renderer/src/hooks/useToast.ts',                               status: 'added', insertions: 18,   deletions: 0 },
+        { path: 'src/renderer/src/index.css',                                       status: 'added', insertions: 98,   deletions: 0 },
+        { path: 'src/renderer/src/ipc.ts',                                          status: 'added', insertions: 15,   deletions: 0 },
+        { path: 'src/renderer/src/main.tsx',                                        status: 'added', insertions: 10,   deletions: 0 },
+        { path: 'src/renderer/src/types.ts',                                        status: 'added', insertions: 77,   deletions: 0 },
+        { path: 'tsconfig.json',                                                    status: 'added', insertions: 7,    deletions: 0 },
+        { path: 'tsconfig.node.json',                                               status: 'added', insertions: 14,   deletions: 0 },
+        { path: 'tsconfig.web.json',                                                status: 'added', insertions: 18,   deletions: 0 },
+        { path: 'vitest.config.ts',                                                 status: 'added', insertions: 8,    deletions: 0 }
       ]
     }
   ]
 }
 
-// 빈 주 (커밋 없음)
+// ─── 2주 전 (2026-03-24 월 ~ 2026-03-30 일) — 커밋 없음 ─────────────────────
+
 export const DUMMY_REPORT_EMPTY: WeeklyReport = {
   projectId: 'preview-001',
-  projectName: '내 소설 프로젝트',
+  projectName: 'git-abstraction-tool',
   startDate: '2026-03-24',
   endDate:   '2026-03-30',
   summary: {
