@@ -2,28 +2,21 @@
    기존 앱의 CSS 변수(--bg-primary 등)를 재사용한다.
    통합 시 앱 전역 CSS 변수 이름에 맞게 조정 필요. */
 
-/* ─── 변수 (기존 앱 변수가 없을 경우 폴백) ─────────────────────────────────── */
+/* ─── 변수 (기존 앱 변수 재사용, 없을 경우 폴백) ───────────────────────────── */
 :root {
-  --wr-bg: var(--bg-secondary, #f5f5f5);
-  --wr-surface: var(--bg-primary, #ffffff);
-  --wr-border: var(--border-color, #e0e0e0);
-  --wr-text: var(--text-primary, #1a1a1a);
-  --wr-text-muted: var(--text-secondary, #666666);
-  --wr-accent: var(--accent-color, #4f8ef7);
+  --wr-bg: var(--bg-sidebar, #f4f5f7);
+  --wr-surface: var(--bg, #ffffff);
+  --wr-border: var(--border, #e5e7eb);
+  --wr-text: var(--text, #1a1a2e);
+  --wr-text-muted: var(--text-muted, #6b7280);
+  --wr-accent: var(--accent, #2563eb);
 
-  --wr-added: #22c55e;
-  --wr-modified: #f59e0b;
-  --wr-deleted: #ef4444;
-  --wr-renamed: #a855f7;
+  --wr-added: var(--success, #059669);
+  --wr-modified: var(--warning, #d97706);
+  --wr-deleted: var(--error, #dc2626);
+  --wr-renamed: var(--status-renamed, #7c3aed);
 }
-
-[data-theme='dark'] {
-  --wr-bg: var(--bg-secondary, #1e1e1e);
-  --wr-surface: var(--bg-primary, #2d2d2d);
-  --wr-border: var(--border-color, #3a3a3a);
-  --wr-text: var(--text-primary, #f0f0f0);
-  --wr-text-muted: var(--text-secondary, #999999);
-}
+/* [data-theme='dark'] 별도 선언 불필요 — 앱의 CSS 변수가 테마에 따라 자동 변경됨 */
 
 /* ─── 컨테이너 ─────────────────────────────────────────────────────────────── */
 .wr-container {
@@ -364,7 +357,7 @@
 }
 
 [data-theme='dark'] .wr-error {
-  background: #450a0a;
-  color: #fca5a5;
-  border-color: #7f1d1d;
+  background: rgba(248, 81, 73, 0.1);
+  color: var(--error, #f85149);
+  border-color: rgba(248, 81, 73, 0.3);
 }
