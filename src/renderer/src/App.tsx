@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AppProvider } from './context/AppContext'
 import { invokeDb } from './ipc'
 import { useAuth } from './hooks/useAuth'
@@ -12,6 +12,7 @@ import { FileManager } from './components/FileManager/FileManager'
 import { Sidebar, pickFolder } from './components/Sidebar/Sidebar'
 import { ConnectGitHub, GitHubStatus } from './components/ConnectGitHub/ConnectGitHub'
 import { ToastContainer } from './components/shared/Toast'
+import { AiCommitSuggestion, CommitAiMetadata } from './types'
 import styles from './App.module.css'
 
 function Shell(): JSX.Element {
@@ -21,15 +22,35 @@ function Shell(): JSX.Element {
   const { addToast } = useToast()
   const { tokenExists, deviceFlow, saveToken, clearToken, startDeviceFlow, cancelDeviceFlow } = useAuth()
   const [showGitHubPanel, setShowGitHubPanel] = useState(false)
+  const [commitMessage, setCommitMessage] = useState('')
+  const [aiSuggestion, setAiSuggestion] = useState<AiCommitSuggestion | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
 
   const { status, loading: statusLoading, error: statusError, fetchStatus, stage, unstage, stageAll, unstageAll, revertFile } =
     useFileStatus(activeProjectId)
 
   const { loading: actionLoading, error: actionError, commit, push, pull, clearError } =
-    useGitActions(activeProjectId, () => {
-      fetchStatus()
-      addToast('Saved successfully!', 'success')
-    })
+    useGitActions(activeProjectId)
+
+  const stagedSignature = useMemo(
+    () =>
+      (status?.files ?? [])
+        .filter((file) => file.staged)
+        .map((file) => `${file.path}:${file.status}:${file.oldPath ?? ''}`)
+        .sort()
+        .join('|'),
+    [status]
+  )
+
+  useEffect(() => {
+    setAiSuggestion(null)
+  }, [activeProjectId, stagedSignature])
+
+  useEffect(() => {
+    if (commitMessage.trim().length === 0) {
+      setCommitMessage(preferences.default_save_message_template)
+    }
+  }, [preferences.default_save_message_template, commitMessage])
 
   const handleConnectGitHub = async (token: string): Promise<void> => {
     await saveToken(token)
@@ -58,6 +79,50 @@ function Shell(): JSX.Element {
 
   const handleToggleTheme = (): void => {
     setPreference('theme', preferences.theme === 'light' ? 'dark' : 'light')
+  }
+
+  const handleSuggestCommitMessage = async (): Promise<void> => {
+    if (!activeProjectId || !status) return
+    const stagedCount = status.files.filter((file) => file.staged).length
+    if (stagedCount === 0) return
+
+    setAiLoading(true)
+    clearError()
+    try {
+      const suggestion = await invokeDb<AiCommitSuggestion>('ai:commit-suggestion', activeProjectId)
+      setAiSuggestion(suggestion)
+      setCommitMessage(suggestion.message)
+      addToast('AI suggested a save message. Review it, then click Save Progress again.', 'info')
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'AI could not summarize these changes right now.'
+      addToast(message, 'error')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  const handleCommit = async (): Promise<void> => {
+    if (!status) return
+    const stagedCount = status.files.filter((file) => file.staged).length
+    if (stagedCount === 0) return
+
+    const trimmedMessage = commitMessage.trim()
+    if (trimmedMessage.length === 0) {
+      await handleSuggestCommitMessage()
+      return
+    }
+
+    const metadata: CommitAiMetadata | undefined =
+      aiSuggestion && trimmedMessage === aiSuggestion.message ? aiSuggestion : undefined
+
+    const saved = await commit(trimmedMessage, metadata)
+    if (!saved) return
+
+    fetchStatus()
+    addToast('Saved successfully!', 'success')
+    setCommitMessage('')
+    setAiSuggestion(null)
   }
 
   const handleOpenGitHubDocs = (): void => {
@@ -125,14 +190,25 @@ function Shell(): JSX.Element {
             <ActionPanel
               status={status}
               loading={actionLoading}
+              aiLoading={aiLoading}
               error={actionError}
-              messageTemplate={preferences.default_save_message_template}
+              message={commitMessage}
               tokenExists={tokenExists}
               forceShowConnect={showGitHubPanel}
               deviceFlow={deviceFlow}
-              onCommit={commit}
-              onPush={async () => { await push(); addToast('Uploaded to cloud', 'success') }}
-              onPull={async () => { await pull(); fetchStatus(); addToast('Updates downloaded', 'success') }}
+              onMessageChange={setCommitMessage}
+              onCommit={handleCommit}
+              onSuggestMessage={handleSuggestCommitMessage}
+              onPush={async () => {
+                const pushed = await push()
+                if (pushed) addToast('Uploaded to cloud', 'success')
+              }}
+              onPull={async () => {
+                const pulled = await pull()
+                if (!pulled) return
+                fetchStatus()
+                addToast('Updates downloaded', 'success')
+              }}
               onClearError={clearError}
               onConnectGitHub={handleConnectGitHub}
               onOpenGitHubDocs={handleOpenGitHubDocs}

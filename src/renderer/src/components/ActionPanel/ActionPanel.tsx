@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { GitError, GitStatus } from '../../types'
 import { DeviceFlowState } from '../../hooks/useAuth'
 import { ConnectGitHub } from '../ConnectGitHub/ConnectGitHub'
@@ -8,12 +7,15 @@ import styles from './ActionPanel.module.css'
 interface Props {
   status: GitStatus | null
   loading: boolean
+  aiLoading: boolean
   error: GitError | null
-  messageTemplate: string
+  message: string
   tokenExists: boolean | null
   forceShowConnect?: boolean
   deviceFlow: DeviceFlowState | null
-  onCommit: (message: string) => void
+  onMessageChange: (message: string) => void
+  onCommit: () => void
+  onSuggestMessage: () => void
   onPush: () => void
   onPull: () => void
   onClearError: () => void
@@ -26,12 +28,15 @@ interface Props {
 export function ActionPanel({
   status,
   loading,
+  aiLoading,
   error,
-  messageTemplate,
+  message,
   tokenExists,
   forceShowConnect = false,
   deviceFlow,
+  onMessageChange,
   onCommit,
+  onSuggestMessage,
   onPush,
   onPull,
   onClearError,
@@ -40,15 +45,13 @@ export function ActionPanel({
   onStartDeviceFlow,
   onCancelDeviceFlow
 }: Props): JSX.Element {
-  const [message, setMessage] = useState(messageTemplate)
-
   const stagedCount = status?.files.filter((f) => f.staged).length ?? 0
-  const canCommit = stagedCount > 0 && message.trim().length > 0 && !loading
+  const canCommit = stagedCount > 0 && !loading && !aiLoading
+  const canSuggest = stagedCount > 0 && !loading && !aiLoading
 
   const handleCommit = (): void => {
     if (!canCommit) return
-    onCommit(message.trim())
-    setMessage('')
+    onCommit()
   }
 
   return (
@@ -77,19 +80,27 @@ export function ActionPanel({
         <textarea
           className={styles.messageInput}
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) => onMessageChange(e.target.value)}
           placeholder={stagedCount > 0 ? 'Describe what you saved…' : 'Select changes above to save'}
           rows={1}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleCommit()
           }}
         />
+        <button
+          className={styles.suggestBtn}
+          onClick={onSuggestMessage}
+          disabled={!canSuggest}
+          title="Use AI to suggest a save message"
+        >
+          {aiLoading ? <Spinner size={14} /> : 'AI Suggest'}
+        </button>
       </div>
 
       <div className={styles.actions}>
         <button className={styles.saveBtn} onClick={handleCommit} disabled={!canCommit}>
-          {loading ? <Spinner size={14} /> : null}
-          {loading ? 'Saving…' : `Save Progress${stagedCount > 0 ? ` (${stagedCount})` : ''}`}
+          {loading || aiLoading ? <Spinner size={14} /> : null}
+          {loading ? 'Saving…' : aiLoading ? 'Thinking…' : `Save Progress${stagedCount > 0 ? ` (${stagedCount})` : ''}`}
         </button>
 
         <button

@@ -30,6 +30,26 @@
 .messageInput::placeholder { color: var(--text-muted); }
 .messageInput:focus { border-color: var(--border-focus); }
 
+.suggestBtn {
+  padding: 9px 12px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.suggestBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.suggestBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .actions {
   display: flex;
   gap: 8px;

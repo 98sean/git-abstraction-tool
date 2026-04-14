@@ -1,6 +1,7 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
+import { loadLocalEnv } from './config/env'
 import { registerIpcHandlers } from './ipc'
 import { startWatchingAllProjects, stopAllWatchers } from './watcher'
 
@@ -36,6 +37,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  loadLocalEnv()
   registerIpcHandlers()
   startWatchingAllProjects()
   createWindow()

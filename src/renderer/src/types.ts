@@ -70,6 +70,15 @@ export interface Preferences {
   default_save_message_template: string
 }
 
+export interface AiCommitSuggestion {
+  message: string
+  summary: string
+  fingerprint: string
+  model: string
+}
+
+export interface CommitAiMetadata extends AiCommitSuggestion {}
+
 export interface Toast {
   id: string
   message: string

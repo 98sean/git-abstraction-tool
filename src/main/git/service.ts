@@ -89,6 +89,24 @@ export class GitService {
   async commit(message: string): Promise<void> {
     try {
       await this.git.commit(message)
+      return
+    } catch (err) {
+      throw mapGitError(err)
+    }
+  }
+
+  async commitAndGetHash(message: string): Promise<string> {
+    try {
+      await this.git.commit(message)
+      return await this.git.revparse(['HEAD'])
+    } catch (err) {
+      throw mapGitError(err)
+    }
+  }
+
+  async getStagedDiff(): Promise<string> {
+    try {
+      return await this.git.diff(['--cached', '--no-color', '--unified=0'])
     } catch (err) {
       throw mapGitError(err)
     }
