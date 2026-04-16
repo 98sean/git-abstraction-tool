@@ -3,28 +3,38 @@ import { AppProvider } from './context/AppContext'
 import { invokeDb } from './ipc'
 import { useAuth } from './hooks/useAuth'
 import { useAiConnection } from './hooks/useAiConnection'
+import { useCloudSetup } from './hooks/useCloudSetup'
 import { useFileStatus } from './hooks/useFileStatus'
 import { useGitActions } from './hooks/useGitActions'
 import { usePreferences } from './hooks/usePreferences'
 import { useProjects } from './hooks/useProjects'
+import { useProjectLinkWizard } from './hooks/useProjectLinkWizard'
 import { useToast } from './hooks/useToast'
 import { ActionPanel } from './components/ActionPanel/ActionPanel'
 import { AIStatus, ConnectAI } from './components/ConnectAI/ConnectAI'
+import { CloudSetupWizard } from './components/CloudSetupWizard/CloudSetupWizard'
 import { FileManager } from './components/FileManager/FileManager'
-import { Sidebar, pickFolder } from './components/Sidebar/Sidebar'
+import { DangerZoneUploadDialog } from './components/DangerZoneUploadDialog/DangerZoneUploadDialog'
+import { ProjectLinkWizard } from './components/ProjectLinkWizard/ProjectLinkWizard'
+import { Sidebar } from './components/Sidebar/Sidebar'
 import { ConnectGitHub, GitHubStatus } from './components/ConnectGitHub/ConnectGitHub'
 import { ToastContainer } from './components/shared/Toast'
+import { ProjectCloudTarget, PushToCloudOptions } from './types'
 import styles from './App.module.css'
 
 function Shell(): JSX.Element {
-  const { projects, activeProjectId, activeProject, addProject, removeProject, setActiveProject } =
+  const { projects, activeProjectId, activeProject, removeProject, setActiveProject } =
     useProjects()
   const { preferences, setPreference } = usePreferences()
   const { addToast } = useToast()
   const { tokenExists, deviceFlow, saveToken, clearToken, startDeviceFlow, cancelDeviceFlow } = useAuth()
   const { connectionStatus, connect, disconnect, setModel } = useAiConnection()
+  const linkWizard = useProjectLinkWizard({
+    onLinked: (project) => addToast(`"${project.friendly_name}" linked successfully`, 'success')
+  })
   const [showGitHubPanel, setShowGitHubPanel] = useState(false)
   const [showAiPanel, setShowAiPanel] = useState(false)
+  const [pendingDangerTarget, setPendingDangerTarget] = useState<ProjectCloudTarget | null>(null)
 
   const { status, loading: statusLoading, error: statusError, fetchStatus, stage, unstage, stageAll, unstageAll, revertFile } =
     useFileStatus(activeProjectId)
@@ -44,17 +54,29 @@ function Shell(): JSX.Element {
     await connect(provider, apiKey)
   }
 
-  const handleAddProject = async (): Promise<void> => {
-    const folderPath = await pickFolder()
-    if (!folderPath) return
-    const parts = folderPath.replace(/\\/g, '/').split('/')
-    const projectName = parts[parts.length - 1] || 'My Project'
-    try {
-      await addProject(folderPath, projectName)
-      addToast(`"${projectName}" linked successfully`, 'success')
-    } catch {
-      addToast('Could not link that folder. Please try again.', 'error')
+  const handleUploadWithTarget = async (
+    target: ProjectCloudTarget,
+    options?: PushToCloudOptions
+  ): Promise<void> => {
+    if (
+      target.mode === 'collaboration' &&
+      target.collaboration?.branchMode === 'danger_default_branch' &&
+      !options?.dangerConfirmed
+    ) {
+      setPendingDangerTarget(target)
+      return
     }
+
+    await push(options)
+    addToast('Uploaded to cloud', 'success')
+  }
+
+  const cloudSetup = useCloudSetup(activeProject, {
+    onReadyToUpload: handleUploadWithTarget
+  })
+
+  const handleAddProject = (): void => {
+    linkWizard.open()
   }
 
   const handleRemoveProject = async (project_id: string): Promise<void> => {
@@ -79,6 +101,19 @@ function Shell(): JSX.Element {
         : 'https://platform.claude.com/docs/api-reference'
 
     invokeDb('shell:openExternal', url).catch(console.error)
+  }
+
+  const handleUpload = async (options?: PushToCloudOptions): Promise<void> => {
+    if (!activeProject) {
+      return
+    }
+
+    if (cloudSetup.target.mode === 'none') {
+      await cloudSetup.open(true)
+      return
+    }
+
+    await handleUploadWithTarget(cloudSetup.target, options)
   }
 
   const projectStates = Object.fromEntries(
@@ -168,11 +203,14 @@ function Shell(): JSX.Element {
               error={actionError}
               messageTemplate={preferences.default_save_message_template}
               tokenExists={tokenExists}
+              cloudUploadReady={cloudSetup.cloudUploadReady}
+              cloudStatusLabel={cloudSetup.cloudStatusLabel}
               forceShowConnect={showGitHubPanel}
               deviceFlow={deviceFlow}
               onCommit={commit}
-              onPush={async () => { await push(); addToast('Uploaded to cloud', 'success') }}
+              onPush={handleUpload}
               onPull={async () => { await pull(); fetchStatus(); addToast('Updates downloaded', 'success') }}
+              onOpenCloudSetup={() => { void cloudSetup.open(true) }}
               onClearError={clearError}
               onConnectGitHub={handleConnectGitHub}
               onOpenGitHubDocs={handleOpenGitHubDocs}
@@ -210,6 +248,55 @@ function Shell(): JSX.Element {
       </div>
 
       <ToastContainer />
+
+      {linkWizard.isOpen && (
+        <ProjectLinkWizard
+          step={linkWizard.step}
+          inspection={linkWizard.inspection}
+          folderPath={linkWizard.folderPath}
+          friendlyName={linkWizard.friendlyName}
+          loading={linkWizard.loading}
+          error={linkWizard.error}
+          selectedIgnoreEntries={linkWizard.selectedIgnoreEntries}
+          onChooseFolder={linkWizard.chooseFolder}
+          onToggleIgnoreEntry={linkWizard.toggleIgnoreEntry}
+          onApproveInit={linkWizard.approveInit}
+          onCancel={linkWizard.close}
+          onFinish={linkWizard.finish}
+        />
+      )}
+
+      {cloudSetup.isOpen && activeProject && (
+        <CloudSetupWizard
+          intent={cloudSetup.intent}
+          loading={cloudSetup.loading}
+          error={cloudSetup.error}
+          remotes={cloudSetup.remotes}
+          branchMode={cloudSetup.branchMode}
+          selectedRemoteName={cloudSetup.selectedRemoteName}
+          selectedBranch={cloudSetup.selectedBranch}
+          onChooseIntent={cloudSetup.chooseIntent}
+          onClose={cloudSetup.close}
+          onCreateBackup={cloudSetup.createBackup}
+          onSelectRemote={cloudSetup.selectRemote}
+          onSelectBranchMode={cloudSetup.selectBranchMode}
+          onSelectBranch={cloudSetup.setSelectedBranch}
+          onContinueCollaboration={cloudSetup.saveCollaborationTarget}
+        />
+      )}
+
+      {pendingDangerTarget?.mode === 'collaboration' && pendingDangerTarget.collaboration && (
+        <DangerZoneUploadDialog
+          branchName={pendingDangerTarget.collaboration.selectedBranch ?? 'main'}
+          onCancel={() => setPendingDangerTarget(null)}
+          onConfirm={() => {
+            const target = pendingDangerTarget
+            setPendingDangerTarget(null)
+            if (!target) return
+            void handleUploadWithTarget(target, { dangerConfirmed: true })
+          }}
+        />
+      )}
     </div>
   )
 }

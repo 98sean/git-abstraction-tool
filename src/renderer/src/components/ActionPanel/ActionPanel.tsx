@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GitError, GitStatus } from '../../types'
+import { GitError, GitStatus, PushToCloudOptions } from '../../types'
 import { DeviceFlowState } from '../../hooks/useAuth'
 import { ConnectGitHub } from '../ConnectGitHub/ConnectGitHub'
 import { Spinner } from '../shared/Spinner'
@@ -11,11 +11,14 @@ interface Props {
   error: GitError | null
   messageTemplate: string
   tokenExists: boolean | null
+  cloudUploadReady: boolean
+  cloudStatusLabel?: string
   forceShowConnect?: boolean
   deviceFlow: DeviceFlowState | null
   onCommit: (message: string) => void
-  onPush: () => void
+  onPush: (options?: PushToCloudOptions) => void
   onPull: () => void
+  onOpenCloudSetup: () => void
   onClearError: () => void
   onConnectGitHub: (token: string) => Promise<void>
   onOpenGitHubDocs: () => void
@@ -29,11 +32,14 @@ export function ActionPanel({
   error,
   messageTemplate,
   tokenExists,
+  cloudUploadReady,
+  cloudStatusLabel,
   forceShowConnect = false,
   deviceFlow,
   onCommit,
   onPush,
   onPull,
+  onOpenCloudSetup,
   onClearError,
   onConnectGitHub,
   onOpenGitHubDocs,
@@ -49,6 +55,15 @@ export function ActionPanel({
     if (!canCommit) return
     onCommit(message.trim())
     setMessage('')
+  }
+
+  const handlePush = (): void => {
+    if (!cloudUploadReady) {
+      onOpenCloudSetup()
+      return
+    }
+
+    onPush()
   }
 
   return (
@@ -103,7 +118,7 @@ export function ActionPanel({
 
         <button
           className={styles.syncBtn}
-          onClick={onPush}
+          onClick={handlePush}
           disabled={loading || !status}
           title="Upload your saved versions to cloud"
         >
@@ -117,6 +132,11 @@ export function ActionPanel({
       {status && (
         <div className={styles.statusBar}>
           <span>{stagedCount} change{stagedCount !== 1 ? 's' : ''} selected</span>
+          {cloudStatusLabel && (
+            <span className={`${styles.cloudHint} ${!cloudUploadReady ? styles.pendingCloud : ''}`}>
+              {cloudStatusLabel}
+            </span>
+          )}
           {status.ahead > 0 && (
             <span className={styles.syncIndicator}>
               ↑ {status.ahead} to upload

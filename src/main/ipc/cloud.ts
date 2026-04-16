@@ -52,4 +52,50 @@ export function registerCloudHandlers(): void {
     setProjectCloudTarget(project_id, nextTarget)
     return nextTarget
   })
+
+  ipcMain.handle(
+    'cloud:collaboration:set',
+    async (
+      _event,
+      project_id: string,
+      input: {
+        repoOwner: string
+        repoName: string
+        remoteName: string
+        branchMode: 'new_branch' | 'existing_branch' | 'danger_default_branch'
+        selectedBranch: string
+      }
+    ) => {
+      const token = getGithubToken()
+
+      if (!token) {
+        throw new Error('Connect GitHub before choosing a team upload target.')
+      }
+
+      const validation = await githubService.validateTokenForRepository({
+        token,
+        owner: input.repoOwner,
+        repo: input.repoName
+      })
+
+      if (validation.status !== 'ok') {
+        throw new Error(validation.reason ?? 'This token cannot access the selected repository.')
+      }
+
+      const currentTarget = getProjectCloudTarget(project_id)
+      const nextTarget = {
+        ...currentTarget,
+        mode: 'collaboration' as const,
+        backup: null,
+        collaboration: {
+          remoteName: input.remoteName,
+          branchMode: input.branchMode,
+          selectedBranch: input.selectedBranch
+        }
+      }
+
+      setProjectCloudTarget(project_id, nextTarget)
+      return nextTarget
+    }
+  )
 }

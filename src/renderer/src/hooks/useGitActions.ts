@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { invokeGit } from '../ipc'
-import { GitError } from '../types'
+import { GitError, PushToCloudOptions } from '../types'
 
 export function useGitActions(
   project_id: string | null,
@@ -9,7 +9,7 @@ export function useGitActions(
   loading: boolean
   error: GitError | null
   commit: (message: string) => Promise<void>
-  push: () => Promise<void>
+  push: (options?: PushToCloudOptions) => Promise<void>
   pull: () => Promise<void>
   clearError: () => void
 } {
@@ -40,9 +40,9 @@ export function useGitActions(
     [project_id, run]
   )
 
-  const push = useCallback((): Promise<void> => {
+  const push = useCallback((options?: PushToCloudOptions): Promise<void> => {
     if (!project_id) return Promise.resolve()
-    return run(() => invokeGit('git:push', project_id))
+    return run(() => invokeGit('git:push', project_id, options))
   }, [project_id, run])
 
   const pull = useCallback((): Promise<void> => {

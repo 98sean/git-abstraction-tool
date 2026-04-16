@@ -40,6 +40,7 @@ export interface BranchInfo {
 }
 
 export type CollaborationBranchMode = 'new_branch' | 'existing_branch' | 'danger_default_branch'
+export type CloudSetupIntent = 'backup' | 'collaboration'
 
 export interface PushToCloudOptions {
   dangerConfirmed?: boolean

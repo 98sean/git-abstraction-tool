@@ -86,6 +86,19 @@
 }
 .aheadBehind { font-variant-numeric: tabular-nums; }
 
+.cloudHint {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgb(15 118 110 / 10%);
+  color: rgb(15 118 110);
+  font-weight: 600;
+}
+
+.pendingCloud {
+  background: rgb(245 158 11 / 12%);
+  color: rgb(180 83 9);
+}
+
 .errorBanner {
   padding: 8px 10px;
   background: color-mix(in srgb, var(--error) 10%, transparent);
