@@ -15,6 +15,8 @@ interface Props {
   projectStates?: Record<string, 'changed' | 'clean' | 'unknown'>
   /** Optional slot for rendering GitHub connection status in the footer */
   githubSlot?: React.ReactNode
+  /** Optional slot for rendering AI connection status in the footer */
+  aiSlot?: React.ReactNode
 }
 
 export function Sidebar({
@@ -26,7 +28,8 @@ export function Sidebar({
   onAddProject,
   onToggleTheme,
   projectStates = {},
-  githubSlot
+  githubSlot,
+  aiSlot
 }: Props): JSX.Element {
   return (
     <aside className={styles.sidebar}>
@@ -77,6 +80,7 @@ export function Sidebar({
           + Link a Project
         </button>
         {githubSlot}
+        {aiSlot}
         <button className={styles.themeBtn} onClick={onToggleTheme}>
           {theme === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
         </button>

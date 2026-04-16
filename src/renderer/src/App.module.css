@@ -14,6 +14,11 @@
   min-width: 0;
 }
 
+.panelArea {
+  padding: 16px 16px 0;
+  flex-shrink: 0;
+}
+
 .header {
   display: flex;
   align-items: center;

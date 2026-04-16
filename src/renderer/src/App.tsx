@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { AppProvider } from './context/AppContext'
 import { invokeDb } from './ipc'
 import { useAuth } from './hooks/useAuth'
+import { useAiConnection } from './hooks/useAiConnection'
 import { useFileStatus } from './hooks/useFileStatus'
 import { useGitActions } from './hooks/useGitActions'
 import { usePreferences } from './hooks/usePreferences'
 import { useProjects } from './hooks/useProjects'
 import { useToast } from './hooks/useToast'
 import { ActionPanel } from './components/ActionPanel/ActionPanel'
+import { AIStatus, ConnectAI } from './components/ConnectAI/ConnectAI'
 import { FileManager } from './components/FileManager/FileManager'
 import { Sidebar, pickFolder } from './components/Sidebar/Sidebar'
 import { ConnectGitHub, GitHubStatus } from './components/ConnectGitHub/ConnectGitHub'
@@ -20,7 +22,9 @@ function Shell(): JSX.Element {
   const { preferences, setPreference } = usePreferences()
   const { addToast } = useToast()
   const { tokenExists, deviceFlow, saveToken, clearToken, startDeviceFlow, cancelDeviceFlow } = useAuth()
+  const { connectionStatus, connect, disconnect, setModel } = useAiConnection()
   const [showGitHubPanel, setShowGitHubPanel] = useState(false)
+  const [showAiPanel, setShowAiPanel] = useState(false)
 
   const { status, loading: statusLoading, error: statusError, fetchStatus, stage, unstage, stageAll, unstageAll, revertFile } =
     useFileStatus(activeProjectId)
@@ -34,6 +38,10 @@ function Shell(): JSX.Element {
   const handleConnectGitHub = async (token: string): Promise<void> => {
     await saveToken(token)
     setShowGitHubPanel(false)
+  }
+
+  const handleConnectAi = async (provider: 'openai' | 'anthropic', apiKey: string): Promise<void> => {
+    await connect(provider, apiKey)
   }
 
   const handleAddProject = async (): Promise<void> => {
@@ -64,6 +72,15 @@ function Shell(): JSX.Element {
     invokeDb('shell:openExternal', 'https://github.com/settings/tokens').catch(console.error)
   }
 
+  const handleOpenAiDocs = (provider: 'openai' | 'anthropic'): void => {
+    const url =
+      provider === 'openai'
+        ? 'https://developers.openai.com/api/'
+        : 'https://platform.claude.com/docs/api-reference'
+
+    invokeDb('shell:openExternal', url).catch(console.error)
+  }
+
   const projectStates = Object.fromEntries(
     projects.map((p) => {
       if (p.project_id === activeProjectId && status) {
@@ -87,8 +104,20 @@ function Shell(): JSX.Element {
         githubSlot={
           <GitHubStatus
             connected={tokenExists === true}
-            onConnect={() => setShowGitHubPanel(true)}
+            onConnect={() => {
+              setShowAiPanel(false)
+              setShowGitHubPanel(true)
+            }}
             onDisconnect={clearToken}
+          />
+        }
+        aiSlot={
+          <AIStatus
+            connected={connectionStatus.connection_status === 'connected'}
+            onClick={() => {
+              setShowGitHubPanel(false)
+              setShowAiPanel((value) => !value)
+            }}
           />
         }
       />
@@ -96,6 +125,17 @@ function Shell(): JSX.Element {
       <div className={styles.main}>
         {activeProject ? (
           <>
+            {showAiPanel && (
+              <div className={styles.panelArea}>
+                <ConnectAI
+                  connectionStatus={connectionStatus}
+                  onConnect={handleConnectAi}
+                  onDisconnect={disconnect}
+                  onOpenProviderDocs={handleOpenAiDocs}
+                  onSelectModel={setModel}
+                />
+              </div>
+            )}
             <header className={styles.header}>
               <span className={styles.projectTitle}>{activeProject.friendly_name}</span>
               {status && (
@@ -140,6 +180,16 @@ function Shell(): JSX.Element {
               onCancelDeviceFlow={cancelDeviceFlow}
             />
           </>
+        ) : showAiPanel ? (
+          <div className={styles.emptyMain}>
+            <ConnectAI
+              connectionStatus={connectionStatus}
+              onConnect={handleConnectAi}
+              onDisconnect={disconnect}
+              onOpenProviderDocs={handleOpenAiDocs}
+              onSelectModel={setModel}
+            />
+          </div>
         ) : showGitHubPanel && tokenExists !== true ? (
           <div className={styles.emptyMain}>
             <ConnectGitHub
