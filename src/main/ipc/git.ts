@@ -2,7 +2,13 @@ import { ipcMain } from 'electron'
 import { getGitService, removeGitService } from '../git'
 import { getCachedStatus, setCachedStatus, invalidateCache } from '../db/statusCache'
 import { getGithubToken } from '../db/credentials'
-import { GitError } from '../git/types'
+import { getProjectCloudTarget } from '../db/projectCloudTargets'
+import {
+  GitError,
+  PullConfiguredTargetInput,
+  PushConfiguredTargetInput,
+  PushToCloudOptions
+} from '../git/types'
 
 // Wrap a git call so IPC errors are serialisable plain objects (Errors don't
 // survive the IPC boundary cleanly in Electron).
@@ -13,6 +19,65 @@ async function run<T>(fn: () => Promise<T>): Promise<{ data: T } | { error: GitE
   } catch (err) {
     return { error: err as GitError }
   }
+}
+
+function noRemoteError(message: string): GitError {
+  return {
+    code: 'NO_REMOTE',
+    message
+  }
+}
+
+function missingBranchError(message: string): GitError {
+  return {
+    code: 'BRANCH_NOT_FOUND',
+    message
+  }
+}
+
+function getPushTarget(project_id: string, token?: string, options?: PushToCloudOptions): PushConfiguredTargetInput {
+  const target = getProjectCloudTarget(project_id)
+
+  if (target.mode === 'backup' && target.backup) {
+    return {
+      mode: 'backup',
+      remoteName: target.backup.remoteName,
+      repoOwner: target.backup.repoOwner,
+      repoName: target.backup.repoName,
+      token
+    }
+  }
+
+  if (target.mode === 'collaboration' && target.collaboration) {
+    if (!target.collaboration.selectedBranch) {
+      throw missingBranchError('Choose a work branch before uploading to the team repository.')
+    }
+
+    return {
+      mode: 'collaboration',
+      remoteName: target.collaboration.remoteName,
+      branchMode: target.collaboration.branchMode,
+      branchName: target.collaboration.selectedBranch,
+      dangerConfirmed: options?.dangerConfirmed,
+      token
+    }
+  }
+
+  throw noRemoteError('Set up Upload to Cloud before uploading this project.')
+}
+
+function getPullTarget(project_id: string, token?: string): PullConfiguredTargetInput {
+  const target = getProjectCloudTarget(project_id)
+
+  if (target.mode === 'collaboration' && target.collaboration?.selectedBranch) {
+    return {
+      remoteName: target.collaboration.remoteName,
+      branchName: target.collaboration.selectedBranch,
+      token
+    }
+  }
+
+  throw noRemoteError('Set up a team upload target before getting updates.')
 }
 
 export function registerGitHandlers(): void {
@@ -46,14 +111,16 @@ export function registerGitHandlers(): void {
     return result
   })
 
-  ipcMain.handle('git:push', (_event, project_id: string) => {
+  ipcMain.handle('git:push', (_event, project_id: string, options?: PushToCloudOptions) => {
     const token = getGithubToken() ?? undefined
-    return run(() => getGitService(project_id).push(token))
+    return run(() =>
+      getGitService(project_id).pushConfiguredTarget(getPushTarget(project_id, token, options))
+    )
   })
 
   ipcMain.handle('git:pull', (_event, project_id: string) => {
     const token = getGithubToken() ?? undefined
-    return run(() => getGitService(project_id).pull(token))
+    return run(() => getGitService(project_id).pullConfiguredTarget(getPullTarget(project_id, token)))
   })
 
   ipcMain.handle('git:branches', (_event, project_id: string) =>

@@ -39,9 +39,22 @@ export interface BranchInfo {
   remote?: string
 }
 
+export type CollaborationBranchMode = 'new_branch' | 'existing_branch' | 'danger_default_branch'
+
+export interface PushToCloudOptions {
+  dangerConfirmed?: boolean
+}
+
+export interface PushConfiguredTargetResult {
+  remoteName: string
+  branchName: string
+  prUrl: string | null
+}
+
 export type GitErrorCode =
   | 'NOT_A_REPO'
   | 'NO_REMOTE'
+  | 'DEFAULT_BRANCH_PROTECTED'
   | 'AUTH_FAILED'
   | 'NETWORK_ERROR'
   | 'MERGE_CONFLICT'
@@ -104,8 +117,6 @@ export interface FinalizeProjectLinkInput {
   shouldInitializeGit: boolean
   ignoreEntries: string[]
 }
-
-export type CollaborationBranchMode = 'new_branch' | 'existing_branch' | 'danger_default_branch'
 
 export interface ProjectCloudTarget {
   mode: 'none' | 'backup' | 'collaboration'
