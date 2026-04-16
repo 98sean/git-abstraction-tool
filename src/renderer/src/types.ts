@@ -88,6 +88,12 @@ export interface AiConnectionState {
   connection_status: AiConnectionStatus
 }
 
+export interface ValidateAiConnectionResult {
+  availableModels: string[]
+  selectedModel: string
+  verifiedAt: number
+}
+
 export interface ProjectAiSettings {
   auto_save_message_enabled: boolean
   ai_diff_consent_granted: boolean
