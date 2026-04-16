@@ -30,6 +30,11 @@
 .messageInput::placeholder { color: var(--text-muted); }
 .messageInput:focus { border-color: var(--border-focus); }
 
+.helperText {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .actions {
   display: flex;
   gap: 8px;

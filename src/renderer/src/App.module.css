@@ -17,6 +17,9 @@
 .panelArea {
   padding: 16px 16px 0;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .header {
@@ -37,6 +40,17 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.settingsBtn {
+  margin-left: auto;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-sidebar);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .branch {

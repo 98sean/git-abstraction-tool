@@ -6,20 +6,24 @@ import { useAiConnection } from './hooks/useAiConnection'
 import { useCloudSetup } from './hooks/useCloudSetup'
 import { useFileStatus } from './hooks/useFileStatus'
 import { useGitActions } from './hooks/useGitActions'
+import { useAutoSaveMessage } from './hooks/useAutoSaveMessage'
 import { usePreferences } from './hooks/usePreferences'
+import { useProjectAiSettings } from './hooks/useProjectAiSettings'
 import { useProjects } from './hooks/useProjects'
 import { useProjectLinkWizard } from './hooks/useProjectLinkWizard'
 import { useToast } from './hooks/useToast'
+import { AIConsentDialog } from './components/AIConsentDialog/AIConsentDialog'
 import { ActionPanel } from './components/ActionPanel/ActionPanel'
 import { AIStatus, ConnectAI } from './components/ConnectAI/ConnectAI'
 import { CloudSetupWizard } from './components/CloudSetupWizard/CloudSetupWizard'
 import { FileManager } from './components/FileManager/FileManager'
 import { DangerZoneUploadDialog } from './components/DangerZoneUploadDialog/DangerZoneUploadDialog'
 import { ProjectLinkWizard } from './components/ProjectLinkWizard/ProjectLinkWizard'
+import { ProjectSettingsPanel } from './components/ProjectSettingsPanel/ProjectSettingsPanel'
 import { Sidebar } from './components/Sidebar/Sidebar'
 import { ConnectGitHub, GitHubStatus } from './components/ConnectGitHub/ConnectGitHub'
 import { ToastContainer } from './components/shared/Toast'
-import { ProjectCloudTarget, PushToCloudOptions } from './types'
+import { ProjectAiSettings, ProjectCloudTarget, PushToCloudOptions } from './types'
 import styles from './App.module.css'
 
 function Shell(): JSX.Element {
@@ -29,11 +33,15 @@ function Shell(): JSX.Element {
   const { addToast } = useToast()
   const { tokenExists, deviceFlow, saveToken, clearToken, startDeviceFlow, cancelDeviceFlow } = useAuth()
   const { connectionStatus, connect, disconnect, setModel } = useAiConnection()
+  const { settings: projectAiSettings, updateSettings: updateProjectAiSettings } = useProjectAiSettings(activeProjectId)
+  const { generate: generateAutoMessage } = useAutoSaveMessage(activeProjectId)
   const linkWizard = useProjectLinkWizard({
     onLinked: (project) => addToast(`"${project.friendly_name}" linked successfully`, 'success')
   })
   const [showGitHubPanel, setShowGitHubPanel] = useState(false)
   const [showAiPanel, setShowAiPanel] = useState(false)
+  const [showProjectSettingsPanel, setShowProjectSettingsPanel] = useState(false)
+  const [showAiConsentDialog, setShowAiConsentDialog] = useState(false)
   const [pendingDangerTarget, setPendingDangerTarget] = useState<ProjectCloudTarget | null>(null)
 
   const { status, loading: statusLoading, error: statusError, fetchStatus, stage, unstage, stageAll, unstageAll, revertFile } =
@@ -103,6 +111,27 @@ function Shell(): JSX.Element {
     invokeDb('shell:openExternal', url).catch(console.error)
   }
 
+  const handleProjectAiChange = async (patch: Partial<ProjectAiSettings>): Promise<void> => {
+    if (patch.auto_save_message_enabled && !projectAiSettings.ai_diff_consent_granted) {
+      setShowAiConsentDialog(true)
+      return
+    }
+
+    await updateProjectAiSettings(patch)
+  }
+
+  const handleAcceptAiConsent = async (): Promise<void> => {
+    await updateProjectAiSettings({
+      auto_save_message_enabled: true,
+      ai_diff_consent_granted: true
+    })
+    setShowAiConsentDialog(false)
+  }
+
+  const handleDeclineAiConsent = (): void => {
+    setShowAiConsentDialog(false)
+  }
+
   const handleUpload = async (options?: PushToCloudOptions): Promise<void> => {
     if (!activeProject) {
       return
@@ -160,15 +189,33 @@ function Shell(): JSX.Element {
       <div className={styles.main}>
         {activeProject ? (
           <>
-            {showAiPanel && (
+            {(showAiPanel || showProjectSettingsPanel) && (
               <div className={styles.panelArea}>
-                <ConnectAI
-                  connectionStatus={connectionStatus}
-                  onConnect={handleConnectAi}
-                  onDisconnect={disconnect}
-                  onOpenProviderDocs={handleOpenAiDocs}
-                  onSelectModel={setModel}
-                />
+                {showAiPanel && (
+                  <ConnectAI
+                    connectionStatus={connectionStatus}
+                    onConnect={handleConnectAi}
+                    onDisconnect={disconnect}
+                    onOpenProviderDocs={handleOpenAiDocs}
+                    onSelectModel={setModel}
+                  />
+                )}
+                {showProjectSettingsPanel && (
+                  <ProjectSettingsPanel
+                    aiSettings={projectAiSettings}
+                    aiConnectionStatus={connectionStatus.connection_status}
+                    selectedModel={connectionStatus.selected_model}
+                    cloudTarget={cloudSetup.target}
+                    onAiChange={(patch) => {
+                      void handleProjectAiChange(patch)
+                    }}
+                    onOpenAiConnection={() => setShowAiPanel(true)}
+                    onOpenCloudSetup={() => {
+                      void cloudSetup.open(false)
+                    }}
+                    onClose={() => setShowProjectSettingsPanel(false)}
+                  />
+                )}
               </div>
             )}
             <header className={styles.header}>
@@ -178,6 +225,12 @@ function Shell(): JSX.Element {
                   🌿 {status.current_branch}
                 </span>
               )}
+              <button
+                className={styles.settingsBtn}
+                onClick={() => setShowProjectSettingsPanel((value) => !value)}
+              >
+                Project Settings
+              </button>
               {status && (status.ahead > 0 || status.behind > 0) && (
                 <span className={styles.aheadBehind}>
                   {status.ahead > 0 && <span>↑ {status.ahead}</span>}
@@ -216,6 +269,12 @@ function Shell(): JSX.Element {
               onOpenGitHubDocs={handleOpenGitHubDocs}
               onStartDeviceFlow={startDeviceFlow}
               onCancelDeviceFlow={cancelDeviceFlow}
+              aiAutoSaveEnabled={projectAiSettings.auto_save_message_enabled}
+              aiConnectionReady={
+                connectionStatus.connection_status === 'connected' &&
+                Boolean(connectionStatus.selected_model)
+              }
+              onGenerateAutoMessage={generateAutoMessage}
             />
           </>
         ) : showAiPanel ? (
@@ -246,6 +305,15 @@ function Shell(): JSX.Element {
           </div>
         )}
       </div>
+
+      {showAiConsentDialog && (
+        <AIConsentDialog
+          onAccept={() => {
+            void handleAcceptAiConsent()
+          }}
+          onDecline={handleDeclineAiConsent}
+        />
+      )}
 
       <ToastContainer />
 

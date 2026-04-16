@@ -13,6 +13,8 @@ interface Props {
   tokenExists: boolean | null
   cloudUploadReady: boolean
   cloudStatusLabel?: string
+  aiAutoSaveEnabled?: boolean
+  aiConnectionReady?: boolean
   forceShowConnect?: boolean
   deviceFlow: DeviceFlowState | null
   onCommit: (message: string) => void
@@ -24,6 +26,7 @@ interface Props {
   onOpenGitHubDocs: () => void
   onStartDeviceFlow: () => Promise<void>
   onCancelDeviceFlow: () => Promise<void>
+  onGenerateAutoMessage?: () => Promise<string | null>
 }
 
 export function ActionPanel({
@@ -34,6 +37,8 @@ export function ActionPanel({
   tokenExists,
   cloudUploadReady,
   cloudStatusLabel,
+  aiAutoSaveEnabled = false,
+  aiConnectionReady = false,
   forceShowConnect = false,
   deviceFlow,
   onCommit,
@@ -44,17 +49,52 @@ export function ActionPanel({
   onConnectGitHub,
   onOpenGitHubDocs,
   onStartDeviceFlow,
-  onCancelDeviceFlow
+  onCancelDeviceFlow,
+  onGenerateAutoMessage
 }: Props): JSX.Element {
   const [message, setMessage] = useState(messageTemplate)
+  const [helperText, setHelperText] = useState<string | null>(null)
+  const [draftingAiMessage, setDraftingAiMessage] = useState(false)
 
   const stagedCount = status?.files.filter((f) => f.staged).length ?? 0
-  const canCommit = stagedCount > 0 && message.trim().length > 0 && !loading
+  const shouldGenerateAiDraft =
+    aiAutoSaveEnabled &&
+    aiConnectionReady &&
+    stagedCount > 0 &&
+    message.trim().length === 0 &&
+    Boolean(onGenerateAutoMessage)
 
-  const handleCommit = (): void => {
+  const canCommit =
+    stagedCount > 0 &&
+    !loading &&
+    !draftingAiMessage &&
+    (message.trim().length > 0 || shouldGenerateAiDraft)
+
+  const handleCommit = async (): Promise<void> => {
     if (!canCommit) return
+
+    if (shouldGenerateAiDraft && onGenerateAutoMessage) {
+      setDraftingAiMessage(true)
+
+      try {
+        const suggestion = await onGenerateAutoMessage()
+
+        if (suggestion) {
+          setMessage(suggestion)
+          setHelperText('AI drafted a save message. Review it, then click Save Progress again.')
+          return
+        }
+
+        setHelperText('AI could not draft a save message. Enter one manually to continue.')
+        return
+      } finally {
+        setDraftingAiMessage(false)
+      }
+    }
+
     onCommit(message.trim())
     setMessage('')
+    setHelperText(null)
   }
 
   const handlePush = (): void => {
@@ -92,19 +132,30 @@ export function ActionPanel({
         <textarea
           className={styles.messageInput}
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) => {
+            setMessage(e.target.value)
+            setHelperText(null)
+          }}
           placeholder={stagedCount > 0 ? 'Describe what you saved…' : 'Select changes above to save'}
           rows={1}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleCommit()
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+              void handleCommit()
+            }
           }}
         />
       </div>
 
+      {helperText && <div className={styles.helperText}>{helperText}</div>}
+
       <div className={styles.actions}>
-        <button className={styles.saveBtn} onClick={handleCommit} disabled={!canCommit}>
-          {loading ? <Spinner size={14} /> : null}
-          {loading ? 'Saving…' : `Save Progress${stagedCount > 0 ? ` (${stagedCount})` : ''}`}
+        <button className={styles.saveBtn} onClick={() => { void handleCommit() }} disabled={!canCommit}>
+          {loading || draftingAiMessage ? <Spinner size={14} /> : null}
+          {draftingAiMessage
+            ? 'Drafting…'
+            : loading
+              ? 'Saving…'
+              : `Save Progress${stagedCount > 0 ? ` (${stagedCount})` : ''}`}
         </button>
 
         <button
