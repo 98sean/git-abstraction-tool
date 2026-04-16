@@ -11,6 +11,7 @@ interface Props {
   onRemoveProject: (id: string) => void
   onAddProject: () => void
   onToggleTheme: () => void
+  onOpenSettings: () => void
   /** Optional: dot colour hint per project — 'changed' | 'clean' | 'unknown' */
   projectStates?: Record<string, 'changed' | 'clean' | 'unknown'>
   /** Optional slot for rendering GitHub connection status in the footer */
@@ -25,6 +26,7 @@ export function Sidebar({
   onRemoveProject,
   onAddProject,
   onToggleTheme,
+  onOpenSettings,
   projectStates = {},
   githubSlot
 }: Props): JSX.Element {
@@ -77,6 +79,9 @@ export function Sidebar({
           + Link a Project
         </button>
         {githubSlot}
+        <button className={styles.settingsBtn} onClick={onOpenSettings}>
+          ⚙ Settings
+        </button>
         <button className={styles.themeBtn} onClick={onToggleTheme}>
           {theme === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
         </button>

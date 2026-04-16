@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { AppProvider } from './context/AppContext'
 import { invokeDb } from './ipc'
 import { useAuth } from './hooks/useAuth'
+import { useApiKeys } from './hooks/useApiKeys'
 import { useFileStatus } from './hooks/useFileStatus'
 import { useGitActions } from './hooks/useGitActions'
 import { usePreferences } from './hooks/usePreferences'
 import { useProjects } from './hooks/useProjects'
 import { useToast } from './hooks/useToast'
 import { ActionPanel } from './components/ActionPanel/ActionPanel'
+import { ApiKeySettings } from './components/ApiKeySettings/ApiKeySettings'
 import { FileManager } from './components/FileManager/FileManager'
 import { Sidebar, pickFolder } from './components/Sidebar/Sidebar'
 import { ConnectGitHub, GitHubStatus } from './components/ConnectGitHub/ConnectGitHub'
@@ -20,7 +22,9 @@ function Shell(): JSX.Element {
   const { preferences, setPreference } = usePreferences()
   const { addToast } = useToast()
   const { tokenExists, deviceFlow, saveToken, clearToken, startDeviceFlow, cancelDeviceFlow } = useAuth()
+  const { keys: apiKeys, setOpenAIKey, setAnthropicKey, clearOpenAIKey, clearAnthropicKey } = useApiKeys()
   const [showGitHubPanel, setShowGitHubPanel] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   const { status, loading: statusLoading, error: statusError, fetchStatus, stage, unstage, stageAll, unstageAll, revertFile } =
     useFileStatus(activeProjectId)
@@ -83,6 +87,7 @@ function Shell(): JSX.Element {
         onRemoveProject={handleRemoveProject}
         onAddProject={handleAddProject}
         onToggleTheme={handleToggleTheme}
+        onOpenSettings={() => setShowSettings(true)}
         projectStates={projectStates}
         githubSlot={
           <GitHubStatus
@@ -158,6 +163,17 @@ function Shell(): JSX.Element {
           </div>
         )}
       </div>
+
+      {showSettings && (
+        <ApiKeySettings
+          keys={apiKeys}
+          onSaveOpenAI={setOpenAIKey}
+          onSaveAnthropic={setAnthropicKey}
+          onClearOpenAI={clearOpenAIKey}
+          onClearAnthropic={clearAnthropicKey}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
 
       <ToastContainer />
     </div>
