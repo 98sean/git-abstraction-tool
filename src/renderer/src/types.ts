@@ -77,6 +77,23 @@ export interface Project {
   last_accessed: number
 }
 
+export type AiProvider = 'openai' | 'anthropic'
+export type AiConnectionStatus = 'connected' | 'invalid' | 'disconnected'
+
+export interface AiConnectionState {
+  provider: AiProvider | null
+  selected_model: string | null
+  available_models: string[]
+  last_verified_at: number | null
+  connection_status: AiConnectionStatus
+}
+
+export interface ProjectAiSettings {
+  auto_save_message_enabled: boolean
+  ai_diff_consent_granted: boolean
+  ai_diff_consent_granted_at: number | null
+}
+
 export interface Preferences {
   theme: 'light' | 'dark'
   auto_save_enabled: boolean
