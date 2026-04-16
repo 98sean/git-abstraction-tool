@@ -75,3 +75,32 @@ export interface Toast {
   message: string
   type: 'info' | 'success' | 'error'
 }
+
+export interface ProjectRemote {
+  name: string
+  fetch: string
+  push: string
+}
+
+export type ProjectWarningKind = 'large' | 'binary' | 'sensitive' | 'generated'
+
+export interface ProjectFolderWarning {
+  kind: ProjectWarningKind
+  path: string
+  reason: string
+}
+
+export interface ProjectFolderInspection {
+  isGitRepo: boolean
+  canInitialize: boolean
+  remotes: ProjectRemote[]
+  warnings: ProjectFolderWarning[]
+  recommendedIgnoreEntries: string[]
+}
+
+export interface FinalizeProjectLinkInput {
+  localPath: string
+  friendlyName: string
+  shouldInitializeGit: boolean
+  ignoreEntries: string[]
+}

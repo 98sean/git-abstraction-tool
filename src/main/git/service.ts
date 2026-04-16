@@ -1,3 +1,5 @@
+import { access, readFile, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import simpleGit, { SimpleGit, StatusResult } from 'simple-git'
 import {
   BranchInfo,
@@ -55,9 +57,69 @@ function injectToken(url: string, token: string): string {
 
 export class GitService {
   private git: SimpleGit
+  private localPath: string
 
   constructor(local_path: string) {
+    this.localPath = local_path
     this.git = simpleGit(local_path)
+  }
+
+  async isRepository(): Promise<boolean> {
+    try {
+      return await this.git.checkIsRepo()
+    } catch {
+      return false
+    }
+  }
+
+  async initRepository(): Promise<void> {
+    try {
+      await this.git.init()
+    } catch (err) {
+      throw mapGitError(err)
+    }
+  }
+
+  async getRemotes(): Promise<Array<{ name: string; fetch: string; push: string }>> {
+    try {
+      const remotes = await this.git.getRemotes(true)
+      return remotes.map((remote) => ({
+        name: remote.name,
+        fetch: remote.refs.fetch ?? '',
+        push: remote.refs.push ?? ''
+      }))
+    } catch (err) {
+      throw mapGitError(err)
+    }
+  }
+
+  async appendIgnoreEntries(entries: string[]): Promise<void> {
+    const ignorePath = join(this.localPath, '.gitignore')
+    const uniqueEntries = [...new Set(entries.map((entry) => entry.trim()).filter(Boolean))]
+    if (uniqueEntries.length === 0) return
+
+    let existingContent = ''
+
+    try {
+      await access(ignorePath)
+      existingContent = await readFile(ignorePath, 'utf8')
+    } catch {
+      existingContent = ''
+    }
+
+    const existingEntries = new Set(
+      existingContent
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+    )
+    const missingEntries = uniqueEntries.filter((entry) => !existingEntries.has(entry))
+
+    if (missingEntries.length === 0) return
+
+    const prefix = existingContent.length > 0 && !existingContent.endsWith('\n') ? '\n' : ''
+    const nextContent = `${existingContent}${prefix}${missingEntries.join('\n')}\n`
+    await writeFile(ignorePath, nextContent, 'utf8')
   }
 
   async getStatus(): Promise<GitStatus> {
