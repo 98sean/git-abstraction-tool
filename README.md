@@ -1,19 +1,17 @@
 # Git Abstraction Tool
 
-A simple, friendly desktop app for saving and sharing your work — no technical knowledge required.
-
-Think of it like having an automatic "undo history" for your entire project, plus the ability to upload your work to the cloud so it's never lost.
+A simple desktop app for saving project history locally, optionally drafting save messages with your own AI key, and optionally uploading work to GitHub with explicit safety checks.
 
 ---
 
-## What does it do?
+## What it does
 
-- **Saves snapshots of your work** — capture exactly what you changed and why, so you can always go back
-- **Syncs to the cloud** — upload your saved work to GitHub for backup and sharing
-- **Tracks changes automatically** — see a live list of everything you've modified since your last save
-- **Works with any folder** — link any folder on your computer and start tracking changes immediately
+- **Local-first saves**: record project snapshots without needing GitHub or AI first
+- **Safe project linking**: inspect a folder before linking it and ask before running `git init`
+- **Optional AI save drafts**: connect one OpenAI or Anthropic key globally, then enable AI per project
+- **Explicit cloud upload**: choose a private backup repo or a collaboration target before anything uploads
 
-No commands to type. No technical jargon. Just point it at a folder and go.
+No shell commands are required in the UI.
 
 ---
 
@@ -21,134 +19,147 @@ No commands to type. No technical jargon. Just point it at a folder and go.
 
 ### Windows
 1. Download `Git-Abstraction-Tool-Setup.exe` from the [Releases page](../../releases)
-2. Run the installer and follow the prompts
-3. Launch **Git Abstraction Tool** from the Start Menu or Desktop shortcut
+2. Run the installer
+3. Launch **Git Abstraction Tool**
 
 ### macOS
 1. Download `Git-Abstraction-Tool.dmg` from the [Releases page](../../releases)
-2. Open the DMG and drag the app to your Applications folder
-3. Open the app from Applications (right-click → Open on first launch)
+2. Drag the app to Applications
+3. Open it from Applications
 
 ### Linux
 1. Download `Git-Abstraction-Tool.AppImage` from the [Releases page](../../releases)
 2. Make it executable: `chmod +x Git-Abstraction-Tool.AppImage`
 3. Run it: `./Git-Abstraction-Tool.AppImage`
 
-> **Requirement:** Git must be installed on your computer.
-> - Windows: [git-scm.com](https://git-scm.com/download/win)
-> - macOS: Install via Xcode Command Line Tools (`xcode-select --install`)
-> - Linux: `sudo apt install git` or equivalent
+Git must already be installed on the machine.
 
 ---
 
 ## Getting Started
 
-### 1. Link your first project
+### 1. Link a project
 
-When you open the app, click **+ Link a Project** in the left sidebar.
+Click **+ Link a Project** in the sidebar.
 
-A folder picker will open — navigate to your project folder and select it. Give it a friendly name (e.g. "My Novel", "Website", "School Project").
+The app opens a link wizard that:
 
-Your project is now being monitored. Any files you change will appear in the main area.
+- chooses a folder
+- checks whether Git is already set up
+- asks before turning on local history with `git init`
+- shows warnings for risky files like `.env` or generated folders
 
-### 2. See what's changed
+The folder is only registered after that preparation succeeds.
 
-The main file list shows everything you've modified since your last save. Each file has a coloured dot:
+### 2. Save progress locally
 
-| Colour | Meaning |
-|--------|---------|
-| 🔵 Blue | New file |
-| 🟡 Yellow | Modified (changed) |
-| 🔴 Red | Deleted |
-| 🟣 Purple | Renamed |
+Stage the changes you want, write a message, and click **Save Progress**.
 
-### 3. Select the changes you want to save
+If AI save messages are enabled for that project:
 
-Check the box next to each file you want to include in this save. Click **Select all** to include everything, or pick individual files.
+1. the first click drafts a message from the staged diff
+2. you review or edit it
+3. the second click creates the actual commit
 
-### 4. Save your progress
+AI never blocks manual saving.
 
-Type a brief note in the message box describing what you did — for example: *"Added introduction chapter"* or *"Fixed the contact form layout"*.
+### 3. Connect GitHub only when you need cloud upload
 
-Click **Save Progress**. Your changes are now permanently recorded with that note.
+Use **Connect GitHub** in the sidebar. The app accepts classic `ghp_...` and fine-grained `github_pat_...` tokens and validates access before marking a cloud target ready.
 
-### 5. Upload to the cloud
+### 4. Connect AI only when you want save drafts
 
-Once you've saved, click **Upload to Cloud** to push your work to GitHub. This backs it up online and lets collaborators see your changes.
+Use **Connect AI** in the sidebar. One provider and model are stored globally, and each project decides whether AI save drafts are enabled.
 
-If you want to download changes made by others, click **Get Updates**.
+### 5. Set up Upload to Cloud
+
+The first time you click **Upload to Cloud**, the app opens a setup wizard.
+
+You choose one of:
+
+- **Back up to my GitHub**: create an app-managed private backup repository
+- **Upload work to a team repository**: choose a detected remote and a branch strategy
+
+For collaboration uploads, the recommended mode is **new work branch**. Direct upload to the default branch stays behind an explicit danger confirmation.
 
 ---
 
-## Connecting to GitHub
+## GitHub Tokens
 
-To use the cloud sync features, you'll need to connect your GitHub account.
+For classic personal access tokens, `repo` is enough for private repositories.  
+If you only use public repositories, `public_repo` is enough.
 
-### Getting a Personal Access Token
+The app stores tokens with Electron `safeStorage`, so they stay encrypted in the OS keychain instead of plain text.
 
-1. Go to [github.com/settings/tokens](https://github.com/settings/tokens)
-2. Click **Generate new token (classic)**
-3. Give it a name (e.g. "Git Abstraction Tool")
-4. Select the **`repo`** permission scope
-5. Click **Generate token** and copy it
+---
 
-> Keep your token private — treat it like a password.
+## AI Providers
 
-### Entering your token in the app
+The app currently supports:
 
-In the left sidebar, click **Connect GitHub** (or go to **Settings → GitHub**).
+- OpenAI
+- Anthropic
 
-Paste your token and click **Connect**. The app will securely encrypt and store it using your operating system's built-in keychain (Windows Credential Locker / macOS Keychain / Linux Secret Service).
+AI keys are also stored with Electron `safeStorage`.  
+Only staged diffs are sent, and only after that project explicitly grants AI diff consent.
 
-Your token is **never stored in plain text** and never leaves your computer except when communicating directly with GitHub.
+---
+
+## Safety Rules
+
+- No silent `git init`
+- No automatic reuse of `origin` for upload
+- No upload until a cloud target is configured
+- No direct default-branch upload without danger confirmation
+- No AI diff transmission without project-level consent
 
 ---
 
 ## Features Overview
 
-### Multiple Projects
-Link as many project folders as you like. Switch between them instantly from the sidebar — each keeps its own change history.
+### Project Settings
 
-### Light & Dark Mode
-Click the theme toggle at the bottom of the sidebar to switch between light and dark mode. Your preference is saved automatically.
+Each linked project exposes a combined **Project Settings** panel that shows:
 
-### Undo Changes to a File
-Hover over any file in the list and click **Undo** to revert it back to how it was at your last save point. This only affects that one file.
+- whether AI save drafts are enabled
+- whether diff consent has been granted
+- the currently selected AI model
+- whether cloud upload is unset, backup, or collaboration
 
-### See Upload / Download Status
-The header shows how many saves you have ready to upload (↑) and how many updates are waiting to download (↓).
+### Upload Modes
 
-### Version Mismatches
-If you and a collaborator have both changed the same file, the app will warn you with a **"Version mismatch"** indicator. You'll need to resolve this before uploading — this is an advanced scenario; reach out to your collaborator to coordinate.
+- **Backup** uses an app-managed `gat-backup` remote
+- **Collaboration** uses the exact remote and branch mode the user selected
+
+### Korean Git Guide
+
+A Korean guide that maps the app UI to real Git behavior lives here:
+
+- [docs/git-feature-guide-ko.md](docs/git-feature-guide-ko.md)
 
 ---
 
 ## Troubleshooting
 
-**"This folder is not a linked project"**
-The folder you linked may not have been set up with Git. Open a terminal in that folder and run `git init`, then re-link it.
+**Upload to Cloud opens setup instead of uploading**  
+The project does not have a configured cloud target yet. Finish the setup wizard first.
 
-**"Login failed. Please check your credentials"**
-Your GitHub token may have expired or been revoked. Go to GitHub Settings → Tokens, generate a new one, and update it in the app via the **Connect GitHub** button.
+**This folder is not a linked project**  
+The folder was not registered successfully, or Git setup failed during linking.
 
-**"Could not reach the cloud. Please check your internet connection"**
-You're offline, or GitHub is temporarily unavailable. Check your connection and try again.
+**Direct upload to the default branch is blocked**  
+This is intentional. Confirm the danger flow explicitly if you truly mean to upload to that branch.
 
-**"There are no changes to save"**
-All your selected files are already up to date — nothing has changed since your last save.
-
-**The file list is empty even though I've made changes**
-Click the **Refresh** button (or re-select your project from the sidebar) to manually refresh the file list.
-
-**The app isn't detecting my changes**
-Make sure the project folder is correctly linked and that your changes are inside the linked folder. Sub-folders are watched automatically.
+**AI did not draft a save message**  
+The provider may be disconnected, the project may not have diff consent yet, or there may be no staged diff to summarize.
 
 ---
 
-## Developer Documentation
+## Development
 
 ### Prerequisites
-- [Node.js](https://nodejs.org) 18+
+
+- Node.js 18+
 - npm 9+
 - Git
 
@@ -160,66 +171,40 @@ cd git-abstraction-tool
 npm install
 ```
 
-### Development
+### Common Commands
 
 ```bash
-npm run dev          # Launch in development mode with hot reload
-npm run typecheck    # Type-check without building
-npm run build        # Production build
-npm test             # Run unit tests
+npm run dev
+npm run typecheck
+npm test
+npm run build
 ```
 
 ### Project Structure
 
-```
+```text
 src/
-├── main/            # Electron main process (Node.js)
-│   ├── db/          # Local state (electron-store JSON files)
-│   ├── git/         # Git abstraction layer (simple-git)
-│   ├── ipc/         # IPC handlers (bridge between main & renderer)
-│   └── watcher/     # File system watcher (chokidar)
-├── preload/         # Context bridge (exposes safe IPC API to renderer)
-└── renderer/        # React frontend
-    ├── components/  # UI components (dumb)
-    ├── context/     # Global state (AppContext)
-    └── hooks/       # Business logic hooks (smart)
+├── main/
+│   ├── ai/
+│   ├── db/
+│   ├── git/
+│   ├── ipc/
+│   ├── projectSetup/
+│   └── watcher/
+├── preload/
+└── renderer/
+    ├── components/
+    ├── context/
+    └── hooks/
 ```
-
-### Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Desktop framework | Electron 29 |
-| Build tool | electron-vite 2 + Vite 5 |
-| Frontend | React 18 + TypeScript 5 |
-| Local storage | electron-store v8 (JSON) |
-| Git integration | simple-git |
-| File watching | chokidar |
-| Credential security | Electron safeStorage (OS keychain) |
-
-### Packaging
-
-```bash
-npm run package      # Build and package for the current OS
-```
-
-Output installers are placed in the `dist/` folder. Cross-platform builds require platform-native toolchains (macOS for DMG, Windows for NSIS, Linux for AppImage).
 
 ### Architecture Notes
 
-- The **main process** owns all file system, Git, and credential access
-- The **renderer** is a sandboxed React app — it communicates exclusively via IPC
-- IPC channels follow two patterns:
-  - `db:*` — local data store operations (return raw values)
-  - `git:*` — git operations (return `{ data }` or `{ error }` for typed error handling)
-  - `auth:*` — credential management (never exposes raw tokens to renderer)
-- The file system watcher pushes `db:status:changed` events to the renderer to trigger UI refreshes without polling
+- The Electron main process owns Git, credential, filesystem, AI, and GitHub access
+- The renderer talks to main only through IPC
+- `db:*`, `auth:*`, `ai:*`, `cloud:*`, `project-setup:*`, and `git:*` stay split by responsibility
 
 ---
-
-## Contributing
-
-Pull requests are welcome. For major changes, please open an issue first.
 
 ## License
 
