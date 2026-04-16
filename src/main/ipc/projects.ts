@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron'
+import { clearProjectCloudTarget } from '../db/projectCloudTargets'
 import { addProject, listProjects, removeProject, touchProject } from '../db/projects'
 import { invalidateCache } from '../db/statusCache'
 import { stopWatchingProject, watchProject } from '../watcher'
@@ -26,6 +27,7 @@ export function registerProjectsHandlers(): void {
     stopWatchingProject(project_id)
     invalidateCache(project_id)
     removeGitService(project_id)
+    clearProjectCloudTarget(project_id)
     removeProject(project_id)
   })
 

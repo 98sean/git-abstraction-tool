@@ -104,3 +104,21 @@ export interface FinalizeProjectLinkInput {
   shouldInitializeGit: boolean
   ignoreEntries: string[]
 }
+
+export type CollaborationBranchMode = 'new_branch' | 'existing_branch' | 'danger_default_branch'
+
+export interface ProjectCloudTarget {
+  mode: 'none' | 'backup' | 'collaboration'
+  backup: { remoteName: string; repoOwner: string; repoName: string; private: true } | null
+  collaboration: {
+    remoteName: string
+    branchMode: CollaborationBranchMode
+    selectedBranch: string | null
+  } | null
+}
+
+export interface GithubTokenValidationResult {
+  status: 'ok' | 'invalid' | 'missing_repo_access' | 'approval_required'
+  accountLogin: string | null
+  reason: string | null
+}

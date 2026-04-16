@@ -5,6 +5,7 @@ import { registerGitHandlers } from './git'
 import { registerDialogHandlers } from './dialog'
 import { registerAuthHandlers } from './auth'
 import { registerProjectSetupHandlers } from './projectSetup'
+import { registerCloudHandlers } from './cloud'
 
 export function registerIpcHandlers(): void {
   registerProjectsHandlers()
@@ -14,4 +15,5 @@ export function registerIpcHandlers(): void {
   registerDialogHandlers()
   registerAuthHandlers()
   registerProjectSetupHandlers()
+  registerCloudHandlers()
 }
