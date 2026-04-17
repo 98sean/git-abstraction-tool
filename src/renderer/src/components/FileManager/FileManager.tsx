@@ -192,7 +192,7 @@ export function FileManager({
   }
 
   // ── Loading / error guards ─────────────────────────────────────────────────
-  if (loading && (!status || trackedPaths.length === 0)) {
+  if (loading && !status) {
     return (
       <div className={styles.loadingState}>
         <Spinner />

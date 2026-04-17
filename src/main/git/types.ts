@@ -16,6 +16,7 @@ export interface FileStatus {
 export interface GitStatus {
   current_branch: string
   files: FileStatus[]
+  tracked_files: string[]  // all files tracked by git (from ls-files)
   ahead: number   // commits ahead of remote
   behind: number  // commits behind remote
   has_conflicts: boolean

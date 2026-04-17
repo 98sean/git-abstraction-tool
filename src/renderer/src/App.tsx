@@ -5,7 +5,6 @@ import { useAuth } from './hooks/useAuth'
 import { useApiKeys } from './hooks/useApiKeys'
 import { useBranches } from './hooks/useBranches'
 import { useTerms } from './hooks/useTerms'
-import { useTrackedFiles } from './hooks/useTrackedFiles'
 import { useFileStatus } from './hooks/useFileStatus'
 import { useGitActions } from './hooks/useGitActions'
 import { usePreferences } from './hooks/usePreferences'
@@ -49,12 +48,12 @@ function Shell(): JSX.Element {
   const { branches, loading: branchesLoading, switchBranch, createBranch, fetchBranches } =
     useBranches(activeProjectId)
 
-  const { trackedPaths, trackedLoading, fetchTracked } = useTrackedFiles(activeProjectId)
+  // tracked_files now comes directly from status (populated by git:status alongside git status)
+  const trackedPaths = status?.tracked_files ?? []
 
   const { loading: actionLoading, error: actionError, commit, push, pull, clearError } =
     useGitActions(activeProjectId, () => {
       fetchStatus()
-      fetchTracked()
       addToast(t.committedToast, 'success')
     })
 
@@ -110,7 +109,7 @@ function Shell(): JSX.Element {
 
   const handleSwitchBranch = async (name: string): Promise<void> => {
     await switchBranch(name)
-    await Promise.all([fetchStatus(), fetchTracked()])
+    await fetchStatus()
     addToast(t.switchedBranchToast(name), 'success')
   }
 
@@ -190,7 +189,7 @@ function Shell(): JSX.Element {
                 <FileManager
                   status={status}
                   trackedPaths={trackedPaths}
-                  loading={statusLoading || trackedLoading}
+                  loading={statusLoading}
                   error={statusError}
                   onStage={stage}
                   onUnstage={unstage}
@@ -209,8 +208,8 @@ function Shell(): JSX.Element {
                 forceShowConnect={showGitHubPanel}
                 deviceFlow={deviceFlow}
                 onCommit={commit}
-                onPush={async () => { await push(); await Promise.all([fetchStatus(), fetchTracked()]); addToast(t.pushedToast, 'success') }}
-                onPull={async () => { await pull(); await Promise.all([fetchStatus(), fetchTracked()]); addToast(t.pulledToast, 'success') }}
+                onPush={async () => { await push(); fetchStatus(); addToast(t.pushedToast, 'success') }}
+                onPull={async () => { await pull(); fetchStatus(); addToast(t.pulledToast, 'success') }}
                 onClearError={clearError}
                 onConnectGitHub={handleConnectGitHub}
                 onOpenGitHubDocs={handleOpenGitHubDocs}

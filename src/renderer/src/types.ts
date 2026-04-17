@@ -18,6 +18,7 @@ export interface FileStatus {
 export interface GitStatus {
   current_branch: string
   files: FileStatus[]
+  tracked_files: string[]
   ahead: number
   behind: number
   has_conflicts: boolean
