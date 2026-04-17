@@ -76,14 +76,18 @@ export function registerGitHandlers(): void {
     return result
   })
 
-  ipcMain.handle('git:push', (_event, project_id: string) => {
+  ipcMain.handle('git:push', async (_event, project_id: string) => {
     const token = getGithubToken() ?? undefined
-    return run(() => getGitService(project_id).push(token))
+    const result = await run(() => getGitService(project_id).push(token))
+    invalidateCache(project_id)
+    return result
   })
 
-  ipcMain.handle('git:pull', (_event, project_id: string) => {
+  ipcMain.handle('git:pull', async (_event, project_id: string) => {
     const token = getGithubToken() ?? undefined
-    return run(() => getGitService(project_id).pull(token))
+    const result = await run(() => getGitService(project_id).pull(token))
+    invalidateCache(project_id)
+    return result
   })
 
   ipcMain.handle('git:files:tracked', (_event, project_id: string) =>

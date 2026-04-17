@@ -49,7 +49,7 @@ function Shell(): JSX.Element {
   const { branches, loading: branchesLoading, switchBranch, createBranch, fetchBranches } =
     useBranches(activeProjectId)
 
-  const { trackedPaths, fetchTracked } = useTrackedFiles(activeProjectId)
+  const { trackedPaths, trackedLoading, fetchTracked } = useTrackedFiles(activeProjectId)
 
   const { loading: actionLoading, error: actionError, commit, push, pull, clearError } =
     useGitActions(activeProjectId, () => {
@@ -190,7 +190,7 @@ function Shell(): JSX.Element {
                 <FileManager
                   status={status}
                   trackedPaths={trackedPaths}
-                  loading={statusLoading}
+                  loading={statusLoading || trackedLoading}
                   error={statusError}
                   onStage={stage}
                   onUnstage={unstage}
@@ -209,8 +209,8 @@ function Shell(): JSX.Element {
                 forceShowConnect={showGitHubPanel}
                 deviceFlow={deviceFlow}
                 onCommit={commit}
-                onPush={async () => { await push(); addToast(t.pushedToast, 'success') }}
-                onPull={async () => { await pull(); fetchStatus(); addToast(t.pulledToast, 'success') }}
+                onPush={async () => { await push(); await Promise.all([fetchStatus(), fetchTracked()]); addToast(t.pushedToast, 'success') }}
+                onPull={async () => { await pull(); await Promise.all([fetchStatus(), fetchTracked()]); addToast(t.pulledToast, 'success') }}
                 onClearError={clearError}
                 onConnectGitHub={handleConnectGitHub}
                 onOpenGitHubDocs={handleOpenGitHubDocs}

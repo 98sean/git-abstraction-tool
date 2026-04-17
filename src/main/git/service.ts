@@ -166,8 +166,11 @@ export class GitService {
   async listTrackedFiles(): Promise<string[]> {
     try {
       const raw = await this.git.raw(['ls-files'])
-      return raw.trim().split('\n').filter(Boolean)
+      const files = raw.split(/\r?\n/).map(p => p.trim()).filter(Boolean)
+      console.log('[GAT] listTrackedFiles:', files.length, 'files')
+      return files
     } catch (err) {
+      console.error('[GAT] listTrackedFiles failed:', err)
       throw mapGitError(err)
     }
   }
