@@ -1,13 +1,15 @@
 # Git Abstraction Tool
 
-A simple desktop app for saving project history locally, optionally drafting save messages with your own AI key, and optionally uploading work to GitHub with explicit safety checks.
+A desktop app for saving project history locally, reviewing every tracked file in one panel, optionally drafting save messages with your own AI key, and optionally uploading work to GitHub with explicit safety checks.
 
 ---
 
 ## What it does
 
-- **Local-first saves**: record project snapshots without needing GitHub or AI first
+- **Local-first saves**: record project snapshots without requiring GitHub or AI setup first
 - **Safe project linking**: inspect a folder before linking it and ask before running `git init`
+- **Full file visibility**: show tracked files and changed files together so the project panel stays understandable
+- **Branch-aware workflow**: create or switch branches from the header before uploading
 - **Optional AI save drafts**: connect one OpenAI or Anthropic key globally, then enable AI per project
 - **Explicit cloud upload**: choose a private backup repo or a collaboration target before anything uploads
 
@@ -32,7 +34,12 @@ No shell commands are required in the UI.
 2. Make it executable: `chmod +x Git-Abstraction-Tool.AppImage`
 3. Run it: `./Git-Abstraction-Tool.AppImage`
 
-Git must already be installed on the machine.
+> **Requirement:** Git must be installed on your computer.
+> - Windows: [git-scm.com](https://git-scm.com/download/win)
+> - macOS: install Xcode Command Line Tools with `xcode-select --install`
+> - Linux: install `git` from your package manager
+>
+> If Git is not detected, the app shows a setup guide and lets you retry after installation.
 
 ---
 
@@ -42,16 +49,18 @@ Git must already be installed on the machine.
 
 Click **+ Link a Project** in the sidebar.
 
-The app opens a link wizard that:
+The link wizard:
 
 - chooses a folder
 - checks whether Git is already set up
 - asks before turning on local history with `git init`
-- shows warnings for risky files like `.env` or generated folders
+- shows warnings for risky files like `.env`, `.DS_Store`, or generated folders
 
 The folder is only registered after that preparation succeeds.
 
-### 2. Save progress locally
+### 2. Review files and save progress
+
+The main panel shows tracked files and current changes together.
 
 Stage the changes you want, write a message, and click **Save Progress**.
 
@@ -61,35 +70,43 @@ If AI save messages are enabled for that project:
 2. you review or edit it
 3. the second click creates the actual commit
 
-AI never blocks manual saving.
+### 3. Switch or create a branch
 
-### 3. Connect GitHub only when you need cloud upload
+Use the branch pill in the project header to:
 
-Use **Connect GitHub** in the sidebar. The app accepts classic `ghp_...` and fine-grained `github_pat_...` tokens and validates access before marking a cloud target ready.
+- switch to an existing local branch
+- create a new branch before uploading
 
-### 4. Connect AI only when you want save drafts
+### 4. Upload to GitHub
 
-Use **Connect AI** in the sidebar. One provider and model are stored globally, and each project decides whether AI save drafts are enabled.
+Click **Upload to Cloud**.
 
-### 5. Set up Upload to Cloud
+On first use, the app opens a setup wizard:
 
-The first time you click **Upload to Cloud**, the app opens a setup wizard.
+- **Back up to my GitHub**: creates an app-managed private backup repository
+- **Upload work to a team repository**: chooses a specific remote and branch mode for collaboration
 
-You choose one of:
-
-- **Back up to my GitHub**: create an app-managed private backup repository
-- **Upload work to a team repository**: choose a detected remote and a branch strategy
-
-For collaboration uploads, the recommended mode is **new work branch**. Direct upload to the default branch stays behind an explicit danger confirmation.
+Uploads do not happen until one of those targets is explicitly configured.
 
 ---
 
 ## GitHub Tokens
 
-For classic personal access tokens, `repo` is enough for private repositories.  
-If you only use public repositories, `public_repo` is enough.
+To use GitHub upload features, connect GitHub in the sidebar footer.
 
-The app stores tokens with Electron `safeStorage`, so they stay encrypted in the OS keychain instead of plain text.
+You can use:
+
+- **GitHub device login** from inside the app
+- **Personal Access Token**
+
+For classic tokens:
+
+- `repo` is enough for private repositories
+- `public_repo` is enough if you only use public repositories
+
+The app accepts both classic `ghp_...` and fine-grained `github_pat_...` tokens.
+
+GitHub credentials are stored with Electron `safeStorage`, not as plain text.
 
 ---
 
@@ -100,7 +117,8 @@ The app currently supports:
 - OpenAI
 - Anthropic
 
-AI keys are also stored with Electron `safeStorage`.  
+AI keys are also stored with Electron `safeStorage`.
+
 Only staged diffs are sent, and only after that project explicitly grants AI diff consent.
 
 ---
@@ -136,76 +154,3 @@ Each linked project exposes a combined **Project Settings** panel that shows:
 A Korean guide that maps the app UI to real Git behavior lives here:
 
 - [docs/git-feature-guide-ko.md](docs/git-feature-guide-ko.md)
-
----
-
-## Troubleshooting
-
-**Upload to Cloud opens setup instead of uploading**  
-The project does not have a configured cloud target yet. Finish the setup wizard first.
-
-**This folder is not a linked project**  
-The folder was not registered successfully, or Git setup failed during linking.
-
-**Direct upload to the default branch is blocked**  
-This is intentional. Confirm the danger flow explicitly if you truly mean to upload to that branch.
-
-**AI did not draft a save message**  
-The provider may be disconnected, the project may not have diff consent yet, or there may be no staged diff to summarize.
-
----
-
-## Development
-
-### Prerequisites
-
-- Node.js 18+
-- npm 9+
-- Git
-
-### Setup
-
-```bash
-git clone https://github.com/98sean/git-abstraction-tool.git
-cd git-abstraction-tool
-npm install
-```
-
-### Common Commands
-
-```bash
-npm run dev
-npm run typecheck
-npm test
-npm run build
-```
-
-### Project Structure
-
-```text
-src/
-├── main/
-│   ├── ai/
-│   ├── db/
-│   ├── git/
-│   ├── ipc/
-│   ├── projectSetup/
-│   └── watcher/
-├── preload/
-└── renderer/
-    ├── components/
-    ├── context/
-    └── hooks/
-```
-
-### Architecture Notes
-
-- The Electron main process owns Git, credential, filesystem, AI, and GitHub access
-- The renderer talks to main only through IPC
-- `db:*`, `auth:*`, `ai:*`, `cloud:*`, `project-setup:*`, and `git:*` stay split by responsibility
-
----
-
-## License
-
-MIT

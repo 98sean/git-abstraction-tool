@@ -4,9 +4,26 @@ import { describe, expect, it, vi } from 'vitest'
 import { ActionPanel } from '../components/ActionPanel/ActionPanel'
 import { GitStatus } from '../types'
 
+vi.mock('../hooks/useTerms', () => ({
+  useTerms: () => ({
+    commitPlaceholder: () => 'Describe your changes…',
+    commitBtn: (count: number) => `Save Progress${count > 0 ? ` (${count})` : ''}`,
+    committingBtn: 'Saving…',
+    pushBtn: 'Upload to Cloud',
+    pullBtn: 'Get Updates',
+    pushTitle: 'Upload your saved versions to cloud',
+    pullTitle: 'Get latest updates from cloud',
+    filesStaged: (n: number) => `${n} changes selected`,
+    toPush: (n: number) => `↑ ${n} to upload`,
+    toPull: (n: number) => `↓ ${n} to download`,
+    conflictMsg: 'Conflict detected'
+  })
+}))
+
 const status: GitStatus = {
   current_branch: 'main',
   files: [],
+  tracked_files: [],
   ahead: 1,
   behind: 0,
   has_conflicts: false,

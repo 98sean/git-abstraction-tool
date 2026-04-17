@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron'
+import simpleGit from 'simple-git'
 import { getGitService, removeGitService } from '../git'
 import { getCachedStatus, setCachedStatus, invalidateCache } from '../db/statusCache'
 import { getGithubToken } from '../db/credentials'
@@ -81,6 +82,35 @@ function getPullTarget(project_id: string, token?: string): PullConfiguredTarget
 }
 
 export function registerGitHandlers(): void {
+  // Check whether git is installed and reachable on PATH
+  ipcMain.handle('git:install:check', async () => {
+    try {
+      const vr = await simpleGit().version()
+      if (!vr.installed) return { installed: false }
+      return { installed: true, version: `${vr.major}.${vr.minor}.${vr.patch}` }
+    } catch {
+      return { installed: false }
+    }
+  })
+
+  // Initialize a git repo in the project's folder
+  ipcMain.handle('git:init', async (_event, project_id: string) => {
+    const result = await run(() => getGitService(project_id).init())
+    // Recreate the service so subsequent calls see the new repo
+    removeGitService(project_id)
+    return result
+  })
+
+  // Validate a folder path is an existing git repo (pre-flight before adding)
+  ipcMain.handle('git:check-repo', async (_event, local_path: string) => {
+    try {
+      await simpleGit(local_path).status()
+      return { isRepo: true }
+    } catch {
+      return { isRepo: false }
+    }
+  })
+
   // Status — cache-first; populates statusCache on miss
   ipcMain.handle('git:status', async (_event, project_id: string) => {
     const cached = getCachedStatus(project_id)
@@ -111,17 +141,27 @@ export function registerGitHandlers(): void {
     return result
   })
 
-  ipcMain.handle('git:push', (_event, project_id: string, options?: PushToCloudOptions) => {
+  ipcMain.handle('git:push', async (_event, project_id: string, options?: PushToCloudOptions) => {
     const token = getGithubToken() ?? undefined
-    return run(() =>
+    const result = await run(() =>
       getGitService(project_id).pushConfiguredTarget(getPushTarget(project_id, token, options))
     )
+    invalidateCache(project_id)
+    return result
   })
 
-  ipcMain.handle('git:pull', (_event, project_id: string) => {
+  ipcMain.handle('git:pull', async (_event, project_id: string) => {
     const token = getGithubToken() ?? undefined
-    return run(() => getGitService(project_id).pullConfiguredTarget(getPullTarget(project_id, token)))
+    const result = await run(() =>
+      getGitService(project_id).pullConfiguredTarget(getPullTarget(project_id, token))
+    )
+    invalidateCache(project_id)
+    return result
   })
+
+  ipcMain.handle('git:files:tracked', (_event, project_id: string) =>
+    run(() => getGitService(project_id).listTrackedFiles())
+  )
 
   ipcMain.handle('git:branches', (_event, project_id: string) =>
     run(() => getGitService(project_id).getBranches())

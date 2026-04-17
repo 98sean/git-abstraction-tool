@@ -50,6 +50,7 @@ function parseStatus(raw: StatusResult): GitStatus {
   return {
     current_branch: raw.current ?? 'HEAD',
     files,
+    tracked_files: [],
     ahead: raw.ahead,
     behind: raw.behind,
     has_conflicts: files.some((file) => file.status === 'conflicted'),
@@ -228,8 +229,21 @@ export class GitService {
 
   async getStatus(): Promise<GitStatus> {
     try {
-      const raw = await this.git.status()
-      return parseStatus(raw)
+      const listTrackedFilesPromise =
+        'raw' in this.git && typeof this.git.raw === 'function'
+          ? this.git.raw(['ls-files']).catch(() => '')
+          : Promise.resolve('')
+
+      const [raw, lsRaw] = await Promise.all([
+        this.git.status(),
+        listTrackedFilesPromise
+      ])
+      const tracked_files = lsRaw
+        .split(/\r?\n/)
+        .map(p => p.trim())
+        .filter(Boolean)
+      const status = parseStatus(raw)
+      return { ...status, tracked_files }
     } catch (err) {
       console.error('[GAT] git.status() failed:', err)
       throw mapGitError(err)
@@ -403,6 +417,24 @@ export class GitService {
   async revertFile(path: string): Promise<void> {
     try {
       await this.git.checkout(['HEAD', '--', path])
+    } catch (err) {
+      throw mapGitError(err)
+    }
+  }
+
+  async listTrackedFiles(): Promise<string[]> {
+    try {
+      const raw = await this.git.raw(['ls-files'])
+      return raw.split(/\r?\n/).map(p => p.trim()).filter(Boolean)
+    } catch (err) {
+      console.error('[GAT] listTrackedFiles failed:', err)
+      throw mapGitError(err)
+    }
+  }
+
+  async init(): Promise<void> {
+    try {
+      await this.git.init()
     } catch (err) {
       throw mapGitError(err)
     }

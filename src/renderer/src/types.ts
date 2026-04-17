@@ -18,6 +18,7 @@ export interface FileStatus {
 export interface GitStatus {
   current_branch: string
   files: FileStatus[]
+  tracked_files: string[]
   ahead: number
   behind: number
   has_conflicts: boolean
@@ -103,6 +104,7 @@ export interface ProjectAiSettings {
 
 export interface Preferences {
   theme: 'light' | 'dark'
+  mode: 'newbie' | 'pro'
   auto_save_enabled: boolean
   default_save_message_template: string
 }

@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AppProvider } from './context/AppContext'
-import { invokeDb } from './ipc'
+import { invokeDb, invokeGit } from './ipc'
 import { useAuth } from './hooks/useAuth'
 import { useAiConnection } from './hooks/useAiConnection'
+import { useBranches } from './hooks/useBranches'
 import { useCloudSetup } from './hooks/useCloudSetup'
+import { useTerms } from './hooks/useTerms'
 import { useFileStatus } from './hooks/useFileStatus'
 import { useGitActions } from './hooks/useGitActions'
 import { useAutoSaveMessage } from './hooks/useAutoSaveMessage'
@@ -15,9 +17,12 @@ import { useToast } from './hooks/useToast'
 import { AIConsentDialog } from './components/AIConsentDialog/AIConsentDialog'
 import { ActionPanel } from './components/ActionPanel/ActionPanel'
 import { AIStatus, ConnectAI } from './components/ConnectAI/ConnectAI'
+import { BranchSelector } from './components/BranchSelector/BranchSelector'
 import { CloudSetupWizard } from './components/CloudSetupWizard/CloudSetupWizard'
-import { FileManager } from './components/FileManager/FileManager'
 import { DangerZoneUploadDialog } from './components/DangerZoneUploadDialog/DangerZoneUploadDialog'
+import { FileManager } from './components/FileManager/FileManager'
+import { GitNotInstalled } from './components/GitNotInstalled/GitNotInstalled'
+import { NotARepo } from './components/NotARepo/NotARepo'
 import { ProjectLinkWizard } from './components/ProjectLinkWizard/ProjectLinkWizard'
 import { ProjectSettingsPanel } from './components/ProjectSettingsPanel/ProjectSettingsPanel'
 import { Sidebar } from './components/Sidebar/Sidebar'
@@ -27,31 +32,77 @@ import { ProjectAiSettings, ProjectCloudTarget, PushToCloudOptions } from './typ
 import styles from './App.module.css'
 
 function Shell(): JSX.Element {
-  const { projects, activeProjectId, activeProject, removeProject, setActiveProject } =
-    useProjects()
+  const { projects, activeProjectId, activeProject, removeProject, setActiveProject } = useProjects()
   const { preferences, setPreference } = usePreferences()
+  const t = useTerms()
   const { addToast } = useToast()
   const { tokenExists, deviceFlow, saveToken, clearToken, startDeviceFlow, cancelDeviceFlow } = useAuth()
   const { connectionStatus, connect, disconnect, setModel } = useAiConnection()
-  const { settings: projectAiSettings, updateSettings: updateProjectAiSettings } = useProjectAiSettings(activeProjectId)
+  const { settings: projectAiSettings, updateSettings: updateProjectAiSettings } =
+    useProjectAiSettings(activeProjectId)
   const { generate: generateAutoMessage } = useAutoSaveMessage(activeProjectId)
   const linkWizard = useProjectLinkWizard({
-    onLinked: (project) => addToast(`"${project.friendly_name}" linked successfully`, 'success')
+    onLinked: (project) => addToast(t.repoAdded(project.friendly_name), 'success')
   })
+
   const [showGitHubPanel, setShowGitHubPanel] = useState(false)
   const [showAiPanel, setShowAiPanel] = useState(false)
   const [showProjectSettingsPanel, setShowProjectSettingsPanel] = useState(false)
   const [showAiConsentDialog, setShowAiConsentDialog] = useState(false)
   const [pendingDangerTarget, setPendingDangerTarget] = useState<ProjectCloudTarget | null>(null)
+  const [gitInstalled, setGitInstalled] = useState<boolean | null>(null)
 
-  const { status, loading: statusLoading, error: statusError, fetchStatus, stage, unstage, stageAll, unstageAll, revertFile } =
-    useFileStatus(activeProjectId)
+  const checkGitInstall = (): void => {
+    setGitInstalled(null)
+    invokeDb<{ installed: boolean }>('git:install:check')
+      .then(({ installed }) => {
+        setGitInstalled(installed)
+      })
+      .catch(() => {
+        setGitInstalled(false)
+      })
+  }
 
-  const { loading: actionLoading, error: actionError, commit, push, pull, clearError } =
-    useGitActions(activeProjectId, () => {
+  useEffect(checkGitInstall, [])
+
+  const {
+    status,
+    loading: statusLoading,
+    error: statusError,
+    fetchStatus,
+    stage,
+    unstage,
+    stageAll,
+    unstageAll,
+    revertFile
+  } = useFileStatus(activeProjectId)
+
+  const { branches, loading: branchesLoading, switchBranch, createBranch, fetchBranches } =
+    useBranches(activeProjectId)
+
+  const {
+    loading: actionLoading,
+    error: actionError,
+    commit,
+    push,
+    pull,
+    clearError
+  } = useGitActions(activeProjectId, {
+    onCommitSuccess: () => {
       fetchStatus()
-      addToast('Saved successfully!', 'success')
-    })
+      addToast(t.committedToast, 'success')
+    },
+    onPushSuccess: () => {
+      fetchStatus()
+      addToast(t.pushedToast, 'success')
+    },
+    onPullSuccess: () => {
+      fetchStatus()
+      addToast(t.pulledToast, 'success')
+    }
+  })
+
+  const trackedPaths = status?.tracked_files ?? []
 
   const handleConnectGitHub = async (token: string): Promise<void> => {
     await saveToken(token)
@@ -76,7 +127,6 @@ function Shell(): JSX.Element {
     }
 
     await push(options)
-    addToast('Uploaded to cloud', 'success')
   }
 
   const cloudSetup = useCloudSetup(activeProject, {
@@ -91,15 +141,24 @@ function Shell(): JSX.Element {
     const project = projects.find((p) => p.project_id === project_id)
     if (!window.confirm(`Remove "${project?.friendly_name}" from your projects?`)) return
     await removeProject(project_id)
-    addToast('Project removed', 'info')
+    addToast(t.repoRemoved, 'info')
   }
 
   const handleToggleTheme = (): void => {
     setPreference('theme', preferences.theme === 'light' ? 'dark' : 'light')
   }
 
+  const handleToggleMode = (): void => {
+    setPreference('mode', preferences.mode === 'pro' ? 'newbie' : 'pro')
+  }
+
   const handleOpenGitHubDocs = (): void => {
     invokeDb('shell:openExternal', 'https://github.com/settings/tokens').catch(console.error)
+  }
+
+  const handleOpenDevicePage = (): void => {
+    const url = deviceFlow?.verification_uri ?? 'https://github.com/login/device'
+    invokeDb('shell:openExternal', url).catch(console.error)
   }
 
   const handleOpenAiDocs = (provider: 'openai' | 'anthropic'): void => {
@@ -109,6 +168,26 @@ function Shell(): JSX.Element {
         : 'https://platform.claude.com/docs/api-reference'
 
     invokeDb('shell:openExternal', url).catch(console.error)
+  }
+
+  const handleInitRepo = async (): Promise<void> => {
+    if (!activeProjectId) return
+    await invokeGit('git:init', activeProjectId)
+    await fetchStatus()
+    await fetchBranches()
+    addToast('Repository initialized', 'success')
+  }
+
+  const handleSwitchBranch = async (name: string): Promise<void> => {
+    await switchBranch(name)
+    await fetchStatus()
+    addToast(t.switchedBranchToast(name), 'success')
+  }
+
+  const handleCreateBranch = async (name: string): Promise<void> => {
+    await createBranch(name)
+    await fetchStatus()
+    addToast(t.createdBranchToast(name), 'success')
   }
 
   const handleProjectAiChange = async (patch: Partial<ProjectAiSettings>): Promise<void> => {
@@ -146,226 +225,252 @@ function Shell(): JSX.Element {
   }
 
   const projectStates = Object.fromEntries(
-    projects.map((p) => {
-      if (p.project_id === activeProjectId && status) {
-        return [p.project_id, status.is_clean ? 'clean' : 'changed'] as const
+    projects.map((project) => {
+      if (project.project_id === activeProjectId && status) {
+        return [project.project_id, status.is_clean ? 'clean' : 'changed'] as const
       }
-      return [p.project_id, 'unknown'] as const
+      return [project.project_id, 'unknown'] as const
     })
   ) as Record<string, 'changed' | 'clean' | 'unknown'>
 
+  const isNotARepo = statusError?.code === 'NOT_A_REPO'
+
   return (
-    <div className={styles.app}>
-      <Sidebar
-        projects={projects}
-        activeProjectId={activeProjectId}
-        theme={preferences.theme}
-        onSelectProject={setActiveProject}
-        onRemoveProject={handleRemoveProject}
-        onAddProject={handleAddProject}
-        onToggleTheme={handleToggleTheme}
-        projectStates={projectStates}
-        githubSlot={
-          <GitHubStatus
-            connected={tokenExists === true}
-            onConnect={() => {
-              setShowAiPanel(false)
-              setShowGitHubPanel(true)
-            }}
-            onDisconnect={clearToken}
-          />
-        }
-        aiSlot={
-          <AIStatus
-            connected={connectionStatus.connection_status === 'connected'}
-            onClick={() => {
-              setShowGitHubPanel(false)
-              setShowAiPanel((value) => !value)
-            }}
-          />
-        }
-      />
+    <>
+      {gitInstalled === false && <GitNotInstalled onRetry={checkGitInstall} />}
 
-      <div className={styles.main}>
-        {activeProject ? (
-          <>
-            {(showAiPanel || showProjectSettingsPanel) && (
-              <div className={styles.panelArea}>
-                {showAiPanel && (
-                  <ConnectAI
-                    connectionStatus={connectionStatus}
-                    onConnect={handleConnectAi}
-                    onDisconnect={disconnect}
-                    onOpenProviderDocs={handleOpenAiDocs}
-                    onSelectModel={setModel}
+      <div className={styles.app}>
+        <Sidebar
+          projects={projects}
+          activeProjectId={activeProjectId}
+          theme={preferences.theme}
+          mode={preferences.mode}
+          onSelectProject={setActiveProject}
+          onRemoveProject={handleRemoveProject}
+          onAddProject={handleAddProject}
+          onToggleTheme={handleToggleTheme}
+          onToggleMode={handleToggleMode}
+          projectStates={projectStates}
+          githubSlot={
+            <GitHubStatus
+              connected={tokenExists === true}
+              onConnect={() => {
+                setShowAiPanel(false)
+                setShowGitHubPanel(true)
+              }}
+              onDisconnect={clearToken}
+            />
+          }
+          aiSlot={
+            <AIStatus
+              connected={connectionStatus.connection_status === 'connected'}
+              onClick={() => {
+                setShowGitHubPanel(false)
+                setShowAiPanel((value) => !value)
+              }}
+            />
+          }
+        />
+
+        <div className={styles.main}>
+          {activeProject ? (
+            <>
+              {(showAiPanel || showProjectSettingsPanel) && (
+                <div className={styles.panelArea}>
+                  {showAiPanel && (
+                    <ConnectAI
+                      connectionStatus={connectionStatus}
+                      onConnect={handleConnectAi}
+                      onDisconnect={disconnect}
+                      onOpenProviderDocs={handleOpenAiDocs}
+                      onSelectModel={setModel}
+                    />
+                  )}
+                  {showProjectSettingsPanel && (
+                    <ProjectSettingsPanel
+                      aiSettings={projectAiSettings}
+                      aiConnectionStatus={connectionStatus.connection_status}
+                      selectedModel={connectionStatus.selected_model}
+                      cloudTarget={cloudSetup.target}
+                      onAiChange={(patch) => {
+                        void handleProjectAiChange(patch)
+                      }}
+                      onOpenAiConnection={() => setShowAiPanel(true)}
+                      onOpenCloudSetup={() => {
+                        void cloudSetup.open(false)
+                      }}
+                      onClose={() => setShowProjectSettingsPanel(false)}
+                    />
+                  )}
+                </div>
+              )}
+
+              <header className={styles.header}>
+                <span className={styles.projectTitle}>{activeProject.friendly_name}</span>
+                {status && (
+                  <BranchSelector
+                    currentBranch={status.current_branch}
+                    branches={branches}
+                    loading={branchesLoading}
+                    onSwitch={handleSwitchBranch}
+                    onCreate={handleCreateBranch}
                   />
                 )}
-                {showProjectSettingsPanel && (
-                  <ProjectSettingsPanel
-                    aiSettings={projectAiSettings}
-                    aiConnectionStatus={connectionStatus.connection_status}
-                    selectedModel={connectionStatus.selected_model}
-                    cloudTarget={cloudSetup.target}
-                    onAiChange={(patch) => {
-                      void handleProjectAiChange(patch)
-                    }}
-                    onOpenAiConnection={() => setShowAiPanel(true)}
-                    onOpenCloudSetup={() => {
-                      void cloudSetup.open(false)
-                    }}
-                    onClose={() => setShowProjectSettingsPanel(false)}
-                  />
+                <button
+                  className={styles.settingsBtn}
+                  onClick={() => setShowProjectSettingsPanel((value) => !value)}
+                >
+                  Project Settings
+                </button>
+                {status && (status.ahead > 0 || status.behind > 0) && (
+                  <span className={styles.aheadBehind}>
+                    {status.ahead > 0 && <span>↑ {status.ahead}</span>}
+                    {status.behind > 0 && <span>↓ {status.behind}</span>}
+                  </span>
                 )}
-              </div>
-            )}
-            <header className={styles.header}>
-              <span className={styles.projectTitle}>{activeProject.friendly_name}</span>
-              {status && (
-                <span className={styles.branch}>
-                  🌿 {status.current_branch}
-                </span>
-              )}
-              <button
-                className={styles.settingsBtn}
-                onClick={() => setShowProjectSettingsPanel((value) => !value)}
-              >
-                Project Settings
-              </button>
-              {status && (status.ahead > 0 || status.behind > 0) && (
-                <span className={styles.aheadBehind}>
-                  {status.ahead > 0 && <span>↑ {status.ahead}</span>}
-                  {status.behind > 0 && <span>↓ {status.behind}</span>}
-                </span>
-              )}
-            </header>
+              </header>
 
-            <FileManager
-              status={status}
-              loading={statusLoading}
-              error={statusError}
-              onStage={stage}
-              onUnstage={unstage}
-              onStageAll={stageAll}
-              onUnstageAll={unstageAll}
-              onRevert={revertFile}
-            />
+              {isNotARepo ? (
+                <NotARepo projectPath={activeProject.local_path} onInit={handleInitRepo} />
+              ) : (
+                <FileManager
+                  status={status}
+                  trackedPaths={trackedPaths}
+                  loading={statusLoading}
+                  error={statusError}
+                  onStage={stage}
+                  onUnstage={unstage}
+                  onStageAll={stageAll}
+                  onUnstageAll={unstageAll}
+                  onRevert={revertFile}
+                />
+              )}
 
-            <ActionPanel
-              status={status}
-              loading={actionLoading}
-              error={actionError}
-              messageTemplate={preferences.default_save_message_template}
-              tokenExists={tokenExists}
-              cloudUploadReady={cloudSetup.cloudUploadReady}
-              cloudStatusLabel={cloudSetup.cloudStatusLabel}
-              forceShowConnect={showGitHubPanel}
-              deviceFlow={deviceFlow}
-              onCommit={commit}
-              onPush={handleUpload}
-              onPull={async () => { await pull(); fetchStatus(); addToast('Updates downloaded', 'success') }}
-              onOpenCloudSetup={() => { void cloudSetup.open(true) }}
-              onClearError={clearError}
-              onConnectGitHub={handleConnectGitHub}
-              onOpenGitHubDocs={handleOpenGitHubDocs}
-              onStartDeviceFlow={startDeviceFlow}
-              onCancelDeviceFlow={cancelDeviceFlow}
-              aiAutoSaveEnabled={projectAiSettings.auto_save_message_enabled}
-              aiConnectionReady={
-                connectionStatus.connection_status === 'connected' &&
-                Boolean(connectionStatus.selected_model)
-              }
-              onGenerateAutoMessage={generateAutoMessage}
-            />
-          </>
-        ) : showAiPanel ? (
-          <div className={styles.emptyMain}>
-            <ConnectAI
-              connectionStatus={connectionStatus}
-              onConnect={handleConnectAi}
-              onDisconnect={disconnect}
-              onOpenProviderDocs={handleOpenAiDocs}
-              onSelectModel={setModel}
-            />
-          </div>
-        ) : showGitHubPanel && tokenExists !== true ? (
-          <div className={styles.emptyMain}>
-            <ConnectGitHub
-              onConnect={handleConnectGitHub}
-              onOpenGitHub={handleOpenGitHubDocs}
-              deviceFlow={deviceFlow}
-              onStartDeviceFlow={startDeviceFlow}
-              onCancelDeviceFlow={cancelDeviceFlow}
-            />
-          </div>
-        ) : (
-          <div className={styles.emptyMain}>
-            <div className={styles.emptyIcon}>📁</div>
-            <h2>Welcome</h2>
-            <p>Link a project folder from the sidebar to start managing your files.</p>
-          </div>
+              <ActionPanel
+                status={status}
+                loading={actionLoading}
+                error={isNotARepo ? null : actionError}
+                messageTemplate={preferences.default_save_message_template}
+                tokenExists={tokenExists}
+                cloudUploadReady={cloudSetup.cloudUploadReady}
+                cloudStatusLabel={cloudSetup.cloudStatusLabel}
+                aiAutoSaveEnabled={projectAiSettings.auto_save_message_enabled}
+                aiConnectionReady={
+                  connectionStatus.connection_status === 'connected' &&
+                  Boolean(connectionStatus.selected_model)
+                }
+                forceShowConnect={showGitHubPanel}
+                deviceFlow={deviceFlow}
+                onCommit={commit}
+                onPush={handleUpload}
+                onPull={pull}
+                onOpenCloudSetup={() => {
+                  void cloudSetup.open(true)
+                }}
+                onClearError={clearError}
+                onConnectGitHub={handleConnectGitHub}
+                onOpenGitHubDocs={handleOpenGitHubDocs}
+                onOpenDevicePage={handleOpenDevicePage}
+                onStartDeviceFlow={startDeviceFlow}
+                onCancelDeviceFlow={cancelDeviceFlow}
+                onGenerateAutoMessage={generateAutoMessage}
+              />
+            </>
+          ) : showAiPanel ? (
+            <div className={styles.emptyMain}>
+              <ConnectAI
+                connectionStatus={connectionStatus}
+                onConnect={handleConnectAi}
+                onDisconnect={disconnect}
+                onOpenProviderDocs={handleOpenAiDocs}
+                onSelectModel={setModel}
+              />
+            </div>
+          ) : showGitHubPanel && tokenExists !== true ? (
+            <div className={styles.emptyMain}>
+              <ConnectGitHub
+                onConnect={handleConnectGitHub}
+                onOpenGitHubDocs={handleOpenGitHubDocs}
+                onOpenDevicePage={handleOpenDevicePage}
+                deviceFlow={deviceFlow}
+                onStartDeviceFlow={startDeviceFlow}
+                onCancelDeviceFlow={cancelDeviceFlow}
+              />
+            </div>
+          ) : (
+            <div className={styles.emptyMain}>
+              <div className={styles.emptyIcon}>📁</div>
+              <h2>Welcome</h2>
+              <p>
+                {preferences.mode === 'newbie'
+                  ? 'Link a project folder from the sidebar to get started.'
+                  : 'Add a repository from the sidebar to get started.'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {showAiConsentDialog && (
+          <AIConsentDialog
+            onAccept={() => {
+              void handleAcceptAiConsent()
+            }}
+            onDecline={handleDeclineAiConsent}
+          />
+        )}
+
+        <ToastContainer />
+
+        {linkWizard.isOpen && (
+          <ProjectLinkWizard
+            step={linkWizard.step}
+            inspection={linkWizard.inspection}
+            folderPath={linkWizard.folderPath}
+            friendlyName={linkWizard.friendlyName}
+            loading={linkWizard.loading}
+            error={linkWizard.error}
+            selectedIgnoreEntries={linkWizard.selectedIgnoreEntries}
+            onChooseFolder={linkWizard.chooseFolder}
+            onToggleIgnoreEntry={linkWizard.toggleIgnoreEntry}
+            onApproveInit={linkWizard.approveInit}
+            onCancel={linkWizard.close}
+            onFinish={linkWizard.finish}
+          />
+        )}
+
+        {cloudSetup.isOpen && activeProject && (
+          <CloudSetupWizard
+            intent={cloudSetup.intent}
+            loading={cloudSetup.loading}
+            error={cloudSetup.error}
+            remotes={cloudSetup.remotes}
+            branchMode={cloudSetup.branchMode}
+            selectedRemoteName={cloudSetup.selectedRemoteName}
+            selectedBranch={cloudSetup.selectedBranch}
+            onChooseIntent={cloudSetup.chooseIntent}
+            onClose={cloudSetup.close}
+            onCreateBackup={cloudSetup.createBackup}
+            onSelectRemote={cloudSetup.selectRemote}
+            onSelectBranchMode={cloudSetup.selectBranchMode}
+            onSelectBranch={cloudSetup.setSelectedBranch}
+            onContinueCollaboration={cloudSetup.saveCollaborationTarget}
+          />
+        )}
+
+        {pendingDangerTarget?.mode === 'collaboration' && pendingDangerTarget.collaboration && (
+          <DangerZoneUploadDialog
+            branchName={pendingDangerTarget.collaboration.selectedBranch ?? 'main'}
+            onCancel={() => setPendingDangerTarget(null)}
+            onConfirm={() => {
+              const target = pendingDangerTarget
+              setPendingDangerTarget(null)
+              if (!target) return
+              void handleUploadWithTarget(target, { dangerConfirmed: true })
+            }}
+          />
         )}
       </div>
-
-      {showAiConsentDialog && (
-        <AIConsentDialog
-          onAccept={() => {
-            void handleAcceptAiConsent()
-          }}
-          onDecline={handleDeclineAiConsent}
-        />
-      )}
-
-      <ToastContainer />
-
-      {linkWizard.isOpen && (
-        <ProjectLinkWizard
-          step={linkWizard.step}
-          inspection={linkWizard.inspection}
-          folderPath={linkWizard.folderPath}
-          friendlyName={linkWizard.friendlyName}
-          loading={linkWizard.loading}
-          error={linkWizard.error}
-          selectedIgnoreEntries={linkWizard.selectedIgnoreEntries}
-          onChooseFolder={linkWizard.chooseFolder}
-          onToggleIgnoreEntry={linkWizard.toggleIgnoreEntry}
-          onApproveInit={linkWizard.approveInit}
-          onCancel={linkWizard.close}
-          onFinish={linkWizard.finish}
-        />
-      )}
-
-      {cloudSetup.isOpen && activeProject && (
-        <CloudSetupWizard
-          intent={cloudSetup.intent}
-          loading={cloudSetup.loading}
-          error={cloudSetup.error}
-          remotes={cloudSetup.remotes}
-          branchMode={cloudSetup.branchMode}
-          selectedRemoteName={cloudSetup.selectedRemoteName}
-          selectedBranch={cloudSetup.selectedBranch}
-          onChooseIntent={cloudSetup.chooseIntent}
-          onClose={cloudSetup.close}
-          onCreateBackup={cloudSetup.createBackup}
-          onSelectRemote={cloudSetup.selectRemote}
-          onSelectBranchMode={cloudSetup.selectBranchMode}
-          onSelectBranch={cloudSetup.setSelectedBranch}
-          onContinueCollaboration={cloudSetup.saveCollaborationTarget}
-        />
-      )}
-
-      {pendingDangerTarget?.mode === 'collaboration' && pendingDangerTarget.collaboration && (
-        <DangerZoneUploadDialog
-          branchName={pendingDangerTarget.collaboration.selectedBranch ?? 'main'}
-          onCancel={() => setPendingDangerTarget(null)}
-          onConfirm={() => {
-            const target = pendingDangerTarget
-            setPendingDangerTarget(null)
-            if (!target) return
-            void handleUploadWithTarget(target, { dangerConfirmed: true })
-          }}
-        />
-      )}
-    </div>
+    </>
   )
 }
 
