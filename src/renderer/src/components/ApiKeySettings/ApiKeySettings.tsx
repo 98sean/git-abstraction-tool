@@ -4,97 +4,97 @@ import styles from './ApiKeySettings.module.css'
 
 interface Props {
   keys: ApiKeys
-  onSaveOpenAI: (key: string) => void
-  onSaveAnthropic: (key: string) => void
-  onClearOpenAI: () => void
-  onClearAnthropic: () => void
+  loading: boolean
+  onSaveOpenAI: (key: string) => Promise<void>
+  onSaveAnthropic: (key: string) => Promise<void>
+  onClearOpenAI: () => Promise<void>
+  onClearAnthropic: () => Promise<void>
   onClose: () => void
-}
-
-function maskKey(key: string): string {
-  if (key.length <= 8) return '•'.repeat(key.length)
-  return key.slice(0, 4) + '•'.repeat(Math.max(0, key.length - 8)) + key.slice(-4)
 }
 
 interface KeyRowProps {
   label: string
   provider: string
   placeholder: string
-  currentKey: string | null
-  onSave: (key: string) => void
-  onClear: () => void
+  isSet: boolean
+  onSave: (key: string) => Promise<void>
+  onClear: () => Promise<void>
 }
 
-function KeyRow({ label, provider, placeholder, currentKey, onSave, onClear }: KeyRowProps): JSX.Element {
+function KeyRow({ label, provider, placeholder, isSet, onSave, onClear }: KeyRowProps): JSX.Element {
   const [draft, setDraft] = useState('')
-  const [showKey, setShowKey] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleSave = (): void => {
+  const handleSave = async (): Promise<void> => {
     if (!draft.trim()) return
-    onSave(draft.trim())
-    setDraft('')
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setSaving(true)
+    setError(null)
+    try {
+      await onSave(draft.trim())
+      setDraft('')
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      setError((err as { message?: string })?.message ?? 'Could not save this key.')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const handleClear = (): void => {
-    onClear()
-    setDraft('')
+  const handleClear = async (): Promise<void> => {
+    setSaving(true)
+    setError(null)
+    try {
+      await onClear()
+      setDraft('')
+    } catch (err) {
+      setError((err as { message?: string })?.message ?? 'Could not remove this key.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
     <div className={styles.keyRow}>
       <div className={styles.keyRowHeader}>
         <span className={styles.providerLabel}>{label}</span>
-        <span className={`${styles.statusBadge} ${currentKey ? styles.set : styles.notSet}`}>
-          {currentKey ? 'Key saved' : 'Not set'}
+        <span className={`${styles.statusBadge} ${isSet ? styles.set : styles.notSet}`}>
+          {isSet ? 'Key saved' : 'Not set'}
         </span>
       </div>
-
-      {currentKey && (
-        <div className={styles.existingKey}>
-          <span className={styles.maskedKey}>
-            {showKey ? currentKey : maskKey(currentKey)}
-          </span>
-          <button
-            className={styles.visibilityBtn}
-            onClick={() => setShowKey((v) => !v)}
-            title={showKey ? 'Hide key' : 'Show key'}
-          >
-            {showKey ? '🙈' : '👁'}
-          </button>
-          <button className={styles.clearBtn} onClick={handleClear}>
-            Remove
-          </button>
-        </div>
-      )}
 
       <div className={styles.inputRow}>
         <input
           type="password"
           className={styles.keyInput}
-          placeholder={currentKey ? `Replace ${provider} key…` : placeholder}
+          placeholder={isSet ? `Replace ${provider} key...` : placeholder}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+          onKeyDown={(e) => e.key === 'Enter' && void handleSave()}
           autoComplete="off"
           spellCheck={false}
+          disabled={saving}
         />
-        <button
-          className={styles.saveBtn}
-          onClick={handleSave}
-          disabled={!draft.trim()}
-        >
-          {saved ? 'Saved!' : 'Save'}
+        <button className={styles.saveBtn} onClick={() => void handleSave()} disabled={!draft.trim() || saving}>
+          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save'}
         </button>
+        {isSet && (
+          <button className={styles.clearBtn} onClick={() => void handleClear()} disabled={saving}>
+            Remove
+          </button>
+        )}
       </div>
+
+      {error && <p className={styles.rowError}>{error}</p>}
     </div>
   )
 }
 
 export function ApiKeySettings({
   keys,
+  loading,
   onSaveOpenAI,
   onSaveAnthropic,
   onClearOpenAI,
@@ -108,8 +108,7 @@ export function ApiKeySettings({
           <div>
             <h2 className={styles.title}>API Key Settings</h2>
             <p className={styles.description}>
-              Enter your own API key to use AI features. Your key is stored locally in your
-              browser only.
+              Enter your own API key to use AI features. Keys are encrypted and saved locally on your device.
             </p>
           </div>
           <button className={styles.closeBtn} onClick={onClose} aria-label="Close settings">
@@ -118,11 +117,13 @@ export function ApiKeySettings({
         </div>
 
         <div className={styles.modalBody}>
+          {loading && <p className={styles.description}>Loading key status...</p>}
+
           <KeyRow
             label="OpenAI (ChatGPT)"
             provider="OpenAI"
-            placeholder="sk-…"
-            currentKey={keys.openai}
+            placeholder="sk-..."
+            isSet={keys.openai}
             onSave={onSaveOpenAI}
             onClear={onClearOpenAI}
           />
@@ -132,8 +133,8 @@ export function ApiKeySettings({
           <KeyRow
             label="Anthropic (Claude)"
             provider="Anthropic"
-            placeholder="sk-ant-…"
-            currentKey={keys.anthropic}
+            placeholder="sk-ant-..."
+            isSet={keys.anthropic}
             onSave={onSaveAnthropic}
             onClear={onClearAnthropic}
           />
@@ -141,7 +142,7 @@ export function ApiKeySettings({
 
         <div className={styles.modalFooter}>
           <p className={styles.footerNote}>
-            🔒 Keys are never sent to our servers. They are only used directly from your device.
+            Keys are only used on your device for direct provider API calls.
           </p>
         </div>
       </div>

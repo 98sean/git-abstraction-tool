@@ -192,6 +192,11 @@
   cursor: not-allowed;
 }
 
+.rowError {
+  font-size: 12px;
+  color: var(--error);
+}
+
 /* ── Footer ── */
 .modalFooter {
   padding: 12px 20px;

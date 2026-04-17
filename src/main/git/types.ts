@@ -32,6 +32,30 @@ export interface CommitInfo {
   date: string  // ISO 8601
 }
 
+export interface TimelineCommitInfo {
+  hash: string
+  short_hash: string
+  message: string
+  date: string
+  changed_files: string[]
+}
+
+export interface RestoreResult {
+  backup_branch: string
+  restored_files: number
+  removed_files: number
+}
+
+export interface RestorePreview {
+  files_to_restore: string[]
+  files_to_remove: string[]
+}
+
+export interface UntrackedDeleteResult {
+  deleted: number
+  failed: string[]
+}
+
 export interface BranchInfo {
   name: string
   current: boolean

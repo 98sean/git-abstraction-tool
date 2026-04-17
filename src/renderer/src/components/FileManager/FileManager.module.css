@@ -68,6 +68,21 @@
 .depsToggle:hover { border-color: var(--accent); color: var(--accent); }
 .depsActive { border-color: var(--accent); color: var(--accent); }
 
+.reviewBtn {
+  padding: 4px 9px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.reviewBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* ── Tree scroll area ── */
 .tree {
   flex: 1;
@@ -133,8 +148,10 @@
 }
 .fileRow:hover { background: var(--bg-hover); }
 .fileRow.staged { background: color-mix(in srgb, var(--success) 6%, transparent); }
-.fileRow.cleanRow { cursor: default; opacity: 0.55; }
-.fileRow.cleanRow:hover { background: transparent; }
+.fileRow.cleanRow { opacity: 0.7; }
+.fileRow.selected {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
 
 .checkPlaceholder {
   width: 15px;
@@ -228,4 +245,177 @@
   border-radius: var(--radius);
   font-size: 13px;
   color: var(--error);
+}
+
+.reviewBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.reviewModal {
+  width: min(860px, 100%);
+  max-height: 84vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.reviewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.reviewHeader h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.reviewClose {
+  font-size: 16px;
+  color: var(--text-muted);
+  background: none;
+  padding: 2px 6px;
+}
+
+.reviewSummary {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.reviewError {
+  margin: 10px 14px 0;
+  font-size: 12px;
+  color: var(--error);
+}
+
+.reviewLoading {
+  padding: 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.reviewList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.reviewRow {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 9px;
+  background: var(--bg-sidebar);
+}
+
+.reviewRowTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reviewPath {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  word-break: break-all;
+}
+
+.reviewBadge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.badgeDelete {
+  background: color-mix(in srgb, var(--error) 15%, transparent);
+  color: var(--error);
+}
+
+.badgeCommit {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: var(--success);
+}
+
+.reviewConfidence {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.reviewReason {
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.reviewCheck {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text);
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.reviewActions {
+  border-top: 1px solid var(--border);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.reviewStageBtn,
+.reviewDeleteBtn {
+  padding: 7px 11px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.reviewStageBtn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.reviewStageBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.reviewDeleteBtn {
+  background: color-mix(in srgb, var(--error) 85%, transparent);
+  color: #fff;
+}
+
+.reviewDeleteBtn:disabled,
+.reviewStageBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }

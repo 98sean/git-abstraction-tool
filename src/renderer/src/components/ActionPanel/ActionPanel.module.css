@@ -105,3 +105,141 @@
   line-height: 1;
   flex-shrink: 0;
 }
+
+.undoPanel {
+  border-top: 1px dashed var(--border);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.undoHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.undoTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.undoHint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.undoInputRow {
+  display: flex;
+  gap: 8px;
+}
+
+.undoInput {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.undoInput:focus {
+  border-color: var(--border-focus);
+}
+
+.undoSuggestBtn {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.undoSuggestBtn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.undoSuggestBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.undoError {
+  font-size: 12px;
+  color: var(--error);
+}
+
+.undoSuggestion {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg-sidebar);
+}
+
+.undoProposal {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.undoSuggestionTitle {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.undoMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.undoReason {
+  font-size: 12px;
+  color: var(--text);
+}
+
+.undoPreview {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.undoFileList {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.undoApplyBtn {
+  margin-top: 2px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 90%, #000 0%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.undoApplyBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

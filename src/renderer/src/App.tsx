@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AppProvider } from './context/AppContext'
 import { invokeDb, invokeGit } from './ipc'
 import { useAuth } from './hooks/useAuth'
@@ -14,11 +14,19 @@ import { ActionPanel } from './components/ActionPanel/ActionPanel'
 import { ApiKeySettings } from './components/ApiKeySettings/ApiKeySettings'
 import { BranchSelector } from './components/BranchSelector/BranchSelector'
 import { FileManager } from './components/FileManager/FileManager'
+import { FileInsightPanel } from './components/FileInsightPanel/FileInsightPanel'
 import { GitNotInstalled } from './components/GitNotInstalled/GitNotInstalled'
 import { NotARepo } from './components/NotARepo/NotARepo'
 import { Sidebar, pickFolder } from './components/Sidebar/Sidebar'
 import { ConnectGitHub, GitHubStatus } from './components/ConnectGitHub/ConnectGitHub'
 import { ToastContainer } from './components/shared/Toast'
+import {
+  FileInsight,
+  NaturalUndoSuggestion,
+  RestoreResult,
+  UntrackedDeleteResult,
+  UntrackedReviewResult
+} from './types'
 import styles from './App.module.css'
 
 function Shell(): JSX.Element {
@@ -28,9 +36,25 @@ function Shell(): JSX.Element {
   const t = useTerms()
   const { addToast } = useToast()
   const { tokenExists, deviceFlow, saveToken, clearToken, startDeviceFlow, cancelDeviceFlow } = useAuth()
-  const { keys: apiKeys, setOpenAIKey, setAnthropicKey, clearOpenAIKey, clearAnthropicKey } = useApiKeys()
+  const {
+    keys: apiKeys,
+    loading: apiKeysLoading,
+    setOpenAIKey,
+    setAnthropicKey,
+    clearOpenAIKey,
+    clearAnthropicKey
+  } = useApiKeys()
   const [showGitHubPanel, setShowGitHubPanel] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [naturalUndoSuggestion, setNaturalUndoSuggestion] = useState<NaturalUndoSuggestion | null>(null)
+  const [naturalUndoLoading, setNaturalUndoLoading] = useState(false)
+  const [naturalUndoApplying, setNaturalUndoApplying] = useState(false)
+  const [naturalUndoError, setNaturalUndoError] = useState<string | null>(null)
+  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null)
+  const [fileInsight, setFileInsight] = useState<FileInsight | null>(null)
+  const [fileInsightLoading, setFileInsightLoading] = useState(false)
+  const [fileInsightError, setFileInsightError] = useState<string | null>(null)
+  const fileInsightReqRef = useRef(0)
 
   // Git installation check
   const [gitInstalled, setGitInstalled] = useState<boolean | null>(null)
@@ -45,7 +69,7 @@ function Shell(): JSX.Element {
   const { status, loading: statusLoading, error: statusError, fetchStatus, stage, unstage, stageAll, unstageAll, revertFile } =
     useFileStatus(activeProjectId)
 
-  const { branches, loading: branchesLoading, switchBranch, createBranch, fetchBranches } =
+  const { branches, loading: branchesLoading, switchBranch, createBranch, deleteBranch, fetchBranches } =
     useBranches(activeProjectId)
 
   // tracked_files now comes directly from status (populated by git:status alongside git status)
@@ -119,6 +143,17 @@ function Shell(): JSX.Element {
     addToast(t.createdBranchToast(name), 'success')
   }
 
+  const handleDeleteBranch = async (name: string): Promise<void> => {
+    try {
+      await deleteBranch(name)
+      await fetchStatus()
+      addToast(t.deletedBranchToast(name), 'info')
+    } catch (err) {
+      const message = (err as { message?: string })?.message ?? 'Could not delete branch.'
+      addToast(message, 'error')
+    }
+  }
+
   const projectStates = Object.fromEntries(
     projects.map((p) => {
       if (p.project_id === activeProjectId && status) {
@@ -129,6 +164,115 @@ function Shell(): JSX.Element {
   ) as Record<string, 'changed' | 'clean' | 'unknown'>
 
   const isNotARepo = statusError?.code === 'NOT_A_REPO'
+
+  useEffect(() => {
+    setNaturalUndoSuggestion(null)
+    setNaturalUndoError(null)
+    setNaturalUndoLoading(false)
+    setNaturalUndoApplying(false)
+    setSelectedFilePath(null)
+    setFileInsight(null)
+    setFileInsightError(null)
+    setFileInsightLoading(false)
+    fileInsightReqRef.current += 1
+  }, [activeProjectId])
+
+  const handleSuggestNaturalUndo = async (query: string): Promise<void> => {
+    if (!activeProjectId) return
+    setNaturalUndoLoading(true)
+    setNaturalUndoError(null)
+    try {
+      const suggestion = await invokeDb<NaturalUndoSuggestion>('ai:undo:suggest', activeProjectId, query)
+      setNaturalUndoSuggestion(suggestion)
+    } catch (err) {
+      const message =
+        (err as { message?: string })?.message ?? 'Could not find a matching point in history.'
+      setNaturalUndoError(message)
+      setNaturalUndoSuggestion(null)
+    } finally {
+      setNaturalUndoLoading(false)
+    }
+  }
+
+  const handleApplyNaturalUndo = async (): Promise<void> => {
+    if (!activeProjectId || !naturalUndoSuggestion) return
+
+    setNaturalUndoApplying(true)
+    setNaturalUndoError(null)
+    try {
+      const result = await invokeGit<RestoreResult>(
+        'git:restore:apply',
+        activeProjectId,
+        naturalUndoSuggestion.commit_hash
+      )
+      await fetchStatus()
+      await fetchBranches()
+      addToast(
+        `Restore complete (restored ${result.restored_files}, removed ${result.removed_files}) | Backup: ${result.backup_branch}`,
+        'success'
+      )
+    } catch (err) {
+      const message = (err as { message?: string })?.message ?? 'Restore failed due to an unexpected error.'
+      setNaturalUndoError(message)
+    } finally {
+      setNaturalUndoApplying(false)
+    }
+  }
+
+  const handleSelectFile = async (path: string): Promise<void> => {
+    if (!activeProjectId) return
+
+    setSelectedFilePath(path)
+    setFileInsightError(null)
+    setFileInsight(null)
+
+    if (!apiKeys.openai) {
+      setFileInsightLoading(false)
+      setFileInsightError('OpenAI key is required. Add it in Settings.')
+      return
+    }
+
+    setFileInsightLoading(true)
+
+    const reqId = fileInsightReqRef.current + 1
+    fileInsightReqRef.current = reqId
+
+    try {
+      const result = await invokeDb<FileInsight>('ai:file:insight', activeProjectId, path)
+      if (fileInsightReqRef.current !== reqId) return
+      setFileInsight(result)
+    } catch (err) {
+      if (fileInsightReqRef.current !== reqId) return
+      const message = (err as { message?: string })?.message ?? 'Could not analyze this file.'
+      setFileInsightError(message)
+    } finally {
+      if (fileInsightReqRef.current === reqId) {
+        setFileInsightLoading(false)
+      }
+    }
+  }
+
+  const handleReviewUntracked = async (): Promise<UntrackedReviewResult> => {
+    if (!activeProjectId) {
+      return { items: [], total_untracked: 0, commit_count: 0, delete_count: 0 }
+    }
+    return await invokeDb<UntrackedReviewResult>('ai:untracked:review', activeProjectId)
+  }
+
+  const handleDeleteUntracked = async (paths: string[]): Promise<UntrackedDeleteResult> => {
+    if (!activeProjectId || paths.length === 0) {
+      return { deleted: 0, failed: [] }
+    }
+    const result = await invokeGit<UntrackedDeleteResult>('git:untracked:delete', activeProjectId, paths)
+    await fetchStatus()
+    if (result.deleted > 0) {
+      addToast(`Deleted ${result.deleted} untracked file(s).`, 'info')
+    }
+    if (result.failed.length > 0) {
+      addToast(`Failed to delete ${result.failed.length} file(s).`, 'error')
+    }
+    return result
+  }
 
   return (
     <>
@@ -170,6 +314,7 @@ function Shell(): JSX.Element {
                     loading={branchesLoading}
                     onSwitch={handleSwitchBranch}
                     onCreate={handleCreateBranch}
+                    onDelete={handleDeleteBranch}
                   />
                 )}
                 {status && (status.ahead > 0 || status.behind > 0) && (
@@ -186,17 +331,34 @@ function Shell(): JSX.Element {
                   onInit={handleInitRepo}
                 />
               ) : (
-                <FileManager
-                  status={status}
-                  trackedPaths={trackedPaths}
-                  loading={statusLoading}
-                  error={statusError}
-                  onStage={stage}
-                  onUnstage={unstage}
-                  onStageAll={stageAll}
-                  onUnstageAll={unstageAll}
-                  onRevert={revertFile}
-                />
+                <div className={styles.workspace}>
+                  <FileManager
+                    status={status}
+                    trackedPaths={trackedPaths}
+                    selectedPath={selectedFilePath}
+                    loading={statusLoading}
+                    error={statusError}
+                    onStage={stage}
+                    onUnstage={unstage}
+                    onStageAll={stageAll}
+                    onUnstageAll={unstageAll}
+                    onRevert={revertFile}
+                    onSelectFile={(path) => void handleSelectFile(path)}
+                    onReviewUntracked={handleReviewUntracked}
+                    onDeleteUntracked={handleDeleteUntracked}
+                  />
+                  <FileInsightPanel
+                    selectedPath={selectedFilePath}
+                    insight={fileInsight}
+                    loading={fileInsightLoading}
+                    error={fileInsightError}
+                    enabled={apiKeys.openai}
+                    onRetry={() => {
+                      if (selectedFilePath) void handleSelectFile(selectedFilePath)
+                    }}
+                    onSelectRelated={(path) => void handleSelectFile(path)}
+                  />
+                </div>
               )}
 
               <ActionPanel
@@ -207,10 +369,17 @@ function Shell(): JSX.Element {
                 tokenExists={tokenExists}
                 forceShowConnect={showGitHubPanel}
                 deviceFlow={deviceFlow}
+                naturalUndoEnabled={apiKeys.openai && !isNotARepo}
+                naturalUndoSuggestion={naturalUndoSuggestion}
+                naturalUndoLoading={naturalUndoLoading}
+                naturalUndoApplying={naturalUndoApplying}
+                naturalUndoError={naturalUndoError}
                 onCommit={commit}
                 onPush={async () => { await push(); fetchStatus(); addToast(t.pushedToast, 'success') }}
                 onPull={async () => { await pull(); fetchStatus(); addToast(t.pulledToast, 'success') }}
                 onClearError={clearError}
+                onSuggestNaturalUndo={handleSuggestNaturalUndo}
+                onApplyNaturalUndo={handleApplyNaturalUndo}
                 onConnectGitHub={handleConnectGitHub}
                 onOpenGitHubDocs={handleOpenGitHubDocs}
                 onOpenDevicePage={handleOpenDevicePage}
@@ -241,6 +410,7 @@ function Shell(): JSX.Element {
         {showSettings && (
           <ApiKeySettings
             keys={apiKeys}
+            loading={apiKeysLoading}
             onSaveOpenAI={setOpenAIKey}
             onSaveAnthropic={setAnthropicKey}
             onClearOpenAI={clearOpenAIKey}

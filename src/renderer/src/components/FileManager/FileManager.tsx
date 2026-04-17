@@ -1,5 +1,12 @@
 import { useMemo, useState } from 'react'
-import { FileStatus, FileStatusCode, GitError, GitStatus } from '../../types'
+import {
+  FileStatus,
+  FileStatusCode,
+  GitError,
+  GitStatus,
+  UntrackedDeleteResult,
+  UntrackedReviewResult
+} from '../../types'
 import { useTerms } from '../../hooks/useTerms'
 import { Spinner } from '../shared/Spinner'
 import styles from './FileManager.module.css'
@@ -122,6 +129,7 @@ function flattenTree(nodes: TreeNode[], collapsed: Set<string>, depth = 0): Flat
 interface Props {
   status: GitStatus | null
   trackedPaths: string[]
+  selectedPath?: string | null
   loading: boolean
   error: GitError | null
   onStage: (paths: string[]) => void
@@ -129,15 +137,24 @@ interface Props {
   onStageAll: () => void
   onUnstageAll: () => void
   onRevert: (path: string) => void
+  onSelectFile?: (path: string) => void
+  onReviewUntracked?: () => Promise<UntrackedReviewResult>
+  onDeleteUntracked?: (paths: string[]) => Promise<UntrackedDeleteResult>
 }
 
 export function FileManager({
-  status, trackedPaths, loading, error,
-  onStage, onUnstage, onStageAll, onUnstageAll, onRevert
+  status, trackedPaths, selectedPath, loading, error,
+  onStage, onUnstage, onStageAll, onUnstageAll, onRevert, onSelectFile, onReviewUntracked, onDeleteUntracked
 }: Props): JSX.Element {
   const t = useTerms()
   const [showDeps, setShowDeps] = useState(false)
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [reviewLoading, setReviewLoading] = useState(false)
+  const [reviewApplying, setReviewApplying] = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [review, setReview] = useState<UntrackedReviewResult | null>(null)
+  const [deleteSelected, setDeleteSelected] = useState<Set<string>>(new Set())
 
   // ── Merge tracked + changed into DisplayFile list ──────────────────────────
   const allFiles = useMemo<DisplayFile[]>(() => {
@@ -180,6 +197,7 @@ export function FileManager({
 
   const changedCount = allFiles.filter(f => f.status !== 'clean').length
   const stagedCount  = allFiles.filter(f => f.staged).length
+  const untrackedCount = allFiles.filter((f) => f.status === 'untracked').length
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const toggleDir = (fp: string): void =>
@@ -189,6 +207,58 @@ export function FileManager({
     if (file.status === 'clean') return
     if (file.staged) onUnstage([file.path])
     else onStage([file.path])
+  }
+
+  const loadUntrackedReview = async (): Promise<void> => {
+    if (!onReviewUntracked) return
+    setReviewOpen(true)
+    setReviewLoading(true)
+    setReviewError(null)
+    try {
+      const result = await onReviewUntracked()
+      setReview(result)
+      setDeleteSelected(
+        new Set(result.items.filter((i) => i.recommendation === 'delete').map((i) => i.path))
+      )
+    } catch (err) {
+      setReviewError((err as { message?: string })?.message ?? 'Could not review untracked files.')
+      setReview(null)
+      setDeleteSelected(new Set())
+    } finally {
+      setReviewLoading(false)
+    }
+  }
+
+  const toggleDeleteSelection = (filePath: string): void => {
+    setDeleteSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(filePath)) next.delete(filePath)
+      else next.add(filePath)
+      return next
+    })
+  }
+
+  const handleDeleteSelected = async (): Promise<void> => {
+    if (!onDeleteUntracked || deleteSelected.size === 0) return
+    setReviewApplying(true)
+    setReviewError(null)
+    try {
+      await onDeleteUntracked(Array.from(deleteSelected))
+      await loadUntrackedReview()
+    } catch (err) {
+      setReviewError((err as { message?: string })?.message ?? 'Could not delete selected files.')
+    } finally {
+      setReviewApplying(false)
+    }
+  }
+
+  const handleStageRecommended = (): void => {
+    if (!review) return
+    const commitPaths = review.items
+      .filter((i) => i.recommendation === 'commit')
+      .map((i) => i.path)
+    if (commitPaths.length === 0) return
+    onStage(commitPaths)
   }
 
   // ── Loading / error guards ─────────────────────────────────────────────────
@@ -251,6 +321,16 @@ export function FileManager({
         >
           {showDeps ? 'Hide deps' : 'Show deps'}
         </button>
+
+        {untrackedCount > 0 && onReviewUntracked && (
+          <button
+            className={styles.reviewBtn}
+            onClick={() => void loadUntrackedReview()}
+            disabled={reviewLoading || reviewApplying}
+          >
+            {reviewLoading ? 'Reviewing...' : `Review untracked (${untrackedCount})`}
+          </button>
+        )}
       </div>
 
       {/* Tree */}
@@ -292,12 +372,12 @@ export function FileManager({
             return (
               <div
                 key={row.key}
-                className={`${styles.fileRow} ${isClean ? styles.cleanRow : ''} ${file.staged ? styles.staged : ''}`}
+                className={`${styles.fileRow} ${isClean ? styles.cleanRow : ''} ${file.staged ? styles.staged : ''} ${selectedPath === file.path ? styles.selected : ''}`}
                 style={{ paddingLeft: 12 + depth * 16 }}
-                onClick={() => handleToggleFile(file)}
-                role={isClean ? undefined : 'button'}
-                tabIndex={isClean ? undefined : 0}
-                onKeyDown={e => !isClean && e.key === 'Enter' && handleToggleFile(file)}
+                onClick={() => onSelectFile?.(file.path)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && onSelectFile?.(file.path)}
               >
                 {isClean ? (
                   <span className={styles.checkPlaceholder} />
@@ -334,6 +414,90 @@ export function FileManager({
           })
         )}
       </div>
+
+      {reviewOpen && (
+        <div
+          className={styles.reviewBackdrop}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !reviewApplying) setReviewOpen(false)
+          }}
+        >
+          <div className={styles.reviewModal} role="dialog" aria-modal="true" aria-label="Untracked review">
+            <div className={styles.reviewHeader}>
+              <h3>Untracked File Review</h3>
+              <button
+                className={styles.reviewClose}
+                onClick={() => setReviewOpen(false)}
+                disabled={reviewApplying}
+              >
+                x
+              </button>
+            </div>
+
+            {reviewError && <div className={styles.reviewError}>{reviewError}</div>}
+            {reviewLoading && <div className={styles.reviewLoading}>Analyzing untracked files (can take up to ~45s for large sets)...</div>}
+
+            {!reviewLoading && review && (
+              <>
+                <div className={styles.reviewSummary}>
+                  <span>Total {review.total_untracked}</span>
+                  <span>Commit {review.commit_count}</span>
+                  <span>Delete {review.delete_count}</span>
+                </div>
+
+                <div className={styles.reviewList}>
+                  {review.items.map((item) => (
+                    <div key={item.path} className={styles.reviewRow}>
+                      <div className={styles.reviewRowTop}>
+                        <span className={styles.reviewPath}>{item.path}</span>
+                        <span
+                          className={`${styles.reviewBadge} ${
+                            item.recommendation === 'delete' ? styles.badgeDelete : styles.badgeCommit
+                          }`}
+                        >
+                          {item.recommendation}
+                        </span>
+                        <span className={styles.reviewConfidence}>
+                          {(item.confidence * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      <p className={styles.reviewReason}>{item.reason}</p>
+                      {item.recommendation === 'delete' && (
+                        <label className={styles.reviewCheck}>
+                          <input
+                            type="checkbox"
+                            checked={deleteSelected.has(item.path)}
+                            onChange={() => toggleDeleteSelection(item.path)}
+                            disabled={reviewApplying}
+                          />
+                          Delete this file
+                        </label>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div className={styles.reviewActions}>
+                  <button
+                    className={styles.reviewStageBtn}
+                    onClick={handleStageRecommended}
+                    disabled={reviewApplying}
+                  >
+                    Stage recommended commit files
+                  </button>
+                  <button
+                    className={styles.reviewDeleteBtn}
+                    onClick={() => void handleDeleteSelected()}
+                    disabled={reviewApplying || deleteSelected.size === 0}
+                  >
+                    {reviewApplying ? 'Deleting...' : `Delete selected (${deleteSelected.size})`}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

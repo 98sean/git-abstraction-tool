@@ -8,6 +8,7 @@ export function useBranches(projectId: string | null): {
   fetchBranches: () => Promise<void>
   switchBranch: (name: string) => Promise<void>
   createBranch: (name: string) => Promise<void>
+  deleteBranch: (name: string) => Promise<void>
 } {
   const [branches, setBranches] = useState<BranchInfo[]>([])
   const [loading, setLoading] = useState(false)
@@ -46,5 +47,13 @@ export function useBranches(projectId: string | null): {
     [projectId, fetchBranches]
   )
 
-  return { branches, loading, fetchBranches, switchBranch, createBranch }
+  const deleteBranch = useCallback(
+    async (name: string) => {
+      await invokeGit('git:branch:delete', projectId, name)
+      await fetchBranches()
+    },
+    [projectId, fetchBranches]
+  )
+
+  return { branches, loading, fetchBranches, switchBranch, createBranch, deleteBranch }
 }

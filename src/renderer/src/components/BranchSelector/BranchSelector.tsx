@@ -9,6 +9,7 @@ interface Props {
   loading: boolean
   onSwitch: (name: string) => Promise<void>
   onCreate: (name: string) => Promise<void>
+  onDelete: (name: string) => Promise<void>
 }
 
 export function BranchSelector({
@@ -16,7 +17,8 @@ export function BranchSelector({
   branches,
   loading,
   onSwitch,
-  onCreate
+  onCreate,
+  onDelete
 }: Props): JSX.Element {
   const t = useTerms()
   const [open, setOpen] = useState(false)
@@ -60,6 +62,17 @@ export function BranchSelector({
     }
   }
 
+  const handleDelete = async (name: string): Promise<void> => {
+    if (name === currentBranch || busy) return
+    if (!window.confirm(t.deleteBranchConfirm(name))) return
+    setBusy(true)
+    try {
+      await onDelete(name)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div className={styles.wrapper} ref={wrapperRef}>
       <button
@@ -82,15 +95,29 @@ export function BranchSelector({
               <div className={styles.emptyBranches}>No branches found</div>
             ) : (
               branches.map((b) => (
-                <button
+                <div
                   key={b.name}
-                  className={`${styles.branchItem} ${b.current ? styles.current : ''}`}
-                  onClick={() => handleSwitch(b.name)}
-                  disabled={busy}
+                  className={`${styles.branchRow} ${b.current ? styles.current : ''}`}
                 >
-                  <span className={styles.check}>{b.current ? '✓' : ''}</span>
-                  <span className={styles.branchName}>{b.name}</span>
-                </button>
+                  <button
+                    className={styles.branchItem}
+                    onClick={() => handleSwitch(b.name)}
+                    disabled={busy}
+                  >
+                    <span className={styles.check}>{b.current ? '✓' : ''}</span>
+                    <span className={styles.branchName}>{b.name}</span>
+                  </button>
+                  {!b.current && (
+                    <button
+                      className={styles.deleteBtn}
+                      onClick={() => void handleDelete(b.name)}
+                      disabled={busy}
+                      title={t.deleteBranchBtn}
+                    >
+                      {t.deleteBranchBtn}
+                    </button>
+                  )}
+                </div>
               ))
             )}
           </div>

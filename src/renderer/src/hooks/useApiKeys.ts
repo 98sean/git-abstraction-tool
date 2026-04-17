@@ -1,44 +1,57 @@
-import { useState, useCallback } from 'react'
-
-const STORAGE_KEY_OPENAI = 'gat_apikey_openai'
-const STORAGE_KEY_ANTHROPIC = 'gat_apikey_anthropic'
+import { useCallback, useEffect, useState } from 'react'
+import { invokeDb } from '../ipc'
 
 export interface ApiKeys {
-  openai: string | null
-  anthropic: string | null
+  openai: boolean
+  anthropic: boolean
 }
+
+type AIProvider = 'openai' | 'anthropic'
 
 export function useApiKeys(): {
   keys: ApiKeys
-  setOpenAIKey: (key: string) => void
-  setAnthropicKey: (key: string) => void
-  clearOpenAIKey: () => void
-  clearAnthropicKey: () => void
+  loading: boolean
+  setOpenAIKey: (key: string) => Promise<void>
+  setAnthropicKey: (key: string) => Promise<void>
+  clearOpenAIKey: () => Promise<void>
+  clearAnthropicKey: () => Promise<void>
+  refresh: () => Promise<void>
 } {
-  const [keys, setKeys] = useState<ApiKeys>(() => ({
-    openai: localStorage.getItem(STORAGE_KEY_OPENAI),
-    anthropic: localStorage.getItem(STORAGE_KEY_ANTHROPIC)
-  }))
+  const [keys, setKeys] = useState<ApiKeys>({ openai: false, anthropic: false })
+  const [loading, setLoading] = useState(true)
 
-  const setOpenAIKey = useCallback((key: string) => {
-    localStorage.setItem(STORAGE_KEY_OPENAI, key)
-    setKeys((prev) => ({ ...prev, openai: key }))
+  const refresh = useCallback(async (): Promise<void> => {
+    const result = await invokeDb<ApiKeys>('ai:keys:status')
+    setKeys(result)
   }, [])
 
-  const setAnthropicKey = useCallback((key: string) => {
-    localStorage.setItem(STORAGE_KEY_ANTHROPIC, key)
-    setKeys((prev) => ({ ...prev, anthropic: key }))
-  }, [])
+  useEffect(() => {
+    refresh().finally(() => setLoading(false))
+  }, [refresh])
 
-  const clearOpenAIKey = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY_OPENAI)
-    setKeys((prev) => ({ ...prev, openai: null }))
-  }, [])
+  const setKey = useCallback(
+    async (provider: AIProvider, key: string): Promise<void> => {
+      await invokeDb('ai:key:set', provider, key)
+      await refresh()
+    },
+    [refresh]
+  )
 
-  const clearAnthropicKey = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY_ANTHROPIC)
-    setKeys((prev) => ({ ...prev, anthropic: null }))
-  }, [])
+  const clearKey = useCallback(
+    async (provider: AIProvider): Promise<void> => {
+      await invokeDb('ai:key:clear', provider)
+      await refresh()
+    },
+    [refresh]
+  )
 
-  return { keys, setOpenAIKey, setAnthropicKey, clearOpenAIKey, clearAnthropicKey }
+  return {
+    keys,
+    loading,
+    refresh,
+    setOpenAIKey: (key) => setKey('openai', key),
+    setAnthropicKey: (key) => setKey('anthropic', key),
+    clearOpenAIKey: () => clearKey('openai'),
+    clearAnthropicKey: () => clearKey('anthropic')
+  }
 }
