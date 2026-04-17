@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { GitError, GitStatus, PushToCloudOptions } from '../../types'
 import { DeviceFlowState } from '../../hooks/useAuth'
 import { useTerms } from '../../hooks/useTerms'
+import { GitError, GitStatus, NaturalUndoSuggestion, PushToCloudOptions } from '../../types'
 import { ConnectGitHub } from '../ConnectGitHub/ConnectGitHub'
 import { Spinner } from '../shared/Spinner'
 import styles from './ActionPanel.module.css'
@@ -18,6 +18,11 @@ interface Props {
   aiConnectionReady?: boolean
   forceShowConnect?: boolean
   deviceFlow: DeviceFlowState | null
+  naturalUndoEnabled?: boolean
+  naturalUndoSuggestion?: NaturalUndoSuggestion | null
+  naturalUndoLoading?: boolean
+  naturalUndoApplying?: boolean
+  naturalUndoError?: string | null
   onCommit: (message: string) => void
   onPush: (options?: PushToCloudOptions) => void
   onPull: () => void
@@ -29,6 +34,8 @@ interface Props {
   onStartDeviceFlow: () => Promise<void>
   onCancelDeviceFlow: () => Promise<void>
   onGenerateAutoMessage?: () => Promise<string | null>
+  onSuggestNaturalUndo?: (query: string) => Promise<void>
+  onApplyNaturalUndo?: () => Promise<void>
 }
 
 export function ActionPanel({
@@ -43,6 +50,11 @@ export function ActionPanel({
   aiConnectionReady = false,
   forceShowConnect = false,
   deviceFlow,
+  naturalUndoEnabled = false,
+  naturalUndoSuggestion = null,
+  naturalUndoLoading = false,
+  naturalUndoApplying = false,
+  naturalUndoError = null,
   onCommit,
   onPush,
   onPull,
@@ -53,14 +65,17 @@ export function ActionPanel({
   onOpenDevicePage,
   onStartDeviceFlow,
   onCancelDeviceFlow,
-  onGenerateAutoMessage
+  onGenerateAutoMessage,
+  onSuggestNaturalUndo,
+  onApplyNaturalUndo
 }: Props): JSX.Element {
   const t = useTerms()
   const [message, setMessage] = useState(messageTemplate)
   const [helperText, setHelperText] = useState<string | null>(null)
   const [draftingAiMessage, setDraftingAiMessage] = useState(false)
+  const [undoQuery, setUndoQuery] = useState('')
 
-  const stagedCount = status?.files.filter((f) => f.staged).length ?? 0
+  const stagedCount = status?.files.filter((file) => file.staged).length ?? 0
   const shouldGenerateAiDraft =
     aiAutoSaveEnabled &&
     aiConnectionReady &&
@@ -73,6 +88,21 @@ export function ActionPanel({
     !loading &&
     !draftingAiMessage &&
     (message.trim().length > 0 || shouldGenerateAiDraft)
+
+  const canSuggestUndo =
+    naturalUndoEnabled &&
+    undoQuery.trim().length > 0 &&
+    !naturalUndoLoading &&
+    !naturalUndoApplying &&
+    !loading &&
+    Boolean(onSuggestNaturalUndo)
+
+  const canApplyUndo =
+    Boolean(naturalUndoSuggestion) &&
+    !naturalUndoLoading &&
+    !naturalUndoApplying &&
+    !loading &&
+    Boolean(onApplyNaturalUndo)
 
   const handleCommit = async (): Promise<void> => {
     if (!canCommit) return
@@ -110,9 +140,13 @@ export function ActionPanel({
     onPush()
   }
 
+  const handleSuggestUndo = async (): Promise<void> => {
+    if (!canSuggestUndo || !onSuggestNaturalUndo) return
+    await onSuggestNaturalUndo(undoQuery.trim())
+  }
+
   return (
     <div className={styles.panel}>
-      {/* Show GitHub connect prompt when auth fails, no token is stored, or sidebar button was clicked */}
       {(error?.code === 'AUTH_FAILED' || tokenExists === false || forceShowConnect) && (
         <ConnectGitHub
           onConnect={onConnectGitHub}
@@ -137,14 +171,14 @@ export function ActionPanel({
         <textarea
           className={styles.messageInput}
           value={message}
-          onChange={(e) => {
-            setMessage(e.target.value)
+          onChange={(event) => {
+            setMessage(event.target.value)
             setHelperText(null)
           }}
           placeholder={t.commitPlaceholder(stagedCount > 0)}
           rows={1}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
               void handleCommit()
             }
           }}
@@ -154,30 +188,24 @@ export function ActionPanel({
       {helperText && <div className={styles.helperText}>{helperText}</div>}
 
       <div className={styles.actions}>
-        <button className={styles.saveBtn} onClick={() => { void handleCommit() }} disabled={!canCommit}>
+        <button
+          className={styles.saveBtn}
+          onClick={() => {
+            void handleCommit()
+          }}
+          disabled={!canCommit}
+        >
           {loading || draftingAiMessage ? <Spinner size={14} /> : null}
           {draftingAiMessage ? 'Drafting…' : loading ? t.committingBtn : t.commitBtn(stagedCount)}
         </button>
 
-        <button
-          className={styles.syncBtn}
-          onClick={onPull}
-          disabled={loading || !status}
-          title={t.pullTitle}
-        >
+        <button className={styles.syncBtn} onClick={onPull} disabled={loading || !status} title={t.pullTitle}>
           {t.pullBtn}
         </button>
 
-        <button
-          className={styles.syncBtn}
-          onClick={handlePush}
-          disabled={loading || !status}
-          title={t.pushTitle}
-        >
+        <button className={styles.syncBtn} onClick={handlePush} disabled={loading || !status} title={t.pushTitle}>
           {t.pushBtn}
-          {(status?.ahead ?? 0) > 0 && (
-            <span className={styles.aheadBehind}>{status!.ahead}</span>
-          )}
+          {(status?.ahead ?? 0) > 0 && <span className={styles.aheadBehind}>{status!.ahead}</span>}
         </button>
       </div>
 
@@ -189,17 +217,93 @@ export function ActionPanel({
               {cloudStatusLabel}
             </span>
           )}
-          {status.ahead > 0 && (
-            <span className={styles.syncIndicator}>{t.toPush(status.ahead)}</span>
-          )}
-          {status.behind > 0 && (
-            <span className={styles.syncIndicator}>{t.toPull(status.behind)}</span>
-          )}
-          {status.has_conflicts && (
-            <span style={{ color: 'var(--status-conflicted)' }}>{t.conflictMsg}</span>
-          )}
+          {status.ahead > 0 && <span className={styles.syncIndicator}>{t.toPush(status.ahead)}</span>}
+          {status.behind > 0 && <span className={styles.syncIndicator}>{t.toPull(status.behind)}</span>}
+          {status.has_conflicts && <span style={{ color: 'var(--status-conflicted)' }}>{t.conflictMsg}</span>}
         </div>
       )}
+
+      <div className={styles.undoPanel}>
+        <div className={styles.undoHeader}>
+          <span className={styles.undoTitle}>Natural Language Undo</span>
+          {!naturalUndoEnabled && <span className={styles.undoHint}>OpenAI connection required</span>}
+        </div>
+
+        <div className={styles.undoInputRow}>
+          <input
+            className={styles.undoInput}
+            value={undoQuery}
+            onChange={(event) => setUndoQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                void handleSuggestUndo()
+              }
+            }}
+            placeholder='Example: "Restore to yesterday afternoon before the red button removal"'
+            disabled={!naturalUndoEnabled || naturalUndoApplying}
+          />
+          <button
+            className={styles.undoSuggestBtn}
+            onClick={() => {
+              void handleSuggestUndo()
+            }}
+            disabled={!canSuggestUndo}
+          >
+            {naturalUndoLoading ? 'Analyzing...' : 'Find Point'}
+          </button>
+        </div>
+
+        {naturalUndoError && <div className={styles.undoError}>{naturalUndoError}</div>}
+
+        {naturalUndoSuggestion && (
+          <div className={styles.undoSuggestion}>
+            <div className={styles.undoProposal}>{naturalUndoSuggestion.proposal_text}</div>
+            <div className={styles.undoSuggestionTitle}>
+              <strong>{naturalUndoSuggestion.short_hash}</strong>
+              <span>{naturalUndoSuggestion.commit_message}</span>
+            </div>
+            <div className={styles.undoMeta}>
+              <span>{new Date(naturalUndoSuggestion.commit_date).toLocaleString()}</span>
+              <span>Confidence {(naturalUndoSuggestion.confidence * 100).toFixed(0)}%</span>
+            </div>
+            <div className={styles.undoReason}>{naturalUndoSuggestion.reason}</div>
+
+            <div className={styles.undoPreview}>
+              <span>Restore {naturalUndoSuggestion.total_restore_files} files</span>
+              <span>Remove {naturalUndoSuggestion.total_remove_files} files</span>
+            </div>
+
+            {naturalUndoSuggestion.restore_files_preview.length > 0 && (
+              <div className={styles.undoFileList}>
+                {naturalUndoSuggestion.restore_files_preview.map((filePath) => (
+                  <div key={`restore:${filePath}`}>Restore: {filePath}</div>
+                ))}
+              </div>
+            )}
+
+            {naturalUndoSuggestion.remove_files_preview.length > 0 && (
+              <div className={styles.undoFileList}>
+                {naturalUndoSuggestion.remove_files_preview.map((filePath) => (
+                  <div key={`remove:${filePath}`}>Remove: {filePath}</div>
+                ))}
+              </div>
+            )}
+
+            <button
+              className={styles.undoApplyBtn}
+              onClick={() => {
+                if (onApplyNaturalUndo) {
+                  void onApplyNaturalUndo()
+                }
+              }}
+              disabled={!canApplyUndo}
+            >
+              {naturalUndoApplying ? 'Restoring...' : 'Yes, Restore This Point'}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

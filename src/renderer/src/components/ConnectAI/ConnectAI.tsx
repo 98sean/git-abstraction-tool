@@ -48,7 +48,7 @@ export function ConnectAI({
         <div>
           <h2 className={styles.title}>Connect AI save suggestions</h2>
           <p className={styles.description}>
-            Use your own OpenAI or Anthropic API key for optional save message drafts.
+            Use your own OpenAI or Anthropic API key for optional save drafts and project analysis.
           </p>
         </div>
         {isConnected && (

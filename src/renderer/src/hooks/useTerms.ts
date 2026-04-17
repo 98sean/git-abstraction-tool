@@ -36,9 +36,12 @@ export interface AppTerms {
   // Branches
   branchLabel: string
   newBranchBtn: string
+  deleteBranchBtn: string
+  deleteBranchConfirm: (name: string) => string
   branchPlaceholder: string
   switchedBranchToast: (name: string) => string
   createdBranchToast: (name: string) => string
+  deletedBranchToast: (name: string) => string
 
   // Git setup (not-a-repo / git not installed)
   initRepoBtn: string
@@ -85,9 +88,12 @@ const PRO: AppTerms = {
 
   branchLabel: 'Branch',
   newBranchBtn: '+ New Branch',
+  deleteBranchBtn: 'Delete',
+  deleteBranchConfirm: (name) => `Delete branch "${name}"?`,
   branchPlaceholder: 'branch-name',
   switchedBranchToast: (name) => `Switched to branch "${name}"`,
   createdBranchToast: (name) => `Created and switched to "${name}"`,
+  deletedBranchToast: (name) => `Deleted branch "${name}"`,
 
   initRepoBtn: 'Initialize Repository',
   notARepoTitle: 'Not a Git repository',
@@ -132,9 +138,12 @@ const NEWBIE: AppTerms = {
 
   branchLabel: 'Version',
   newBranchBtn: '+ New Version',
+  deleteBranchBtn: 'Delete',
+  deleteBranchConfirm: (name) => `Delete version "${name}"?`,
   branchPlaceholder: 'version-name',
   switchedBranchToast: (name) => `Switched to version "${name}"`,
   createdBranchToast: (name) => `Created and switched to "${name}"`,
+  deletedBranchToast: (name) => `Deleted version "${name}"`,
 
   initRepoBtn: 'Set up this Project',
   notARepoTitle: 'Project not set up yet',

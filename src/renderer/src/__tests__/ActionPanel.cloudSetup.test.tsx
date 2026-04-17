@@ -50,6 +50,7 @@ describe('ActionPanel cloud setup', () => {
         onClearError={vi.fn()}
         onConnectGitHub={vi.fn()}
         onOpenGitHubDocs={vi.fn()}
+        onOpenDevicePage={vi.fn()}
         onStartDeviceFlow={vi.fn()}
         onCancelDeviceFlow={vi.fn()}
         onOpenCloudSetup={onOpenCloudSetup}

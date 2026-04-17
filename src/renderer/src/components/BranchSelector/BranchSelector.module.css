@@ -71,6 +71,13 @@
   color: var(--text-muted);
 }
 
+.branchRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 6px;
+}
+
 .branchItem {
   display: flex;
   align-items: center;
@@ -86,9 +93,30 @@
   transition: background var(--transition);
   cursor: pointer;
 }
-.branchItem:hover:not(:disabled) { background: var(--bg-hover); }
-.branchItem.current { color: var(--accent); font-weight: 600; }
+.branchRow:hover .branchItem { background: var(--bg-hover); }
+.branchRow.current .branchItem { color: var(--accent); font-weight: 600; }
 .branchItem:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.deleteBtn {
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--error);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.deleteBtn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--error) 40%, transparent);
+  background: color-mix(in srgb, var(--error) 8%, transparent);
+}
+
+.deleteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .check {
   width: 14px;

@@ -19,29 +19,28 @@ vi.mock('../hooks/useTerms', () => ({
   })
 }))
 
-describe('ActionPanel AI save flow', () => {
-  it('drafts an AI message on the first save click when enabled', async () => {
-    const onGenerateAutoMessage = vi.fn().mockResolvedValue('Updated the layout and fixed spacing.')
+describe('ActionPanel natural undo flow', () => {
+  it('submits a natural-language undo query when analysis is enabled', () => {
+    const onSuggestNaturalUndo = vi.fn().mockResolvedValue(undefined)
 
     render(
       <ActionPanel
         status={{
-          current_branch: 'main',
-          files: [{ path: 'app.tsx', status: 'modified', staged: true }],
-          tracked_files: ['app.tsx'],
+          current_branch: 'feature/demo',
+          files: [],
+          tracked_files: [],
           ahead: 0,
           behind: 0,
           has_conflicts: false,
-          is_clean: false
+          is_clean: true
         }}
         loading={false}
         error={null}
         messageTemplate=""
         tokenExists={true}
-        deviceFlow={null}
         cloudUploadReady={true}
-        aiAutoSaveEnabled={true}
-        aiConnectionReady={true}
+        deviceFlow={null}
+        naturalUndoEnabled={true}
         onCommit={vi.fn()}
         onPush={vi.fn()}
         onPull={vi.fn()}
@@ -52,11 +51,15 @@ describe('ActionPanel AI save flow', () => {
         onOpenDevicePage={vi.fn()}
         onStartDeviceFlow={vi.fn()}
         onCancelDeviceFlow={vi.fn()}
-        onGenerateAutoMessage={onGenerateAutoMessage}
+        onSuggestNaturalUndo={onSuggestNaturalUndo}
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: /Save Progress/i }))
-    expect(onGenerateAutoMessage).toHaveBeenCalled()
+    fireEvent.change(screen.getByPlaceholderText(/restore to yesterday afternoon/i), {
+      target: { value: 'Restore to before the pricing copy change' }
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Find Point/i }))
+
+    expect(onSuggestNaturalUndo).toHaveBeenCalledWith('Restore to before the pricing copy change')
   })
 })

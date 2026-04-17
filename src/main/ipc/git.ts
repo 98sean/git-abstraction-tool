@@ -175,6 +175,16 @@ export function registerGitHandlers(): void {
     run(() => getGitService(project_id).switchBranch(name))
   )
 
+  ipcMain.handle('git:branch:delete', (_event, project_id: string, name: string) =>
+    run(() => getGitService(project_id).deleteBranch(name))
+  )
+
+  ipcMain.handle('git:untracked:delete', async (_event, project_id: string, paths: string[]) => {
+    const result = await run(() => getGitService(project_id).deleteUntracked(paths))
+    invalidateCache(project_id)
+    return result
+  })
+
   ipcMain.handle('git:revert', (_event, project_id: string, path: string) =>
     run(() => getGitService(project_id).revertFile(path))
   )
@@ -183,6 +193,27 @@ export function registerGitHandlers(): void {
     'git:log',
     (_event, project_id: string, limit?: number) =>
       run(() => getGitService(project_id).getLog(limit))
+  )
+
+  ipcMain.handle(
+    'git:timeline',
+    (_event, project_id: string, limit?: number) =>
+      run(() => getGitService(project_id).getTimeline(limit))
+  )
+
+  ipcMain.handle(
+    'git:restore:preview',
+    (_event, project_id: string, commitHash: string) =>
+      run(() => getGitService(project_id).getRestorePreview(commitHash))
+  )
+
+  ipcMain.handle(
+    'git:restore:apply',
+    async (_event, project_id: string, commitHash: string) => {
+      const result = await run(() => getGitService(project_id).restoreToCommit(commitHash))
+      invalidateCache(project_id)
+      return result
+    }
   )
 
   // Clean up service instance when a project is removed
