@@ -33,6 +33,18 @@ export interface AppTerms {
   toPull: (n: number) => string
   conflictMsg: string
 
+  // Branches
+  branchLabel: string
+  newBranchBtn: string
+  branchPlaceholder: string
+  switchedBranchToast: (name: string) => string
+  createdBranchToast: (name: string) => string
+
+  // Git setup (not-a-repo / git not installed)
+  initRepoBtn: string
+  notARepoTitle: string
+  notARepoDesc: string
+
   // Toasts (used in App.tsx)
   committedToast: string
   pushedToast: string
@@ -71,6 +83,16 @@ const PRO: AppTerms = {
   toPull: (n) => `↓ ${n} to pull`,
   conflictMsg: '⚠ Merge conflict detected',
 
+  branchLabel: 'Branch',
+  newBranchBtn: '+ New Branch',
+  branchPlaceholder: 'branch-name',
+  switchedBranchToast: (name) => `Switched to branch "${name}"`,
+  createdBranchToast: (name) => `Created and switched to "${name}"`,
+
+  initRepoBtn: 'Initialize Repository',
+  notARepoTitle: 'Not a Git repository',
+  notARepoDesc: 'This folder has not been initialized as a Git repository yet.',
+
   committedToast: 'Committed successfully!',
   pushedToast: 'Pushed successfully',
   pulledToast: 'Pulled successfully',
@@ -107,6 +129,16 @@ const NEWBIE: AppTerms = {
   toPush: (n) => `↑ ${n} to upload`,
   toPull: (n) => `↓ ${n} to download`,
   conflictMsg: '⚠ Version mismatch detected',
+
+  branchLabel: 'Version',
+  newBranchBtn: '+ New Version',
+  branchPlaceholder: 'version-name',
+  switchedBranchToast: (name) => `Switched to version "${name}"`,
+  createdBranchToast: (name) => `Created and switched to "${name}"`,
+
+  initRepoBtn: 'Set up this Project',
+  notARepoTitle: 'Project not set up yet',
+  notARepoDesc: 'This folder hasn\'t been set up for saving and tracking changes yet.',
 
   committedToast: 'Saved successfully!',
   pushedToast: 'Uploaded to cloud',

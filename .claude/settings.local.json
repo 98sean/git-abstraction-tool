@@ -6,7 +6,8 @@
       "Bash(npm remove:*)",
       "Bash(npm install:*)",
       "Bash(npm pkg:*)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(grep *)"
     ]
   }
 }

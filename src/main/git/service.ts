@@ -163,6 +163,14 @@ export class GitService {
     }
   }
 
+  async init(): Promise<void> {
+    try {
+      await this.git.init()
+    } catch (err) {
+      throw mapGitError(err)
+    }
+  }
+
   async getLog(limit = 50): Promise<CommitInfo[]> {
     try {
       const log = await this.git.log({ maxCount: limit })

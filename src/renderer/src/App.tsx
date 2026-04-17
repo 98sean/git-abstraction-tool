@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AppProvider } from './context/AppContext'
-import { invokeDb } from './ipc'
+import { invokeDb, invokeGit } from './ipc'
 import { useAuth } from './hooks/useAuth'
 import { useApiKeys } from './hooks/useApiKeys'
+import { useBranches } from './hooks/useBranches'
 import { useTerms } from './hooks/useTerms'
 import { useFileStatus } from './hooks/useFileStatus'
 import { useGitActions } from './hooks/useGitActions'
@@ -11,7 +12,10 @@ import { useProjects } from './hooks/useProjects'
 import { useToast } from './hooks/useToast'
 import { ActionPanel } from './components/ActionPanel/ActionPanel'
 import { ApiKeySettings } from './components/ApiKeySettings/ApiKeySettings'
+import { BranchSelector } from './components/BranchSelector/BranchSelector'
 import { FileManager } from './components/FileManager/FileManager'
+import { GitNotInstalled } from './components/GitNotInstalled/GitNotInstalled'
+import { NotARepo } from './components/NotARepo/NotARepo'
 import { Sidebar, pickFolder } from './components/Sidebar/Sidebar'
 import { ConnectGitHub, GitHubStatus } from './components/ConnectGitHub/ConnectGitHub'
 import { ToastContainer } from './components/shared/Toast'
@@ -28,8 +32,21 @@ function Shell(): JSX.Element {
   const [showGitHubPanel, setShowGitHubPanel] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
 
+  // Git installation check
+  const [gitInstalled, setGitInstalled] = useState<boolean | null>(null)
+  const checkGitInstall = (): void => {
+    setGitInstalled(null)
+    invokeDb<{ installed: boolean }>('git:install:check').then(({ installed }) => {
+      setGitInstalled(installed)
+    })
+  }
+  useEffect(checkGitInstall, [])
+
   const { status, loading: statusLoading, error: statusError, fetchStatus, stage, unstage, stageAll, unstageAll, revertFile } =
     useFileStatus(activeProjectId)
+
+  const { branches, loading: branchesLoading, switchBranch, createBranch, fetchBranches } =
+    useBranches(activeProjectId)
 
   const { loading: actionLoading, error: actionError, commit, push, pull, clearError } =
     useGitActions(activeProjectId, () => {
@@ -79,6 +96,26 @@ function Shell(): JSX.Element {
     invokeDb('shell:openExternal', url).catch(console.error)
   }
 
+  const handleInitRepo = async (): Promise<void> => {
+    if (!activeProjectId) return
+    await invokeGit('git:init', activeProjectId)
+    await fetchStatus()
+    await fetchBranches()
+    addToast('Repository initialized', 'success')
+  }
+
+  const handleSwitchBranch = async (name: string): Promise<void> => {
+    await switchBranch(name)
+    await fetchStatus()
+    addToast(t.switchedBranchToast(name), 'success')
+  }
+
+  const handleCreateBranch = async (name: string): Promise<void> => {
+    await createBranch(name)
+    await fetchStatus()
+    addToast(t.createdBranchToast(name), 'success')
+  }
+
   const projectStates = Object.fromEntries(
     projects.map((p) => {
       if (p.project_id === activeProjectId && status) {
@@ -88,110 +125,129 @@ function Shell(): JSX.Element {
     })
   ) as Record<string, 'changed' | 'clean' | 'unknown'>
 
+  const isNotARepo = statusError?.code === 'NOT_A_REPO'
+
   return (
-    <div className={styles.app}>
-      <Sidebar
-        projects={projects}
-        activeProjectId={activeProjectId}
-        theme={preferences.theme}
-        mode={preferences.mode}
-        onSelectProject={setActiveProject}
-        onRemoveProject={handleRemoveProject}
-        onAddProject={handleAddProject}
-        onToggleTheme={handleToggleTheme}
-        onToggleMode={handleToggleMode}
-        onOpenSettings={() => setShowSettings(true)}
-        projectStates={projectStates}
-        githubSlot={
-          <GitHubStatus
-            connected={tokenExists === true}
-            onConnect={() => setShowGitHubPanel(true)}
-            onDisconnect={clearToken}
-          />
-        }
-      />
-
-      <div className={styles.main}>
-        {activeProject ? (
-          <>
-            <header className={styles.header}>
-              <span className={styles.projectTitle}>{activeProject.friendly_name}</span>
-              {status && (
-                <span className={styles.branch}>
-                  🌿 {status.current_branch}
-                </span>
-              )}
-              {status && (status.ahead > 0 || status.behind > 0) && (
-                <span className={styles.aheadBehind}>
-                  {status.ahead > 0 && <span>↑ {status.ahead}</span>}
-                  {status.behind > 0 && <span>↓ {status.behind}</span>}
-                </span>
-              )}
-            </header>
-
-            <FileManager
-              status={status}
-              loading={statusLoading}
-              error={statusError}
-              onStage={stage}
-              onUnstage={unstage}
-              onStageAll={stageAll}
-              onUnstageAll={unstageAll}
-              onRevert={revertFile}
-            />
-
-            <ActionPanel
-              status={status}
-              loading={actionLoading}
-              error={actionError}
-              messageTemplate={preferences.default_save_message_template}
-              tokenExists={tokenExists}
-              forceShowConnect={showGitHubPanel}
-              deviceFlow={deviceFlow}
-              onCommit={commit}
-              onPush={async () => { await push(); addToast(t.pushedToast, 'success') }}
-              onPull={async () => { await pull(); fetchStatus(); addToast(t.pulledToast, 'success') }}
-              onClearError={clearError}
-              onConnectGitHub={handleConnectGitHub}
-              onOpenGitHubDocs={handleOpenGitHubDocs}
-              onOpenDevicePage={handleOpenDevicePage}
-              onStartDeviceFlow={startDeviceFlow}
-              onCancelDeviceFlow={cancelDeviceFlow}
-            />
-          </>
-        ) : showGitHubPanel && tokenExists !== true ? (
-          <div className={styles.emptyMain}>
-            <ConnectGitHub
-              onConnect={handleConnectGitHub}
-              onOpenGitHubDocs={handleOpenGitHubDocs}
-              onOpenDevicePage={handleOpenDevicePage}
-              deviceFlow={deviceFlow}
-              onStartDeviceFlow={startDeviceFlow}
-              onCancelDeviceFlow={cancelDeviceFlow}
-            />
-          </div>
-        ) : (
-          <div className={styles.emptyMain}>
-            <div className={styles.emptyIcon}>📁</div>
-            <h2>Welcome</h2>
-            <p>{preferences.mode === 'newbie' ? 'Link a project folder from the sidebar to get started.' : 'Add a repository from the sidebar to get started.'}</p>
-          </div>
-        )}
-      </div>
-
-      {showSettings && (
-        <ApiKeySettings
-          keys={apiKeys}
-          onSaveOpenAI={setOpenAIKey}
-          onSaveAnthropic={setAnthropicKey}
-          onClearOpenAI={clearOpenAIKey}
-          onClearAnthropic={clearAnthropicKey}
-          onClose={() => setShowSettings(false)}
-        />
+    <>
+      {gitInstalled === false && (
+        <GitNotInstalled onRetry={checkGitInstall} />
       )}
 
-      <ToastContainer />
-    </div>
+      <div className={styles.app}>
+        <Sidebar
+          projects={projects}
+          activeProjectId={activeProjectId}
+          theme={preferences.theme}
+          mode={preferences.mode}
+          onSelectProject={setActiveProject}
+          onRemoveProject={handleRemoveProject}
+          onAddProject={handleAddProject}
+          onToggleTheme={handleToggleTheme}
+          onToggleMode={handleToggleMode}
+          onOpenSettings={() => setShowSettings(true)}
+          projectStates={projectStates}
+          githubSlot={
+            <GitHubStatus
+              connected={tokenExists === true}
+              onConnect={() => setShowGitHubPanel(true)}
+              onDisconnect={clearToken}
+            />
+          }
+        />
+
+        <div className={styles.main}>
+          {activeProject ? (
+            <>
+              <header className={styles.header}>
+                <span className={styles.projectTitle}>{activeProject.friendly_name}</span>
+                {status && (
+                  <BranchSelector
+                    currentBranch={status.current_branch}
+                    branches={branches}
+                    loading={branchesLoading}
+                    onSwitch={handleSwitchBranch}
+                    onCreate={handleCreateBranch}
+                  />
+                )}
+                {status && (status.ahead > 0 || status.behind > 0) && (
+                  <span className={styles.aheadBehind}>
+                    {status.ahead > 0 && <span>↑ {status.ahead}</span>}
+                    {status.behind > 0 && <span>↓ {status.behind}</span>}
+                  </span>
+                )}
+              </header>
+
+              {isNotARepo ? (
+                <NotARepo
+                  projectPath={activeProject.local_path}
+                  onInit={handleInitRepo}
+                />
+              ) : (
+                <FileManager
+                  status={status}
+                  loading={statusLoading}
+                  error={statusError}
+                  onStage={stage}
+                  onUnstage={unstage}
+                  onStageAll={stageAll}
+                  onUnstageAll={unstageAll}
+                  onRevert={revertFile}
+                />
+              )}
+
+              <ActionPanel
+                status={status}
+                loading={actionLoading}
+                error={isNotARepo ? null : actionError}
+                messageTemplate={preferences.default_save_message_template}
+                tokenExists={tokenExists}
+                forceShowConnect={showGitHubPanel}
+                deviceFlow={deviceFlow}
+                onCommit={commit}
+                onPush={async () => { await push(); addToast(t.pushedToast, 'success') }}
+                onPull={async () => { await pull(); fetchStatus(); addToast(t.pulledToast, 'success') }}
+                onClearError={clearError}
+                onConnectGitHub={handleConnectGitHub}
+                onOpenGitHubDocs={handleOpenGitHubDocs}
+                onOpenDevicePage={handleOpenDevicePage}
+                onStartDeviceFlow={startDeviceFlow}
+                onCancelDeviceFlow={cancelDeviceFlow}
+              />
+            </>
+          ) : showGitHubPanel && tokenExists !== true ? (
+            <div className={styles.emptyMain}>
+              <ConnectGitHub
+                onConnect={handleConnectGitHub}
+                onOpenGitHubDocs={handleOpenGitHubDocs}
+                onOpenDevicePage={handleOpenDevicePage}
+                deviceFlow={deviceFlow}
+                onStartDeviceFlow={startDeviceFlow}
+                onCancelDeviceFlow={cancelDeviceFlow}
+              />
+            </div>
+          ) : (
+            <div className={styles.emptyMain}>
+              <div className={styles.emptyIcon}>📁</div>
+              <h2>Welcome</h2>
+              <p>{preferences.mode === 'newbie' ? 'Link a project folder from the sidebar to get started.' : 'Add a repository from the sidebar to get started.'}</p>
+            </div>
+          )}
+        </div>
+
+        {showSettings && (
+          <ApiKeySettings
+            keys={apiKeys}
+            onSaveOpenAI={setOpenAIKey}
+            onSaveAnthropic={setAnthropicKey}
+            onClearOpenAI={clearOpenAIKey}
+            onClearAnthropic={clearAnthropicKey}
+            onClose={() => setShowSettings(false)}
+          />
+        )}
+
+        <ToastContainer />
+      </div>
+    </>
   )
 }
 
