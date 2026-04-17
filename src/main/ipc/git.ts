@@ -86,6 +86,10 @@ export function registerGitHandlers(): void {
     return run(() => getGitService(project_id).pull(token))
   })
 
+  ipcMain.handle('git:files:tracked', (_event, project_id: string) =>
+    run(() => getGitService(project_id).listTrackedFiles())
+  )
+
   ipcMain.handle('git:branches', (_event, project_id: string) =>
     run(() => getGitService(project_id).getBranches())
   )

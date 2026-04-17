@@ -163,6 +163,15 @@ export class GitService {
     }
   }
 
+  async listTrackedFiles(): Promise<string[]> {
+    try {
+      const raw = await this.git.raw(['ls-files'])
+      return raw.trim().split('\n').filter(Boolean)
+    } catch (err) {
+      throw mapGitError(err)
+    }
+  }
+
   async init(): Promise<void> {
     try {
       await this.git.init()

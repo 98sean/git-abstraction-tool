@@ -5,6 +5,7 @@ import { useAuth } from './hooks/useAuth'
 import { useApiKeys } from './hooks/useApiKeys'
 import { useBranches } from './hooks/useBranches'
 import { useTerms } from './hooks/useTerms'
+import { useTrackedFiles } from './hooks/useTrackedFiles'
 import { useFileStatus } from './hooks/useFileStatus'
 import { useGitActions } from './hooks/useGitActions'
 import { usePreferences } from './hooks/usePreferences'
@@ -48,9 +49,12 @@ function Shell(): JSX.Element {
   const { branches, loading: branchesLoading, switchBranch, createBranch, fetchBranches } =
     useBranches(activeProjectId)
 
+  const { trackedPaths, fetchTracked } = useTrackedFiles(activeProjectId)
+
   const { loading: actionLoading, error: actionError, commit, push, pull, clearError } =
     useGitActions(activeProjectId, () => {
       fetchStatus()
+      fetchTracked()
       addToast(t.committedToast, 'success')
     })
 
@@ -106,7 +110,7 @@ function Shell(): JSX.Element {
 
   const handleSwitchBranch = async (name: string): Promise<void> => {
     await switchBranch(name)
-    await fetchStatus()
+    await Promise.all([fetchStatus(), fetchTracked()])
     addToast(t.switchedBranchToast(name), 'success')
   }
 
@@ -185,6 +189,7 @@ function Shell(): JSX.Element {
               ) : (
                 <FileManager
                   status={status}
+                  trackedPaths={trackedPaths}
                   loading={statusLoading}
                   error={statusError}
                   onStage={stage}
