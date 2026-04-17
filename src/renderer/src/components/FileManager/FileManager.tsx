@@ -1,4 +1,5 @@
 import { GitError, GitStatus } from '../../types'
+import { useTerms } from '../../hooks/useTerms'
 import { Spinner } from '../shared/Spinner'
 import { FileItem } from './FileItem'
 import styles from './FileManager.module.css'
@@ -24,11 +25,13 @@ export function FileManager({
   onUnstageAll,
   onRevert
 }: Props): JSX.Element {
+  const t = useTerms()
+
   if (loading && !status) {
     return (
       <div className={styles.loadingState}>
         <Spinner />
-        <span>Checking for changes…</span>
+        <span>{t.loadingStatus}</span>
       </div>
     )
   }
@@ -50,8 +53,8 @@ export function FileManager({
     return (
       <div className={styles.emptyState}>
         <div className={styles.emptyIcon}>✅</div>
-        <div className={styles.emptyText}>Everything is saved</div>
-        <div className={styles.emptySubtext}>No unsaved changes</div>
+        <div className={styles.emptyText}>{t.cleanTitle}</div>
+        <div className={styles.emptySubtext}>{t.cleanSubtext}</div>
       </div>
     )
   }
@@ -67,17 +70,17 @@ export function FileManager({
           onClick={onStageAll}
           disabled={stagedCount === totalCount}
         >
-          Select all
+          {t.stageAll}
         </button>
         <button
           className={styles.toolbarBtn}
           onClick={onUnstageAll}
           disabled={stagedCount === 0}
         >
-          Deselect all
+          {t.unstageAll}
         </button>
         <span className={styles.fileCount}>
-          {stagedCount} / {totalCount} selected
+          {t.stagedOf(stagedCount, totalCount)}
         </span>
       </div>
 

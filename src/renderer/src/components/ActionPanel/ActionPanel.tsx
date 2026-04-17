@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { GitError, GitStatus } from '../../types'
 import { DeviceFlowState } from '../../hooks/useAuth'
+import { useTerms } from '../../hooks/useTerms'
 import { ConnectGitHub } from '../ConnectGitHub/ConnectGitHub'
 import { Spinner } from '../shared/Spinner'
 import styles from './ActionPanel.module.css'
@@ -19,6 +20,7 @@ interface Props {
   onClearError: () => void
   onConnectGitHub: (token: string) => Promise<void>
   onOpenGitHubDocs: () => void
+  onOpenDevicePage: () => void
   onStartDeviceFlow: () => Promise<void>
   onCancelDeviceFlow: () => Promise<void>
 }
@@ -37,9 +39,11 @@ export function ActionPanel({
   onClearError,
   onConnectGitHub,
   onOpenGitHubDocs,
+  onOpenDevicePage,
   onStartDeviceFlow,
   onCancelDeviceFlow
 }: Props): JSX.Element {
+  const t = useTerms()
   const [message, setMessage] = useState(messageTemplate)
 
   const stagedCount = status?.files.filter((f) => f.staged).length ?? 0
@@ -57,7 +61,8 @@ export function ActionPanel({
       {(error?.code === 'AUTH_FAILED' || tokenExists === false || forceShowConnect) && (
         <ConnectGitHub
           onConnect={onConnectGitHub}
-          onOpenGitHub={onOpenGitHubDocs}
+          onOpenGitHubDocs={onOpenGitHubDocs}
+          onOpenDevicePage={onOpenDevicePage}
           deviceFlow={deviceFlow}
           onStartDeviceFlow={onStartDeviceFlow}
           onCancelDeviceFlow={onCancelDeviceFlow}
@@ -78,7 +83,7 @@ export function ActionPanel({
           className={styles.messageInput}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder={stagedCount > 0 ? 'Describe what you saved…' : 'Select changes above to save'}
+          placeholder={t.commitPlaceholder(stagedCount > 0)}
           rows={1}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleCommit()
@@ -89,25 +94,25 @@ export function ActionPanel({
       <div className={styles.actions}>
         <button className={styles.saveBtn} onClick={handleCommit} disabled={!canCommit}>
           {loading ? <Spinner size={14} /> : null}
-          {loading ? 'Saving…' : `Save Progress${stagedCount > 0 ? ` (${stagedCount})` : ''}`}
+          {loading ? t.committingBtn : t.commitBtn(stagedCount)}
         </button>
 
         <button
           className={styles.syncBtn}
           onClick={onPull}
           disabled={loading || !status}
-          title="Get latest updates from cloud"
+          title={t.pullTitle}
         >
-          ↓ Get Updates
+          {t.pullBtn}
         </button>
 
         <button
           className={styles.syncBtn}
           onClick={onPush}
           disabled={loading || !status}
-          title="Upload your saved versions to cloud"
+          title={t.pushTitle}
         >
-          ↑ Upload to Cloud
+          {t.pushBtn}
           {(status?.ahead ?? 0) > 0 && (
             <span className={styles.aheadBehind}>{status!.ahead}</span>
           )}
@@ -116,21 +121,15 @@ export function ActionPanel({
 
       {status && (
         <div className={styles.statusBar}>
-          <span>{stagedCount} change{stagedCount !== 1 ? 's' : ''} selected</span>
+          <span>{t.filesStaged(stagedCount)}</span>
           {status.ahead > 0 && (
-            <span className={styles.syncIndicator}>
-              ↑ {status.ahead} to upload
-            </span>
+            <span className={styles.syncIndicator}>{t.toPush(status.ahead)}</span>
           )}
           {status.behind > 0 && (
-            <span className={styles.syncIndicator}>
-              ↓ {status.behind} to download
-            </span>
+            <span className={styles.syncIndicator}>{t.toPull(status.behind)}</span>
           )}
           {status.has_conflicts && (
-            <span style={{ color: 'var(--status-conflicted)' }}>
-              ⚠ Version mismatch detected
-            </span>
+            <span style={{ color: 'var(--status-conflicted)' }}>{t.conflictMsg}</span>
           )}
         </div>
       )}

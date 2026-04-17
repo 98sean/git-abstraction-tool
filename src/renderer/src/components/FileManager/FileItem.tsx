@@ -1,4 +1,5 @@
 import { FileStatus, FileStatusCode } from '../../types'
+import { useTerms } from '../../hooks/useTerms'
 import styles from './FileManager.module.css'
 
 interface Props {
@@ -17,6 +18,7 @@ const STATUS_LABELS: Record<FileStatusCode, string> = {
 }
 
 export function FileItem({ file, onToggleStage, onRevert }: Props): JSX.Element {
+  const t = useTerms()
   return (
     <div
       className={`${styles.fileRow} ${file.staged ? styles.staged : ''}`}
@@ -39,9 +41,9 @@ export function FileItem({ file, onToggleStage, onRevert }: Props): JSX.Element 
         <button
           className={styles.revertBtn}
           onClick={(e) => { e.stopPropagation(); onRevert(file.path) }}
-          title="Undo changes to this file"
+          title={t.revertTitle}
         >
-          Undo
+          {t.revertBtn}
         </button>
       )}
     </div>

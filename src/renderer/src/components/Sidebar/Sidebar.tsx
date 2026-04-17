@@ -1,16 +1,19 @@
 import React from 'react'
 import { invokeDb } from '../../ipc'
 import { Project } from '../../types'
+import { useTerms } from '../../hooks/useTerms'
 import styles from './Sidebar.module.css'
 
 interface Props {
   projects: Project[]
   activeProjectId: string | null
   theme: 'light' | 'dark'
+  mode: 'newbie' | 'pro'
   onSelectProject: (id: string) => void
   onRemoveProject: (id: string) => void
   onAddProject: () => void
   onToggleTheme: () => void
+  onToggleMode: () => void
   onOpenSettings: () => void
   /** Optional: dot colour hint per project — 'changed' | 'clean' | 'unknown' */
   projectStates?: Record<string, 'changed' | 'clean' | 'unknown'>
@@ -22,26 +25,29 @@ export function Sidebar({
   projects,
   activeProjectId,
   theme,
+  mode,
   onSelectProject,
   onRemoveProject,
   onAddProject,
   onToggleTheme,
+  onToggleMode,
   onOpenSettings,
   projectStates = {},
   githubSlot
 }: Props): JSX.Element {
+  const t = useTerms()
   return (
     <aside className={styles.sidebar}>
       <div className={styles.header}>
-        <span className={styles.appTitle}>My Projects</span>
+        <span className={styles.appTitle}>{t.sidebarTitle}</span>
       </div>
 
       <div className={styles.projectList}>
         {projects.length === 0 ? (
           <div className={styles.emptyHint}>
-            No projects yet.
-            <br />
-            Click "Link a Project" to get started.
+            {t.noReposHint.split('\n').map((line, i) => (
+              <React.Fragment key={i}>{line}{i === 0 && <br />}</React.Fragment>
+            ))}
           </div>
         ) : (
           projects.map((p) => {
@@ -76,9 +82,12 @@ export function Sidebar({
 
       <div className={styles.footer}>
         <button className={styles.linkBtn} onClick={onAddProject}>
-          + Link a Project
+          {t.addRepo}
         </button>
         {githubSlot}
+        <button className={styles.modeBtn} onClick={onToggleMode}>
+          {mode === 'pro' ? '👤 Switch to Newbie Mode' : '⚡ Switch to Pro Mode'}
+        </button>
         <button className={styles.settingsBtn} onClick={onOpenSettings}>
           ⚙ Settings
         </button>

@@ -66,6 +66,7 @@ export interface Project {
 
 export interface Preferences {
   theme: 'light' | 'dark'
+  mode: 'newbie' | 'pro'
   auto_save_enabled: boolean
   default_save_message_template: string
 }

@@ -101,6 +101,21 @@
 }
 .linkBtn:hover { background: var(--accent-hover); }
 
+.modeBtn {
+  width: 100%;
+  padding: 7px 12px;
+  background: none;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  transition: all var(--transition);
+}
+.modeBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .settingsBtn {
   width: 100%;
   padding: 7px 12px;

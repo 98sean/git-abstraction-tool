@@ -3,6 +3,7 @@ import { AppProvider } from './context/AppContext'
 import { invokeDb } from './ipc'
 import { useAuth } from './hooks/useAuth'
 import { useApiKeys } from './hooks/useApiKeys'
+import { useTerms } from './hooks/useTerms'
 import { useFileStatus } from './hooks/useFileStatus'
 import { useGitActions } from './hooks/useGitActions'
 import { usePreferences } from './hooks/usePreferences'
@@ -20,6 +21,7 @@ function Shell(): JSX.Element {
   const { projects, activeProjectId, activeProject, addProject, removeProject, setActiveProject } =
     useProjects()
   const { preferences, setPreference } = usePreferences()
+  const t = useTerms()
   const { addToast } = useToast()
   const { tokenExists, deviceFlow, saveToken, clearToken, startDeviceFlow, cancelDeviceFlow } = useAuth()
   const { keys: apiKeys, setOpenAIKey, setAnthropicKey, clearOpenAIKey, clearAnthropicKey } = useApiKeys()
@@ -32,7 +34,7 @@ function Shell(): JSX.Element {
   const { loading: actionLoading, error: actionError, commit, push, pull, clearError } =
     useGitActions(activeProjectId, () => {
       fetchStatus()
-      addToast('Saved successfully!', 'success')
+      addToast(t.committedToast, 'success')
     })
 
   const handleConnectGitHub = async (token: string): Promise<void> => {
@@ -47,9 +49,9 @@ function Shell(): JSX.Element {
     const projectName = parts[parts.length - 1] || 'My Project'
     try {
       await addProject(folderPath, projectName)
-      addToast(`"${projectName}" linked successfully`, 'success')
+      addToast(t.repoAdded(projectName), 'success')
     } catch {
-      addToast('Could not link that folder. Please try again.', 'error')
+      addToast(t.repoAddFailed, 'error')
     }
   }
 
@@ -57,15 +59,24 @@ function Shell(): JSX.Element {
     const project = projects.find((p) => p.project_id === project_id)
     if (!window.confirm(`Remove "${project?.friendly_name}" from your projects?`)) return
     await removeProject(project_id)
-    addToast('Project removed', 'info')
+    addToast(t.repoRemoved, 'info')
   }
 
   const handleToggleTheme = (): void => {
     setPreference('theme', preferences.theme === 'light' ? 'dark' : 'light')
   }
 
+  const handleToggleMode = (): void => {
+    setPreference('mode', preferences.mode === 'pro' ? 'newbie' : 'pro')
+  }
+
   const handleOpenGitHubDocs = (): void => {
     invokeDb('shell:openExternal', 'https://github.com/settings/tokens').catch(console.error)
+  }
+
+  const handleOpenDevicePage = (): void => {
+    const url = deviceFlow?.verification_uri ?? 'https://github.com/login/device'
+    invokeDb('shell:openExternal', url).catch(console.error)
   }
 
   const projectStates = Object.fromEntries(
@@ -83,10 +94,12 @@ function Shell(): JSX.Element {
         projects={projects}
         activeProjectId={activeProjectId}
         theme={preferences.theme}
+        mode={preferences.mode}
         onSelectProject={setActiveProject}
         onRemoveProject={handleRemoveProject}
         onAddProject={handleAddProject}
         onToggleTheme={handleToggleTheme}
+        onToggleMode={handleToggleMode}
         onOpenSettings={() => setShowSettings(true)}
         projectStates={projectStates}
         githubSlot={
@@ -136,11 +149,12 @@ function Shell(): JSX.Element {
               forceShowConnect={showGitHubPanel}
               deviceFlow={deviceFlow}
               onCommit={commit}
-              onPush={async () => { await push(); addToast('Uploaded to cloud', 'success') }}
-              onPull={async () => { await pull(); fetchStatus(); addToast('Updates downloaded', 'success') }}
+              onPush={async () => { await push(); addToast(t.pushedToast, 'success') }}
+              onPull={async () => { await pull(); fetchStatus(); addToast(t.pulledToast, 'success') }}
               onClearError={clearError}
               onConnectGitHub={handleConnectGitHub}
               onOpenGitHubDocs={handleOpenGitHubDocs}
+              onOpenDevicePage={handleOpenDevicePage}
               onStartDeviceFlow={startDeviceFlow}
               onCancelDeviceFlow={cancelDeviceFlow}
             />
@@ -149,7 +163,8 @@ function Shell(): JSX.Element {
           <div className={styles.emptyMain}>
             <ConnectGitHub
               onConnect={handleConnectGitHub}
-              onOpenGitHub={handleOpenGitHubDocs}
+              onOpenGitHubDocs={handleOpenGitHubDocs}
+              onOpenDevicePage={handleOpenDevicePage}
               deviceFlow={deviceFlow}
               onStartDeviceFlow={startDeviceFlow}
               onCancelDeviceFlow={cancelDeviceFlow}
@@ -159,7 +174,7 @@ function Shell(): JSX.Element {
           <div className={styles.emptyMain}>
             <div className={styles.emptyIcon}>📁</div>
             <h2>Welcome</h2>
-            <p>Link a project folder from the sidebar to start managing your files.</p>
+            <p>{preferences.mode === 'newbie' ? 'Link a project folder from the sidebar to get started.' : 'Add a repository from the sidebar to get started.'}</p>
           </div>
         )}
       </div>
