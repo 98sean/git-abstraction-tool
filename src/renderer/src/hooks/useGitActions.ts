@@ -1,15 +1,21 @@
 import { useCallback, useState } from 'react'
 import { invokeGit } from '../ipc'
-import { GitError } from '../types'
+import { GitError, PushToCloudOptions } from '../types'
+
+interface UseGitActionsOptions {
+  onCommitSuccess?: () => void
+  onPushSuccess?: () => void
+  onPullSuccess?: () => void
+}
 
 export function useGitActions(
   project_id: string | null,
-  onSuccess?: () => void
+  callbacks: UseGitActionsOptions = {}
 ): {
   loading: boolean
   error: GitError | null
   commit: (message: string) => Promise<void>
-  push: () => Promise<void>
+  push: (options?: PushToCloudOptions) => Promise<void>
   pull: () => Promise<void>
   clearError: () => void
 } {
@@ -17,7 +23,7 @@ export function useGitActions(
   const [error, setError] = useState<GitError | null>(null)
 
   const run = useCallback(
-    async (fn: () => Promise<unknown>): Promise<void> => {
+    async (fn: () => Promise<unknown>, onSuccess?: () => void): Promise<void> => {
       setLoading(true)
       setError(null)
       try {
@@ -29,26 +35,29 @@ export function useGitActions(
         setLoading(false)
       }
     },
-    [onSuccess]
+    []
   )
 
   const commit = useCallback(
     (message: string): Promise<void> => {
       if (!project_id) return Promise.resolve()
-      return run(() => invokeGit('git:commit', project_id, message))
+      return run(() => invokeGit('git:commit', project_id, message), callbacks.onCommitSuccess)
     },
-    [project_id, run]
+    [callbacks.onCommitSuccess, project_id, run]
   )
 
-  const push = useCallback((): Promise<void> => {
-    if (!project_id) return Promise.resolve()
-    return run(() => invokeGit('git:push', project_id))
-  }, [project_id, run])
+  const push = useCallback(
+    (pushOptions?: PushToCloudOptions): Promise<void> => {
+      if (!project_id) return Promise.resolve()
+      return run(() => invokeGit('git:push', project_id, pushOptions), callbacks.onPushSuccess)
+    },
+    [callbacks.onPushSuccess, project_id, run]
+  )
 
   const pull = useCallback((): Promise<void> => {
     if (!project_id) return Promise.resolve()
-    return run(() => invokeGit('git:pull', project_id))
-  }, [project_id, run])
+    return run(() => invokeGit('git:pull', project_id), callbacks.onPullSuccess)
+  }, [callbacks.onPullSuccess, project_id, run])
 
   const clearError = useCallback(() => setError(null), [])
 

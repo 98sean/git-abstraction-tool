@@ -1,6 +1,8 @@
 node_modules
 out
 dist
+.worktrees
+.vitest
 
 # OS
 .DS_Store

@@ -1,3 +1,4 @@
+import { join } from 'node:path'
 import Store from 'electron-store'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -12,9 +13,12 @@ interface ProjectsSchema {
   projects: Project[]
 }
 
+const storeCwd = process.env.VITEST ? join(process.cwd(), '.vitest', 'electron-store') : undefined
+
 const store = new Store<ProjectsSchema>({
   name: 'projects',
-  defaults: { projects: [] }
+  defaults: { projects: [] },
+  ...(storeCwd ? { cwd: storeCwd } : {})
 })
 
 export function listProjects(): Project[] {

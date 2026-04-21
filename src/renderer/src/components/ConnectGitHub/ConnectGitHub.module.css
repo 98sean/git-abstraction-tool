@@ -57,6 +57,7 @@
   font-size: 11px;
   color: var(--accent);
   text-decoration: none;
+  background: none;
   cursor: pointer;
 }
 .helpLink:hover { text-decoration: underline; }
@@ -95,7 +96,15 @@
 .divider::before { left: 0; }
 .divider::after { right: 0; }
 
+.codeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+
 .userCode {
+  flex: 1;
   font-size: 22px;
   font-weight: 700;
   font-family: var(--font-mono);
@@ -106,8 +115,22 @@
   border-radius: var(--radius);
   padding: 10px 16px;
   text-align: center;
-  margin: 10px 0 12px;
 }
+
+.copyBtn {
+  padding: 8px 12px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  transition: all var(--transition);
+  flex-shrink: 0;
+}
+.copyBtn:hover { border-color: var(--accent); color: var(--accent); }
+.copyBtn.copied { border-color: var(--success); color: var(--success); }
 
 .waitingRow {
   display: flex;
@@ -147,14 +170,44 @@
   color: var(--text-muted);
   transition: all var(--transition);
 }
-.sidebarStatus.connected {
-  border-color: var(--success);
-  color: var(--success);
-}
-.sidebarStatus:hover:not(.connected) {
+.sidebarStatus:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* Connected state: status row + separate disconnect button */
+.connectedRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.connectedRow .sidebarStatus {
+  border-color: var(--success);
+  color: var(--success);
+  cursor: default;
+  pointer-events: none;
+}
+
+.connectedLabel {
+  flex: 1;
+}
+
+.disconnectBtn {
+  width: 100%;
+  padding: 5px 12px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: all var(--transition);
+}
+.disconnectBtn:hover {
+  border-color: var(--error);
+  color: var(--error);
+}
+
 .dot {
   width: 7px;
   height: 7px;

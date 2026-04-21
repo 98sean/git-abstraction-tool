@@ -4,6 +4,9 @@ import { registerStatusHandlers } from './status'
 import { registerGitHandlers } from './git'
 import { registerDialogHandlers } from './dialog'
 import { registerAuthHandlers } from './auth'
+import { registerProjectSetupHandlers } from './projectSetup'
+import { registerCloudHandlers } from './cloud'
+import { registerAiHandlers } from './ai'
 
 export function registerIpcHandlers(): void {
   registerProjectsHandlers()
@@ -12,4 +15,7 @@ export function registerIpcHandlers(): void {
   registerGitHandlers()
   registerDialogHandlers()
   registerAuthHandlers()
+  registerProjectSetupHandlers()
+  registerCloudHandlers()
+  registerAiHandlers()
 }

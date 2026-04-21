@@ -35,6 +35,7 @@ function detectCode(raw: string): GitErrorCode {
 const USER_MESSAGES: Record<GitErrorCode, string> = {
   NOT_A_REPO: 'This folder is not a linked project. Please re-link it.',
   NO_REMOTE: 'No cloud destination is set up for this project.',
+  DEFAULT_BRANCH_PROTECTED: 'Default branch upload requires danger-mode confirmation.',
   AUTH_FAILED: 'Login failed. Please check your credentials in Settings.',
   NETWORK_ERROR: 'Could not reach the cloud. Please check your internet connection.',
   MERGE_CONFLICT: 'There is a version mismatch that needs to be resolved before continuing.',
