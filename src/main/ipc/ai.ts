@@ -3,42 +3,19 @@ import { readdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import { generateCommitSuggestion } from '../ai/openai'
 import {
-  clearAnthropicKey,
-  clearOpenAIKey,
-  getOpenAIKey,
-  hasAnthropicKey,
-  hasOpenAIKey,
-  setAnthropicKey,
-  setOpenAIKey
-} from '../db/credentials'
+  createManualToolService
+} from '../ai/manualToolService'
+import { createAiService } from '../ai/service'
+import { AiProviderName } from '../ai/types'
+import { getAiConnectionState, clearAiConnectionState, setAiConnectionState } from '../db/aiConnection'
+import { clearAiApiKey, getAiApiKey, setAiApiKey } from '../db/credentials'
+import { getProjectAiSettings, ProjectAiSettings, setProjectAiSettings } from '../db/projectAiSettings'
 import { listProjects } from '../db/projects'
 import { getGitService } from '../git'
 import { TimelineCommitInfo } from '../git/types'
 
-type AIProvider = 'openai' | 'anthropic'
-
-interface UndoModelResponse {
-  commit_hash?: string
-  reason?: string
-  confidence?: number
-}
-
-interface OpenAIChatResponse {
-  choices?: Array<{
-    message?: {
-      content?: string
-    }
-  }>
-}
-
-interface FileInsightModelResponse {
-  summary?: string
-  functionality?: string
-  related_files?: Array<{
-    path?: string
-    reason?: string
-  }>
-}
+const aiService = createAiService()
+const manualToolService = createManualToolService({ aiService })
 
 interface RelatedCandidate {
   path: string
@@ -54,46 +31,12 @@ interface UntrackedReviewItem {
   confidence: number
 }
 
-interface UntrackedModelResponse {
-  decisions?: Array<{
-    path?: string
-    recommendation?: UntrackedRecommendation
-    reason?: string
-    confidence?: number
-  }>
-}
-
 const UNTRACKED_AI_MAX_CONTEXT_FILES = 100
 const UNTRACKED_AI_MAX_SNIPPET_FILES = 16
 const UNTRACKED_AI_SNIPPET_MAX_BYTES = 100_000
 const UNTRACKED_AI_TIMEOUT_BASE_MS = 12_000
 const UNTRACKED_AI_TIMEOUT_PER_FILE_MS = 220
 const UNTRACKED_AI_TIMEOUT_MAX_MS = 45_000
-
-function stripCodeFence(raw: string): string {
-  const trimmed = raw.trim()
-  if (!trimmed.startsWith('```')) return trimmed
-  return trimmed
-    .replace(/^```[a-zA-Z]*\s*/, '')
-    .replace(/```$/, '')
-    .trim()
-}
-
-function toTimelineInput(commits: TimelineCommitInfo[]): Array<{
-  hash: string
-  short_hash: string
-  date: string
-  message: string
-  changed_files: string[]
-}> {
-  return commits.map((commit) => ({
-    hash: commit.hash,
-    short_hash: commit.short_hash,
-    date: commit.date,
-    message: commit.message,
-    changed_files: commit.changed_files.slice(0, 15)
-  }))
-}
 
 function basename(path: string): string {
   const normalized = path.replace(/\\/g, '/')
@@ -189,67 +132,6 @@ function buildRelatedCandidates(
     .map(([candidatePath, score]) => ({ path: candidatePath, score }))
     .sort((a, b) => b.score - a.score || a.path.localeCompare(b.path))
     .slice(0, 12)
-}
-
-async function requestFileInsight(
-  apiKey: string,
-  input: {
-    file_path: string
-    content_snippet: string
-    recent_commits: Array<{ date: string; message: string }>
-    related_candidates: RelatedCandidate[]
-  }
-): Promise<FileInsightModelResponse> {
-  const payload = {
-    model: 'gpt-4o-mini',
-    temperature: 0.2,
-    response_format: { type: 'json_object' },
-    messages: [
-      {
-        role: 'system',
-        content:
-          'You explain one code file for non-technical users. ' +
-          'Return strict JSON only with keys: ' +
-          '{"summary":"...","functionality":"...","related_files":[{"path":"...","reason":"..."}]}. ' +
-          'Keep summary/functionality concise. related_files max 5 and paths must come from candidates.'
-      },
-      {
-        role: 'user',
-        content: JSON.stringify(input)
-      }
-    ]
-  }
-
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  })
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    throw new Error(`OpenAI request failed (${res.status}): ${body.slice(0, 160)}`)
-  }
-
-  const data = (await res.json()) as OpenAIChatResponse
-  const content = data.choices?.[0]?.message?.content
-  if (!content) throw new Error('OpenAI did not return a valid response.')
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(stripCodeFence(content))
-  } catch {
-    throw new Error('Could not parse AI response JSON.')
-  }
-
-  if (!parsed || typeof parsed !== 'object') {
-    throw new Error('AI response JSON shape was invalid.')
-  }
-
-  return parsed as FileInsightModelResponse
 }
 
 const DELETE_PATH_PATTERNS = [
@@ -460,65 +342,6 @@ function getUntrackedReviewTimeoutMs(itemCount: number): number {
   return Math.min(timeout, UNTRACKED_AI_TIMEOUT_MAX_MS)
 }
 
-async function requestUntrackedReview(
-  apiKey: string,
-  contexts: UntrackedContext[],
-  timeoutMs: number
-): Promise<UntrackedModelResponse> {
-  const payload = {
-    model: 'gpt-4o-mini',
-    temperature: 0.1,
-    response_format: { type: 'json_object' },
-    messages: [
-      {
-        role: 'system',
-        content:
-          'You classify untracked files in a software project. ' +
-          'Return strict JSON only: {"decisions":[{"path":"...","recommendation":"commit|delete","reason":"...","confidence":0..1}]}. ' +
-          'Prefer delete for generated/build/cache/temp/log/virtualenv/local-secret files. ' +
-          'Prefer commit for source code, config, tests, docs, migration scripts, and lockfiles.'
-      },
-      {
-        role: 'user',
-        content: JSON.stringify({ untracked_files: contexts })
-      }
-    ]
-  }
-
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload),
-    signal: controller.signal
-  }).finally(() => clearTimeout(timer))
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    throw new Error(`OpenAI request failed (${res.status}): ${body.slice(0, 160)}`)
-  }
-
-  const data = (await res.json()) as OpenAIChatResponse
-  const content = data.choices?.[0]?.message?.content
-  if (!content) throw new Error('OpenAI did not return a valid response.')
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(stripCodeFence(content))
-  } catch {
-    throw new Error('Could not parse AI response JSON.')
-  }
-
-  if (!parsed || typeof parsed !== 'object') {
-    throw new Error('AI response JSON shape was invalid.')
-  }
-  return parsed as UntrackedModelResponse
-}
-
 function resolveCommit(commits: TimelineCommitInfo[], suggestedHash?: string): TimelineCommitInfo | null {
   const hash = suggestedHash?.trim()
   if (!hash) return null
@@ -530,107 +353,116 @@ function resolveCommit(commits: TimelineCommitInfo[], suggestedHash?: string): T
   )
 }
 
-async function requestUndoSuggestion(
-  apiKey: string,
-  query: string,
-  commits: TimelineCommitInfo[]
-): Promise<UndoModelResponse> {
-  const payload = {
-    model: 'gpt-4o-mini',
-    temperature: 0.1,
-    response_format: { type: 'json_object' },
-    messages: [
-      {
-        role: 'system',
-        content:
-          'You map a natural-language undo request to one commit from a Git timeline. ' +
-          'Return strict JSON only: {"commit_hash":"<full-or-short-hash-or-empty>","reason":"<short reason>","confidence":0..1}. ' +
-          'Choose the commit that best matches the requested time/event. If unclear, return empty commit_hash.'
-      },
-      {
-        role: 'user',
-        content: JSON.stringify({
-          now: new Date().toISOString(),
-          user_query: query,
-          timeline: toTimelineInput(commits)
-        })
-      }
-    ]
+function getConnectedAiConfig(): { provider: AiProviderName; apiKey: string; model: string } {
+  const connectionState = getAiConnectionState()
+  const apiKey = getAiApiKey()
+
+  if (!connectionState.provider || !connectionState.selected_model || !apiKey) {
+    throw new Error('Connect AI to use this analysis feature.')
   }
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  })
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '')
-    throw new Error(`OpenAI request failed (${res.status}): ${body.slice(0, 160)}`)
+  if (!aiService.supportsManualTools(connectionState.provider)) {
+    throw new Error('The current AI connection does not support this analysis feature.')
   }
 
-  const data = (await res.json()) as OpenAIChatResponse
-  const content = data.choices?.[0]?.message?.content
-  if (!content) throw new Error('OpenAI did not return a valid response.')
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(stripCodeFence(content))
-  } catch {
-    throw new Error('Could not parse AI response JSON.')
-  }
-
-  if (!parsed || typeof parsed !== 'object') {
-    throw new Error('AI response JSON shape was invalid.')
-  }
-
-  const modelResponse = parsed as UndoModelResponse
-  const confidence = Number(modelResponse.confidence)
   return {
-    commit_hash: modelResponse.commit_hash?.trim(),
-    reason: modelResponse.reason?.trim() || 'Matched from your request and commit history.',
-    confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0.5
+    provider: connectionState.provider,
+    apiKey,
+    model: connectionState.selected_model
   }
 }
 
-function setProviderKey(provider: AIProvider, key: string): void {
-  if (provider === 'openai') {
-    setOpenAIKey(key)
-    return
-  }
-  setAnthropicKey(key)
-}
-
-function clearProviderKey(provider: AIProvider): void {
-  if (provider === 'openai') {
-    clearOpenAIKey()
-    return
-  }
-  clearAnthropicKey()
-}
-
-export function registerAIHandlers(): void {
-  ipcMain.handle('ai:keys:status', () => ({
-    openai: hasOpenAIKey(),
-    anthropic: hasAnthropicKey()
-  }))
-
-  ipcMain.handle('ai:key:set', (_event, provider: AIProvider, key: string) => {
-    if (!provider || (provider !== 'openai' && provider !== 'anthropic')) {
-      throw new Error('Unsupported AI provider.')
-    }
-    if (!key?.trim()) throw new Error('API key cannot be empty.')
-    setProviderKey(provider, key.trim())
+export function registerAiHandlers(): void {
+  ipcMain.handle('ai:connection:get', () => {
+    return getAiConnectionState()
   })
 
-  ipcMain.handle('ai:key:clear', (_event, provider: AIProvider) => {
-    if (!provider || (provider !== 'openai' && provider !== 'anthropic')) {
-      throw new Error('Unsupported AI provider.')
+  ipcMain.handle('ai:connection:connect', async (_event, provider: AiProviderName, apiKey: string) => {
+    const connectionState = await aiService.connectProvider({ provider, apiKey })
+
+    setAiApiKey(apiKey)
+    setAiConnectionState(connectionState)
+
+    return getAiConnectionState()
+  })
+
+  ipcMain.handle('ai:connection:disconnect', () => {
+    clearAiApiKey()
+    clearAiConnectionState()
+    return getAiConnectionState()
+  })
+
+  ipcMain.handle('ai:connection:model:set', (_event, model: string) => {
+    const currentState = getAiConnectionState()
+
+    if (!currentState.provider) {
+      return currentState
     }
-    clearProviderKey(provider)
+
+    setAiConnectionState({
+      ...currentState,
+      selected_model: model
+    })
+
+    return getAiConnectionState()
+  })
+
+  ipcMain.handle('ai:project-settings:get', (_event, project_id: string) => {
+    return getProjectAiSettings(project_id)
+  })
+
+  ipcMain.handle(
+    'ai:project-settings:set',
+    (_event, project_id: string, patch: Partial<ProjectAiSettings>) => {
+      const currentSettings = getProjectAiSettings(project_id)
+      const nextSettings: ProjectAiSettings = {
+        ...currentSettings,
+        ...patch
+      }
+
+      if (
+        patch.ai_diff_consent_granted === true &&
+        !currentSettings.ai_diff_consent_granted &&
+        patch.ai_diff_consent_granted_at === undefined
+      ) {
+        nextSettings.ai_diff_consent_granted_at = Date.now()
+      }
+
+      if (patch.ai_diff_consent_granted === false) {
+        nextSettings.ai_diff_consent_granted_at = null
+      }
+
+      setProjectAiSettings(project_id, nextSettings)
+      return getProjectAiSettings(project_id)
+    }
+  )
+
+  ipcMain.handle('ai:auto-save-message:generate', async (_event, project_id: string) => {
+    const connectionState = getAiConnectionState()
+    const projectSettings = getProjectAiSettings(project_id)
+    const apiKey = getAiApiKey()
+
+    if (!connectionState.provider || !connectionState.selected_model || !apiKey) {
+      return null
+    }
+
+    if (!projectSettings.auto_save_message_enabled || !projectSettings.ai_diff_consent_granted) {
+      return null
+    }
+
+    const gitService = getGitService(project_id)
+    const diffContext = await gitService.getStagedDiffContext()
+
+    if (!diffContext.diff.trim()) {
+      return null
+    }
+
+    return aiService.generateAutoSaveMessage({
+      provider: connectionState.provider,
+      model: connectionState.selected_model,
+      apiKey,
+      diffContext
+    })
   })
 
   ipcMain.handle('ai:commit-suggestion', async (_event, project_id: string) => {
@@ -646,10 +478,7 @@ export function registerAIHandlers(): void {
       throw new Error('Please describe the point in time you want to restore to.')
     }
 
-    const openaiKey = getOpenAIKey()
-    if (!openaiKey) {
-      throw new Error('OpenAI API key is not configured. Save it in Settings first.')
-    }
+    const aiConfig = getConnectedAiConfig()
 
     const service = getGitService(project_id)
     const timeline = await service.getTimeline(120)
@@ -657,8 +486,14 @@ export function registerAIHandlers(): void {
       throw new Error('No commit history is available for restoration.')
     }
 
-    const model = await requestUndoSuggestion(openaiKey, query.trim(), timeline)
-    const target = resolveCommit(timeline, model.commit_hash)
+    const suggestion = await manualToolService.generateNaturalUndoSuggestion({
+      provider: aiConfig.provider,
+      model: aiConfig.model,
+      apiKey: aiConfig.apiKey,
+      query: query.trim(),
+      timeline
+    })
+    const target = resolveCommit(timeline, suggestion.commitHash)
 
     if (!target) {
       throw new Error('Could not identify a commit for this request. Please be more specific.')
@@ -674,8 +509,8 @@ export function registerAIHandlers(): void {
       short_hash: target.short_hash,
       commit_message: target.message,
       commit_date: target.date,
-      reason: model.reason ?? 'Selected the closest commit for your request.',
-      confidence: model.confidence ?? 0.5,
+      reason: suggestion.reason,
+      confidence: suggestion.confidence,
       total_restore_files: preview.files_to_restore.length,
       total_remove_files: preview.files_to_remove.length,
       restore_files_preview: preview.files_to_restore.slice(0, 6),
@@ -690,10 +525,7 @@ export function registerAIHandlers(): void {
       throw new Error('Please select a file first.')
     }
 
-    const openaiKey = getOpenAIKey()
-    if (!openaiKey) {
-      throw new Error('OpenAI API key is not configured. Save it in Settings first.')
-    }
+    const aiConfig = getConnectedAiConfig()
 
     const service = getGitService(project_id)
     const [timeline, trackedFiles] = await Promise.all([
@@ -716,43 +548,26 @@ export function registerAIHandlers(): void {
       .slice(0, 8)
       .map((c) => ({ date: c.date, message: c.message }))
 
-    const model = await requestFileInsight(openaiKey, {
-      file_path: normalizedPath,
-      content_snippet: toTextSnippet(rawContent),
-      recent_commits: recentCommits,
-      related_candidates: relatedCandidates
+    const insight = await manualToolService.generateFileInsight({
+      provider: aiConfig.provider,
+      model: aiConfig.model,
+      apiKey: aiConfig.apiKey,
+      filePath: normalizedPath,
+      contentSnippet: toTextSnippet(rawContent),
+      recentCommits: recentCommits,
+      relatedCandidates: relatedCandidates
     })
-
-    const candidateSet = new Set(relatedCandidates.map((c) => c.path))
-    const relatedFromModel = (model.related_files ?? [])
-      .map((item) => ({
-        path: item.path?.replace(/\\/g, '/').trim() ?? '',
-        reason: item.reason?.trim() || 'Related behavior or dependencies.'
-      }))
-      .filter((item) => item.path && candidateSet.has(item.path))
-      .slice(0, 5)
-
-    const relatedFiles =
-      relatedFromModel.length > 0
-        ? relatedFromModel
-        : relatedCandidates.slice(0, 5).map((candidate) => ({
-          path: candidate.path,
-          reason: 'Frequently changed together in commit history.'
-        }))
 
     return {
       file_path: normalizedPath,
-      summary: model.summary?.trim() || 'This file is part of the current project workflow.',
-      functionality: model.functionality?.trim() || 'It defines behavior used by the surrounding feature set.',
-      related_files: relatedFiles
+      summary: insight.summary,
+      functionality: insight.functionality,
+      related_files: insight.relatedFiles
     }
   })
 
   ipcMain.handle('ai:untracked:review', async (_event, project_id: string) => {
-    const openaiKey = getOpenAIKey()
-    if (!openaiKey) {
-      throw new Error('OpenAI API key is not configured. Save it in Settings first.')
-    }
+    const aiConfig = getConnectedAiConfig()
 
     const service = getGitService(project_id)
     const status = await service.getStatus()
@@ -791,30 +606,20 @@ export function registerAIHandlers(): void {
         const contexts = await buildUntrackedContexts(projectRoot, aiInputPaths)
         try {
           const timeoutMs = getUntrackedReviewTimeoutMs(contexts.length)
-          const model = await requestUntrackedReview(openaiKey, contexts, timeoutMs)
+          const review = await manualToolService.reviewUntrackedFiles({
+            provider: aiConfig.provider,
+            model: aiConfig.model,
+            apiKey: aiConfig.apiKey,
+            contexts,
+            timeoutMs
+          })
           const unresolvedSet = new Set(aiInputPaths)
           aiDecisions = new Map(
-            (model.decisions ?? [])
-              .map((decision) => {
-                const candidatePath = normalizeUntrackedPath(decision.path ?? '')
-                if (!candidatePath || !unresolvedSet.has(candidatePath)) return null
-                const recommendation = decision.recommendation === 'delete' ? 'delete' : 'commit'
-                const confidence = Number(decision.confidence)
-                return [
-                  candidatePath,
-                  {
-                    path: candidatePath,
-                    recommendation,
-                    reason:
-                      decision.reason?.trim() ||
-                      (recommendation === 'delete'
-                        ? 'Likely generated or local-only file.'
-                        : 'Likely project source/config file.'),
-                    confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0.65
-                  } as UntrackedReviewItem
-                ] as const
-              })
-              .filter((entry): entry is readonly [string, UntrackedReviewItem] => !!entry)
+            review.items
+              .map((item) =>
+                unresolvedSet.has(item.path) ? ([item.path, item] as const) : null
+              )
+              .filter((entry): entry is readonly [string, UntrackedReviewItem] => entry !== null)
           )
         } catch {
           aiFallbackReason =

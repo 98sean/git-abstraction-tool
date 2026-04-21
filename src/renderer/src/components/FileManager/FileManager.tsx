@@ -132,6 +132,7 @@ interface Props {
   selectedPath?: string | null
   loading: boolean
   error: GitError | null
+  aiReviewEnabled?: boolean
   onStage: (paths: string[]) => void
   onUnstage: (paths: string[]) => void
   onStageAll: () => void
@@ -143,7 +144,7 @@ interface Props {
 }
 
 export function FileManager({
-  status, trackedPaths, selectedPath, loading, error,
+  status, trackedPaths, selectedPath, loading, error, aiReviewEnabled = false,
   onStage, onUnstage, onStageAll, onUnstageAll, onRevert, onSelectFile, onReviewUntracked, onDeleteUntracked
 }: Props): JSX.Element {
   const t = useTerms()
@@ -322,7 +323,7 @@ export function FileManager({
           {showDeps ? 'Hide deps' : 'Show deps'}
         </button>
 
-        {untrackedCount > 0 && onReviewUntracked && (
+        {untrackedCount > 0 && aiReviewEnabled && onReviewUntracked && (
           <button
             className={styles.reviewBtn}
             onClick={() => void loadUntrackedReview()}

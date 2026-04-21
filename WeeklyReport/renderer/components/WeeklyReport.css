@@ -1,0 +1,389 @@
+/* WeeklyReport/renderer/components/WeeklyReport.css
+   기존 앱의 CSS 변수(--bg-primary 등)를 재사용한다.
+   통합 시 앱 전역 CSS 변수 이름에 맞게 조정 필요. */
+
+/* ─── 변수 (기존 앱 변수 재사용, 없을 경우 폴백) ───────────────────────────── */
+:root {
+  --wr-bg: var(--bg-sidebar, #f4f5f7);
+  --wr-surface: var(--bg, #ffffff);
+  --wr-border: var(--border, #e5e7eb);
+  --wr-text: var(--text, #1a1a2e);
+  --wr-text-muted: var(--text-muted, #6b7280);
+  --wr-accent: var(--accent, #2563eb);
+
+  --wr-added: var(--success, #059669);
+  --wr-modified: var(--warning, #d97706);
+  --wr-deleted: var(--error, #dc2626);
+  --wr-renamed: var(--status-renamed, #7c3aed);
+}
+/* [data-theme='dark'] 별도 선언 불필요 — 앱의 CSS 변수가 테마에 따라 자동 변경됨 */
+
+/* ─── 컨테이너 ─────────────────────────────────────────────────────────────── */
+.wr-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  background: var(--wr-bg);
+  min-height: 100%;
+  color: var(--wr-text);
+  overflow-y: auto;
+}
+
+/* ─── 섹션 제목 ────────────────────────────────────────────────────────────── */
+.wr-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--wr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 12px;
+}
+
+/* ─── 주간 네비게이터 ──────────────────────────────────────────────────────── */
+.wr-navigator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--wr-surface);
+  border: 1px solid var(--wr-border);
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.wr-nav-btn {
+  background: none;
+  border: 1px solid var(--wr-border);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: var(--wr-text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.wr-nav-btn:hover:not(:disabled) {
+  background: var(--wr-bg);
+}
+
+.wr-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.wr-nav-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.wr-date-range {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.wr-current-badge {
+  font-size: 11px;
+  background: var(--wr-accent);
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 8px;
+}
+
+/* ─── 요약 카드 ────────────────────────────────────────────────────────────── */
+.wr-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.wr-card {
+  background: var(--wr-surface);
+  border: 1px solid var(--wr-border);
+  border-radius: 10px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.wr-card-value {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.wr-card-label {
+  font-size: 12px;
+  color: var(--wr-text-muted);
+  text-align: center;
+}
+
+.wr-card--neutral .wr-card-value  { color: var(--wr-accent); }
+.wr-card--added .wr-card-value    { color: var(--wr-added); }
+.wr-card--modified .wr-card-value { color: var(--wr-modified); }
+.wr-card--deleted .wr-card-value  { color: var(--wr-deleted); }
+.wr-card--insertions .wr-card-value { color: var(--wr-added); }
+.wr-card--deletions .wr-card-value  { color: var(--wr-deleted); }
+
+/* ─── 일별 타임라인 ────────────────────────────────────────────────────────── */
+.wr-timeline {
+  background: var(--wr-surface);
+  border: 1px solid var(--wr-border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.wr-timeline-bars {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 100px;
+  gap: 8px;
+}
+
+.wr-timeline-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+  gap: 4px;
+}
+
+.wr-bar-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--wr-text-muted);
+  height: 16px;
+  line-height: 16px;
+}
+
+.wr-bar-track {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.wr-bar-fill {
+  width: 70%;
+  min-height: 3px;
+  background: var(--wr-accent);
+  border-radius: 3px 3px 0 0;
+  transition: height 0.3s ease;
+}
+
+.wr-timeline-col--today .wr-bar-fill {
+  background: var(--wr-added);
+}
+
+.wr-bar-label {
+  font-size: 12px;
+  color: var(--wr-text-muted);
+}
+
+.wr-timeline-col--today .wr-bar-label {
+  color: var(--wr-added);
+  font-weight: 600;
+}
+
+/* ─── 하단 2열 레이아웃 (저장 내역 + 주간 요약본) ──────────────────────────── */
+.wr-bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* ─── 주간 요약본 ────────────────────────────────────────────────────────────── */
+.wr-text-summary {
+  background: var(--wr-surface);
+  border: 1px solid var(--wr-border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.wr-summary-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--wr-text);
+  margin: 0;
+  white-space: pre-line;
+}
+
+/* ─── 커밋 목록 ────────────────────────────────────────────────────────────── */
+.wr-commit-list {
+  background: var(--wr-surface);
+  border: 1px solid var(--wr-border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wr-commit {
+  border: 1px solid var(--wr-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.wr-commit-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: var(--wr-text);
+  font-size: 14px;
+  transition: background 0.1s;
+}
+
+.wr-commit-header:hover {
+  background: var(--wr-bg);
+}
+
+.wr-commit-toggle {
+  font-size: 10px;
+  color: var(--wr-text-muted);
+  flex-shrink: 0;
+  width: 12px;
+}
+
+.wr-commit-message {
+  flex: 1;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wr-commit-meta {
+  font-size: 12px;
+  color: var(--wr-text-muted);
+  flex-shrink: 0;
+}
+
+/* 파일 목록 */
+.wr-commit-files {
+  list-style: none;
+  margin: 0;
+  padding: 0 14px 10px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--wr-border);
+  padding-top: 8px;
+  background: var(--wr-bg);
+}
+
+.wr-commit-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.wr-file-path {
+  flex: 1;
+  font-family: monospace;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--wr-text);
+}
+
+.wr-file-status {
+  font-size: 11px;
+  color: var(--wr-text-muted);
+  flex-shrink: 0;
+}
+
+.wr-file-lines {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.wr-ins { color: var(--wr-added); }
+.wr-del { color: var(--wr-deleted); }
+
+/* ─── 상태 점 ──────────────────────────────────────────────────────────────── */
+.wr-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.wr-dot--added    { background: var(--wr-added); }
+.wr-dot--modified { background: var(--wr-modified); }
+.wr-dot--deleted  { background: var(--wr-deleted); }
+.wr-dot--renamed  { background: var(--wr-renamed); }
+
+/* ─── 빈 상태 / 로딩 / 에러 ───────────────────────────────────────────────── */
+.wr-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: var(--wr-text-muted);
+  text-align: center;
+}
+
+.wr-empty-icon {
+  font-size: 40px;
+}
+
+.wr-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px;
+  color: var(--wr-text-muted);
+}
+
+.wr-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--wr-border);
+  border-top-color: var(--wr-accent);
+  border-radius: 50%;
+  animation: wr-spin 0.8s linear infinite;
+}
+
+@keyframes wr-spin {
+  to { transform: rotate(360deg); }
+}
+
+.wr-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+[data-theme='dark'] .wr-error {
+  background: rgba(248, 81, 73, 0.1);
+  color: var(--error, #f85149);
+  border-color: rgba(248, 81, 73, 0.3);
+}

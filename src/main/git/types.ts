@@ -62,11 +62,54 @@ export interface BranchInfo {
   remote?: string
 }
 
+export type CollaborationBranchMode = 'new_branch' | 'existing_branch' | 'danger_default_branch'
+
+export interface PushToCloudOptions {
+  dangerConfirmed?: boolean
+}
+
+export interface PushBackupTargetInput {
+  mode: 'backup'
+  remoteName: string
+  repoOwner: string
+  repoName: string
+  token?: string
+}
+
+export interface PushCollaborationTargetInput {
+  mode: 'collaboration'
+  remoteName: string
+  branchMode: CollaborationBranchMode
+  branchName: string
+  dangerConfirmed?: boolean
+  token?: string
+}
+
+export type PushConfiguredTargetInput = PushBackupTargetInput | PushCollaborationTargetInput
+
+export interface PushConfiguredTargetResult {
+  remoteName: string
+  branchName: string
+  prUrl: string | null
+}
+
+export interface PullConfiguredTargetInput {
+  remoteName: string
+  branchName: string
+  token?: string
+}
+
+export interface StagedDiffContext {
+  diff: string
+  files: Array<{ path: string; status: FileStatusCode }>
+}
+
 // ─── Errors ──────────────────────────────────────────────────────────────────
 
 export type GitErrorCode =
   | 'NOT_A_REPO'
   | 'NO_REMOTE'
+  | 'DEFAULT_BRANCH_PROTECTED'
   | 'AUTH_FAILED'
   | 'NETWORK_ERROR'
   | 'MERGE_CONFLICT'
@@ -80,4 +123,45 @@ export interface GitError {
   code: GitErrorCode
   message: string  // user-friendly; safe to show in the UI
   raw?: string     // original git stderr — for logging only, never shown to user
+}
+
+// ─── Weekly Report ────────────────────────────────────────────────────────────
+
+export interface WeeklyCommitFile {
+  path: string
+  status: 'added' | 'modified' | 'deleted' | 'renamed'
+  insertions: number
+  deletions: number
+}
+
+export interface WeeklyCommit {
+  hash: string
+  date: string
+  message: string
+  files: WeeklyCommitFile[]
+}
+
+export interface WeeklyReportSummary {
+  totalCommits: number
+  filesAdded: number
+  filesModified: number
+  filesDeleted: number
+  totalInsertions: number
+  totalDeletions: number
+}
+
+export interface DailyBreakdown {
+  date: string
+  dayOfWeek: string
+  commitCount: number
+}
+
+export interface WeeklyReport {
+  projectId: string
+  projectName: string
+  startDate: string
+  endDate: string
+  summary: WeeklyReportSummary
+  dailyBreakdown: DailyBreakdown[]
+  commits: WeeklyCommit[]
 }

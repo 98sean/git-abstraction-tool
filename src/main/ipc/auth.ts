@@ -1,7 +1,9 @@
 import { ipcMain, shell, BrowserWindow } from 'electron'
 import { clearGithubToken, hasGithubToken, setGithubToken } from '../db/credentials'
+import { createGithubService } from '../github/service'
 
 const GITHUB_CLIENT_ID = 'Ov23lihbAdUM2nvHGoip'
+const githubService = createGithubService()
 
 interface DeviceCodeResponse {
   device_code: string
@@ -55,6 +57,16 @@ async function pollForToken(
     const data = (await res.json()) as TokenPollResponse
 
     if (data.access_token) {
+      const validation = await githubService.validateToken(data.access_token)
+      if (validation.status !== 'ok') {
+        cancelPolling()
+        notifyRenderer(
+          'auth:github:device:error',
+          validation.reason ?? 'GitHub authorization succeeded, but the token could not be validated.'
+        )
+        return
+      }
+
       cancelPolling()
       setGithubToken(data.access_token)
       notifyRenderer('auth:github:device:success')
@@ -90,8 +102,15 @@ async function pollForToken(
 }
 
 export function registerAuthHandlers(): void {
-  ipcMain.handle('auth:token:set', (_event, token: string) => {
+  ipcMain.handle('auth:token:set', async (_event, token: string) => {
+    const validation = await githubService.validateToken(token)
+
+    if (validation.status !== 'ok') {
+      throw new Error(validation.reason ?? 'This GitHub token could not be validated.')
+    }
+
     setGithubToken(token)
+    return validation
   })
 
   ipcMain.handle('auth:token:exists', () => {

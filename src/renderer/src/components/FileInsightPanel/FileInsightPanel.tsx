@@ -24,7 +24,7 @@ export function FileInsightPanel({
     return (
       <aside className={styles.panel}>
         <div className={styles.title}>File Insight</div>
-        <p className={styles.placeholder}>Set an OpenAI key in Settings to use AI file explanations.</p>
+        <p className={styles.placeholder}>Connect AI to use file insight.</p>
       </aside>
     )
   }
