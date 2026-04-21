@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { invokeDb } from '../ipc'
+import { GithubTokenValidationResult } from '../types'
 import { useToast } from './useToast'
 
 export interface DeviceFlowState {
@@ -49,11 +50,21 @@ export function useAuth(): {
   const saveToken = useCallback(
     async (token: string): Promise<void> => {
       try {
-        await invokeDb('auth:token:set', token)
+        const result = await invokeDb<GithubTokenValidationResult>('auth:token:set', token)
         setTokenExists(true)
-        addToast('GitHub connected successfully', 'success')
-      } catch {
-        addToast('Could not save credentials securely. Please try again.', 'error')
+        addToast(
+          result.accountLogin
+            ? `GitHub connected as ${result.accountLogin}`
+            : 'GitHub connected successfully',
+          'success'
+        )
+      } catch (error) {
+        addToast(
+          error instanceof Error
+            ? error.message
+            : 'Could not save credentials securely. Please try again.',
+          'error'
+        )
       }
     },
     [addToast]

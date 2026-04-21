@@ -1,40 +1,60 @@
-import { safeStorage } from 'electron'
+import { createRequire } from 'node:module'
+import { join } from 'node:path'
 import Store from 'electron-store'
 
 interface CredentialsSchema {
   github_token?: string // base64-encoded safeStorage-encrypted bytes
-  openai_key?: string // base64-encoded safeStorage-encrypted bytes
-  anthropic_key?: string // base64-encoded safeStorage-encrypted bytes
+  ai_api_key?: string // base64-encoded safeStorage-encrypted bytes
 }
+
+const storeCwd = process.env.VITEST ? join(process.cwd(), '.vitest', 'electron-store') : undefined
 
 const store = new Store<CredentialsSchema>({
   name: 'credentials',
-  defaults: {}
+  defaults: {},
+  ...(storeCwd ? { cwd: storeCwd } : {})
 })
 
-export function setGithubToken(token: string): void {
-  ensureEncryptionAvailable()
-  const encrypted = safeStorage.encryptString(token)
-  store.set('github_token', encrypted.toString('base64'))
+const require = createRequire(import.meta.url)
+
+interface SafeStorageLike {
+  isEncryptionAvailable(): boolean
+  encryptString(value: string): Buffer
+  decryptString(value: Buffer): string
 }
 
-function ensureEncryptionAvailable(): void {
-  if (!safeStorage.isEncryptionAvailable()) {
+function getSafeStorage(): SafeStorageLike | null {
+  try {
+    const electronModule = require('electron')
+
+    if (typeof electronModule === 'string') {
+      return null
+    }
+
+    return (electronModule as { safeStorage?: SafeStorageLike }).safeStorage ?? null
+  } catch {
+    return null
+  }
+}
+
+function encryptAndStore(key: keyof CredentialsSchema, value: string): void {
+  const safeStorage = getSafeStorage()
+
+  if (!safeStorage?.isEncryptionAvailable()) {
     throw new Error(
       'Secure storage is not available on this system. ' +
         'On Linux, ensure a keyring service (GNOME Keyring or KWallet) is running.'
     )
   }
-}
 
-function setEncryptedValue(key: keyof CredentialsSchema, value: string): void {
-  ensureEncryptionAvailable()
   const encrypted = safeStorage.encryptString(value)
   store.set(key, encrypted.toString('base64'))
 }
 
-function getDecryptedValue(key: keyof CredentialsSchema): string | null {
-  if (!safeStorage.isEncryptionAvailable()) return null
+function readAndDecrypt(key: keyof CredentialsSchema): string | null {
+  const safeStorage = getSafeStorage()
+
+  if (!safeStorage?.isEncryptionAvailable()) return null
   const stored = store.get(key)
   if (!stored) return null
   try {
@@ -46,8 +66,12 @@ function getDecryptedValue(key: keyof CredentialsSchema): string | null {
   }
 }
 
+export function setGithubToken(token: string): void {
+  encryptAndStore('github_token', token)
+}
+
 export function getGithubToken(): string | null {
-  return getDecryptedValue('github_token')
+  return readAndDecrypt('github_token')
 }
 
 export function clearGithubToken(): void {
@@ -58,34 +82,14 @@ export function hasGithubToken(): boolean {
   return !!store.get('github_token')
 }
 
-export function setOpenAIKey(key: string): void {
-  setEncryptedValue('openai_key', key)
+export function setAiApiKey(apiKey: string): void {
+  encryptAndStore('ai_api_key', apiKey)
 }
 
-export function getOpenAIKey(): string | null {
-  return getDecryptedValue('openai_key')
+export function getAiApiKey(): string | null {
+  return readAndDecrypt('ai_api_key')
 }
 
-export function clearOpenAIKey(): void {
-  store.delete('openai_key')
-}
-
-export function hasOpenAIKey(): boolean {
-  return !!store.get('openai_key')
-}
-
-export function setAnthropicKey(key: string): void {
-  setEncryptedValue('anthropic_key', key)
-}
-
-export function getAnthropicKey(): string | null {
-  return getDecryptedValue('anthropic_key')
-}
-
-export function clearAnthropicKey(): void {
-  store.delete('anthropic_key')
-}
-
-export function hasAnthropicKey(): boolean {
-  return !!store.get('anthropic_key')
+export function clearAiApiKey(): void {
+  store.delete('ai_api_key')
 }

@@ -87,13 +87,13 @@ export function ConnectGitHub({
         <>
           <div className={styles.divider}>or use a Personal Access Token</div>
           <div className={styles.description}>
-            Needs <strong>repo</strong> permission.
+            Supports classic <strong>ghp_</strong> and fine-grained <strong>github_pat_</strong> tokens.
           </div>
           <div className={styles.inputRow}>
             <input
               type="password"
               className={styles.tokenInput}
-              placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+              placeholder="ghp_... or github_pat_..."
               value={token}
               onChange={(e) => setToken(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleConnect()}

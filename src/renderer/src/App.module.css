@@ -14,6 +14,14 @@
   min-width: 0;
 }
 
+.panelArea {
+  padding: 16px 16px 0;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .workspace {
   flex: 1;
   min-height: 0;
@@ -42,6 +50,17 @@
   text-overflow: ellipsis;
 }
 
+.settingsBtn {
+  margin-left: auto;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-sidebar);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .branch {
   display: inline-flex;
   align-items: center;
@@ -57,7 +76,6 @@
 }
 
 .aheadBehind {
-  margin-left: auto;
   font-size: 12px;
   color: var(--text-muted);
   display: flex;

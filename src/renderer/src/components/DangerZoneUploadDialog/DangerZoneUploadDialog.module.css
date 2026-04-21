@@ -1,0 +1,72 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(15 23 42 / 56%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 28;
+}
+
+.dialog {
+  width: min(460px, 100%);
+  background: var(--bg);
+  border: 1px solid rgb(220 38 38 / 22%);
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 28px 90px rgb(15 23 42 / 24%);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--error);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: var(--text);
+  font-size: 26px;
+  line-height: 1.15;
+}
+
+.copy {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.buttonRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.secondaryButton,
+.dangerButton {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.secondaryButton {
+  background: var(--bg-sidebar);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.dangerButton {
+  background: var(--error);
+  color: #fff;
+}

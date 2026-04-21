@@ -1,8 +1,16 @@
 import { ipcMain } from 'electron'
+import { clearProjectAiSettings } from '../db/projectAiSettings'
+import { clearProjectCloudTarget } from '../db/projectCloudTargets'
 import { addProject, listProjects, removeProject, touchProject } from '../db/projects'
 import { invalidateCache } from '../db/statusCache'
 import { stopWatchingProject, watchProject } from '../watcher'
 import { removeGitService } from '../git'
+
+export function registerProjectForUse(local_path: string, friendly_name: string) {
+  const project = addProject(local_path, friendly_name)
+  watchProject(project.project_id, project.local_path)
+  return project
+}
 
 export function registerProjectsHandlers(): void {
   ipcMain.handle('db:projects:list', () => {
@@ -12,9 +20,7 @@ export function registerProjectsHandlers(): void {
   ipcMain.handle(
     'db:projects:add',
     (_event, local_path: string, friendly_name: string) => {
-      const project = addProject(local_path, friendly_name)
-      watchProject(project.project_id, project.local_path)
-      return project
+      return registerProjectForUse(local_path, friendly_name)
     }
   )
 
@@ -22,6 +28,8 @@ export function registerProjectsHandlers(): void {
     stopWatchingProject(project_id)
     invalidateCache(project_id)
     removeGitService(project_id)
+    clearProjectAiSettings(project_id)
+    clearProjectCloudTarget(project_id)
     removeProject(project_id)
   })
 

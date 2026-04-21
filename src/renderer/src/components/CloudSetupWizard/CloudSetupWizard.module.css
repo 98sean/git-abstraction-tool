@@ -1,0 +1,218 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(15 23 42 / 52%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 24;
+}
+
+.dialog {
+  width: min(720px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  overflow: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 28px 90px rgb(15 23 42 / 22%);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0;
+  color: var(--text);
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.closeButton {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-sidebar);
+  color: var(--text-muted);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.errorBanner {
+  border-radius: 14px;
+  background: rgb(220 38 38 / 10%);
+  color: var(--error);
+  padding: 12px 14px;
+  font-size: 13px;
+}
+
+.intentGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.intentCard,
+.modeCard {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--bg-sidebar);
+  color: var(--text);
+  padding: 18px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+
+.intentCard:hover,
+.modeCard:hover,
+.closeButton:hover {
+  border-color: var(--accent);
+}
+
+.intentTitle {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.intentCopy,
+.copy,
+.modeCard span {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.copy {
+  margin: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field span {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.select,
+.input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.modeList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.activeMode {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgb(59 130 246 / 12%);
+}
+
+.dangerMode {
+  background: rgb(220 38 38 / 6%);
+  border-color: rgb(220 38 38 / 18%);
+}
+
+.revealDangerButton {
+  align-self: flex-start;
+  background: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.buttonRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.primaryButton {
+  background: var(--accent);
+  color: #fff;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.secondaryButton {
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+@media (max-width: 760px) {
+  .backdrop {
+    padding: 12px;
+    align-items: flex-end;
+  }
+
+  .dialog {
+    border-radius: 24px 24px 0 0;
+    max-height: calc(100vh - 12px);
+    padding: 20px;
+  }
+
+  .intentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+}

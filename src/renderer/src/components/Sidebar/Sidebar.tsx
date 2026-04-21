@@ -8,17 +8,19 @@ interface Props {
   projects: Project[]
   activeProjectId: string | null
   theme: 'light' | 'dark'
-  mode: 'newbie' | 'pro'
+  mode?: 'newbie' | 'pro'
   onSelectProject: (id: string) => void
   onRemoveProject: (id: string) => void
   onAddProject: () => void
   onToggleTheme: () => void
-  onToggleMode: () => void
-  onOpenSettings: () => void
+  onToggleMode?: () => void
+  onOpenSettings?: () => void
   /** Optional: dot colour hint per project — 'changed' | 'clean' | 'unknown' */
   projectStates?: Record<string, 'changed' | 'clean' | 'unknown'>
   /** Optional slot for rendering GitHub connection status in the footer */
   githubSlot?: React.ReactNode
+  /** Optional slot for rendering AI connection status in the footer */
+  aiSlot?: React.ReactNode
 }
 
 export function Sidebar({
@@ -33,7 +35,8 @@ export function Sidebar({
   onToggleMode,
   onOpenSettings,
   projectStates = {},
-  githubSlot
+  githubSlot,
+  aiSlot
 }: Props): JSX.Element {
   const t = useTerms()
   return (
@@ -85,12 +88,17 @@ export function Sidebar({
           {t.addRepo}
         </button>
         {githubSlot}
-        <button className={styles.modeBtn} onClick={onToggleMode}>
-          {mode === 'pro' ? '👤 Switch to Newbie Mode' : '⚡ Switch to Pro Mode'}
-        </button>
-        <button className={styles.settingsBtn} onClick={onOpenSettings}>
-          ⚙ Settings
-        </button>
+        {aiSlot}
+        {mode && onToggleMode && (
+          <button className={styles.modeBtn} onClick={onToggleMode}>
+            {mode === 'pro' ? '👤 Switch to Newbie Mode' : '⚡ Switch to Pro Mode'}
+          </button>
+        )}
+        {onOpenSettings && (
+          <button className={styles.settingsBtn} onClick={onOpenSettings}>
+            ⚙ Settings
+          </button>
+        )}
         <button className={styles.themeBtn} onClick={onToggleTheme}>
           {theme === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
         </button>
