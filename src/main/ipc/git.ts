@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron'
 import simpleGit from 'simple-git'
 import { getGitService, removeGitService } from '../git'
-import { addAiCommitSummary } from '../db/aiSummaries'
+import { addAiCommitSummary, AiCommitChangeKind } from '../db/aiSummaries'
 import { getCachedStatus, setCachedStatus, invalidateCache } from '../db/statusCache'
 import { getGithubToken } from '../db/credentials'
 import { GitError } from '../git/types'
@@ -11,6 +11,10 @@ interface CommitAiMetadata {
   summary: string
   fingerprint: string
   model: string
+  change_kind?: AiCommitChangeKind
+  user_visible?: boolean
+  areas?: string[]
+  keywords?: string[]
 }
 
 // Wrap a git call so IPC errors are serialisable plain objects (Errors don't
@@ -91,7 +95,11 @@ export function registerGitHandlers(): void {
             summary: aiMetadata.summary,
             created_at: Date.now(),
             model: aiMetadata.model,
-            fingerprint: aiMetadata.fingerprint
+            fingerprint: aiMetadata.fingerprint,
+            change_kind: aiMetadata.change_kind,
+            user_visible: aiMetadata.user_visible,
+            areas: aiMetadata.areas,
+            keywords: aiMetadata.keywords
           })
         }
         return commitHash

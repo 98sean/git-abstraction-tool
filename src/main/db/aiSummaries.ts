@@ -1,5 +1,15 @@
 import Store from 'electron-store'
 
+export type AiCommitChangeKind =
+  | 'feature'
+  | 'fix'
+  | 'content'
+  | 'style'
+  | 'config'
+  | 'refactor'
+  | 'chore'
+  | 'mixed'
+
 export interface AiCommitSummary {
   project_id: string
   commit_hash: string
@@ -8,6 +18,12 @@ export interface AiCommitSummary {
   created_at: number
   model: string
   fingerprint: string
+  // Optional on the stored record so entries written before these fields existed
+  // remain readable. New writes from the current code always populate them.
+  change_kind?: AiCommitChangeKind
+  user_visible?: boolean
+  areas?: string[]
+  keywords?: string[]
 }
 
 interface AiSummariesSchema {

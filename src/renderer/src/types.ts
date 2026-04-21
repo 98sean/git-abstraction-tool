@@ -139,9 +139,23 @@ export interface Preferences {
   default_save_message_template: string
 }
 
+export type AiCommitChangeKind =
+  | 'feature'
+  | 'fix'
+  | 'content'
+  | 'style'
+  | 'config'
+  | 'refactor'
+  | 'chore'
+  | 'mixed'
+
 export interface AiCommitSuggestion {
   message: string
   summary: string
+  change_kind: AiCommitChangeKind
+  user_visible: boolean
+  areas: string[]
+  keywords: string[]
   fingerprint: string
   model: string
 }
