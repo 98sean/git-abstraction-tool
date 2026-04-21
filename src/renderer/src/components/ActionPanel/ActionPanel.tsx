@@ -39,6 +39,12 @@ interface Props {
   onGenerateAutoMessage?: () => Promise<string | null>
   onSuggestNaturalUndo?: (query: string) => Promise<void>
   onApplyNaturalUndo?: () => Promise<void>
+  /**
+   * Pick one of the alternative candidates the AI returned. The handler in
+   * App.tsx should promote that alternative into `primary` so the rest of the
+   * proposal UI (preview, Yes-Restore button) re-renders against it.
+   */
+  onSelectNaturalUndoAlternative?: (alternativeIndex: number) => void
 }
 
 export function ActionPanel({
@@ -73,7 +79,8 @@ export function ActionPanel({
   onCancelDeviceFlow,
   onGenerateAutoMessage,
   onSuggestNaturalUndo,
-  onApplyNaturalUndo
+  onApplyNaturalUndo,
+  onSelectNaturalUndoAlternative
 }: Props): JSX.Element {
   const t = useTerms()
   const [undoQuery, setUndoQuery] = useState('')
@@ -269,6 +276,31 @@ export function ActionPanel({
             >
               {naturalUndoApplying ? 'Restoring...' : 'Yes, Restore This Point'}
             </button>
+
+            {naturalUndoSuggestion.alternatives.length > 0 && (
+              <div className={styles.undoAlternatives}>
+                <div className={styles.undoAlternativesLabel}>
+                  Not quite right? Other possible matches:
+                </div>
+                {naturalUndoSuggestion.alternatives.map((alt, index) => (
+                  <button
+                    key={alt.commit_hash}
+                    type="button"
+                    className={styles.undoAlternativeItem}
+                    onClick={() => onSelectNaturalUndoAlternative?.(index)}
+                    disabled={naturalUndoApplying || !onSelectNaturalUndoAlternative}
+                  >
+                    <div className={styles.undoAlternativeHeader}>
+                      <strong>{alt.short_hash}</strong>
+                      <span className={styles.undoAlternativeMeta}>
+                        {new Date(alt.commit_date).toLocaleString()} · {(alt.confidence * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className={styles.undoAlternativeReason}>{alt.reason}</div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

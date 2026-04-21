@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   FileStatus,
   FileStatusCode,
@@ -109,6 +109,18 @@ function buildTree(files: DisplayFile[]): TreeNode[] {
   return annotate(roots)
 }
 
+/** Walk the tree and return the fullPath of every directory node. */
+function collectDirPaths(nodes: TreeNode[]): string[] {
+  const out: string[] = []
+  for (const n of nodes) {
+    if (n.type === 'dir') {
+      out.push(n.fullPath)
+      out.push(...collectDirPaths(n.children))
+    }
+  }
+  return out
+}
+
 function flattenTree(nodes: TreeNode[], collapsed: Set<string>, depth = 0): FlatRow[] {
   const rows: FlatRow[] = []
   for (const n of nodes) {
@@ -193,6 +205,27 @@ export function FileManager({
       .filter((n): n is DirNode => n.type === 'dir' && DEPENDENCY_DIRS.has(n.name))
       .reduce((s, n) => s + n.changedCount, 0)
   }, [tree, showDeps])
+
+  // When a folder first appears in the tree (i.e. on the initial load of a
+  // project, or when new nested folders show up later), default it to
+  // collapsed so users don't face an overwhelming fully-expanded view.
+  // Folders they've already seen and interacted with keep whatever state
+  // they're in — we only touch *newly-seen* paths.
+  const seenDirPathsRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    const allDirs = collectDirPaths(visibleTree)
+    const seen = seenDirPathsRef.current
+    const freshlyDiscovered = allDirs.filter((p) => !seen.has(p))
+    if (freshlyDiscovered.length === 0) return
+
+    for (const p of allDirs) seen.add(p)
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      for (const p of freshlyDiscovered) next.add(p)
+      return next
+    })
+  }, [visibleTree])
 
   const flatRows = useMemo(() => flattenTree(visibleTree, collapsed), [visibleTree, collapsed])
 

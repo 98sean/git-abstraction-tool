@@ -5,14 +5,28 @@ import { generateCommitSuggestion } from '../ai/openai'
 import {
   createManualToolService
 } from '../ai/manualToolService'
+import {
+  NaturalUndoTimelineEntry,
+  WeeklyFeatureStats,
+  WeeklyFeatureSummaryEntry
+} from '../ai/manualToolTypes'
 import { createAiService } from '../ai/service'
 import { AiProviderName } from '../ai/types'
 import { getAiConnectionState, clearAiConnectionState, setAiConnectionState } from '../db/aiConnection'
+import {
+  getAiCommitSummariesByHash
+} from '../db/aiSummaries'
+import {
+  getCachedWeeklySummary,
+  setCachedWeeklySummary
+} from '../db/weeklySummaryCache'
+import { createHash } from 'node:crypto'
 import { clearAiApiKey, getAiApiKey, setAiApiKey } from '../db/credentials'
 import { getProjectAiSettings, ProjectAiSettings, setProjectAiSettings } from '../db/projectAiSettings'
 import { listProjects } from '../db/projects'
 import { getGitService } from '../git'
-import { TimelineCommitInfo } from '../git/types'
+import { GitWeeklyService } from '../git/weekly-service'
+import { TimelineCommitInfo, WeeklyCommit } from '../git/types'
 
 const aiService = createAiService()
 const manualToolService = createManualToolService({ aiService })
@@ -74,6 +88,19 @@ function formatCommitDate(isoDate: string): string {
   const date = new Date(isoDate)
   if (Number.isNaN(date.getTime())) return isoDate
   return date.toLocaleString()
+}
+
+/**
+ * Extract the first sentence of a paragraph, capped at 120 chars, so an AI
+ * summary paragraph can be reused as an at-a-glance proposal label without
+ * dumping the whole paragraph into a button.
+ */
+function firstSentence(paragraph: string): string {
+  const trimmed = paragraph.trim()
+  if (!trimmed) return 'changes were made'
+  const match = trimmed.match(/^(.+?[.!?])(\s|$)/u)
+  const picked = match ? match[1] : trimmed
+  return picked.length > 120 ? `${picked.slice(0, 117).trimEnd()}…` : picked
 }
 
 function getProjectPath(projectId: string): string {
@@ -486,38 +513,247 @@ export function registerAiHandlers(): void {
       throw new Error('No commit history is available for restoration.')
     }
 
+    // Join the raw git timeline with any AI-generated summaries saved when the
+    // commits were made, so the AI can match vague user queries against rich
+    // feature descriptions rather than just file paths.
+    const summariesByHash = getAiCommitSummariesByHash(
+      project_id,
+      timeline.map((entry) => entry.hash)
+    )
+    const enrichedTimeline: NaturalUndoTimelineEntry[] = timeline.map((entry) => {
+      const ai = summariesByHash.get(entry.hash)
+      return {
+        hash: entry.hash,
+        short_hash: entry.short_hash,
+        date: entry.date,
+        message: entry.message,
+        changed_files: entry.changed_files,
+        ai_summary: ai?.summary,
+        change_kind: ai?.change_kind,
+        user_visible: ai?.user_visible,
+        areas: ai?.areas,
+        keywords: ai?.keywords
+      }
+    })
+
     const suggestion = await manualToolService.generateNaturalUndoSuggestion({
       provider: aiConfig.provider,
       model: aiConfig.model,
       apiKey: aiConfig.apiKey,
       query: query.trim(),
-      timeline
+      timeline: enrichedTimeline
     })
-    const target = resolveCommit(timeline, suggestion.commitHash)
 
+    const target = resolveCommit(timeline, suggestion.primary.commitHash)
     if (!target) {
       throw new Error('Could not identify a commit for this request. Please be more specific.')
     }
 
-    const preview = await service.getRestorePreview(target.hash)
-    const eventSummary = summarizeCommitEvent(target)
-    const proposalText = `Restore to this point (${formatCommitDate(target.date)}: ${eventSummary})?`
+    // Build the full payload for one candidate commit, reusing the preview +
+    // labeling helpers. The AI summary (when available) supersedes the
+    // file-heuristic `summarizeCommitEvent` output for the user-visible label.
+    const buildOption = async (
+      commit: TimelineCommitInfo,
+      reason: string,
+      confidence: number
+    ): Promise<{
+      commit_hash: string
+      short_hash: string
+      commit_message: string
+      commit_date: string
+      reason: string
+      confidence: number
+      total_restore_files: number
+      total_remove_files: number
+      restore_files_preview: string[]
+      remove_files_preview: string[]
+      proposal_text: string
+    }> => {
+      const preview = await service.getRestorePreview(commit.hash)
+      const ai = summariesByHash.get(commit.hash)
+      const label = ai?.summary
+        ? firstSentence(ai.summary)
+        : summarizeCommitEvent(commit)
+      return {
+        commit_hash: commit.hash,
+        short_hash: commit.short_hash,
+        commit_message: commit.message,
+        commit_date: commit.date,
+        reason,
+        confidence,
+        total_restore_files: preview.files_to_restore.length,
+        total_remove_files: preview.files_to_remove.length,
+        restore_files_preview: preview.files_to_restore.slice(0, 6),
+        remove_files_preview: preview.files_to_remove.slice(0, 6),
+        proposal_text: `Restore to this point (${formatCommitDate(commit.date)}: ${label})?`
+      }
+    }
+
+    const primaryPayload = await buildOption(
+      target,
+      suggestion.primary.reason,
+      suggestion.primary.confidence
+    )
+
+    const altCommits = suggestion.alternatives
+      .map((candidate) => ({ candidate, commit: resolveCommit(timeline, candidate.commitHash) }))
+      .filter(
+        (entry): entry is { candidate: (typeof suggestion.alternatives)[number]; commit: TimelineCommitInfo } =>
+          entry.commit !== null && entry.commit.hash !== target.hash
+      )
+      .slice(0, 2)
+
+    const alternatives = await Promise.all(
+      altCommits.map(({ candidate, commit }) =>
+        buildOption(commit, candidate.reason, candidate.confidence)
+      )
+    )
 
     return {
       query: query.trim(),
-      commit_hash: target.hash,
-      short_hash: target.short_hash,
-      commit_message: target.message,
-      commit_date: target.date,
-      reason: suggestion.reason,
-      confidence: suggestion.confidence,
-      total_restore_files: preview.files_to_restore.length,
-      total_remove_files: preview.files_to_remove.length,
-      restore_files_preview: preview.files_to_restore.slice(0, 6),
-      remove_files_preview: preview.files_to_remove.slice(0, 6),
-      proposal_text: proposalText
+      ...primaryPayload,
+      alternatives
     }
   })
+
+  // Weekly "what I did" feature summary aimed at non-technical creators.
+  //
+  // Ground truth for the narrative is the real git log for the week (commits,
+  // files added/modified/deleted, lines added/removed, active days). We join
+  // that against `ai-summaries.json` by commit_hash to enrich individual
+  // commits with feature-level paragraphs when available, but every commit
+  // in the week — including ones without an AI summary — is passed to the
+  // model so the narrative covers the whole week and never exceeds reality.
+  ipcMain.handle(
+    'ai:weekly:summary',
+    async (_event, project_id: string, startDate: string, endDate: string) => {
+      const aiConfig = getConnectedAiConfig()
+
+      const project = listProjects().find((p) => p.project_id === project_id)
+      if (!project) {
+        throw new Error('Project not found. Please reconnect.')
+      }
+
+      const weeklyService = new GitWeeklyService(project.local_path)
+      const weeklyReport = await weeklyService.getWeeklyLog(
+        startDate,
+        endDate,
+        project_id,
+        project.friendly_name
+      )
+      const weekCommits: WeeklyCommit[] = weeklyReport.commits
+
+      const stats: WeeklyFeatureStats = {
+        totalCommits: weeklyReport.summary.totalCommits,
+        filesAdded: weeklyReport.summary.filesAdded,
+        filesModified: weeklyReport.summary.filesModified,
+        filesDeleted: weeklyReport.summary.filesDeleted,
+        linesAdded: weeklyReport.summary.totalInsertions,
+        linesRemoved: weeklyReport.summary.totalDeletions,
+        activeDays: weeklyReport.dailyBreakdown.filter((d) => d.commitCount > 0).length
+      }
+
+      if (weekCommits.length === 0) {
+        return {
+          summary: '',
+          highlights: [] as string[],
+          commit_count: 0,
+          ai_summary_count: 0,
+          has_entries: false,
+          stats
+        }
+      }
+
+      // Pull AI summaries for just the commits in this week (by full hash).
+      const summariesByHash = getAiCommitSummariesByHash(
+        project_id,
+        weekCommits.map((c) => c.hash)
+      )
+
+      const entries: WeeklyFeatureSummaryEntry[] = weekCommits
+        // oldest → newest so the AI reads the story chronologically
+        .slice()
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        .map((commit) => {
+          const ai = summariesByHash.get(commit.hash)
+          return {
+            hash: commit.hash,
+            date: commit.date,
+            message: commit.message,
+            ai_summary: ai?.summary,
+            change_kind: ai?.change_kind,
+            user_visible: ai?.user_visible,
+            areas: ai?.areas,
+            keywords: ai?.keywords,
+            is_initial_import: commit.is_initial_import
+          }
+        })
+
+      const aiSummaryCount = entries.filter((entry) => Boolean(entry.ai_summary)).length
+
+      // Build a stable signature for the week so we can cache the AI result
+      // across app restarts. Changes to commits, AI summaries, or model all
+      // invalidate the cache automatically inside getCachedWeeklySummary.
+      const commitSignature = createHash('sha256')
+        .update(entries.map((e) => `${e.hash}:${e.ai_summary ? 1 : 0}`).join('|'))
+        .digest('hex')
+
+      const cached = getCachedWeeklySummary({
+        project_id,
+        start_date: startDate,
+        end_date: endDate,
+        commit_signature: commitSignature,
+        model: aiConfig.model,
+        ai_summary_count: aiSummaryCount
+      })
+
+      if (cached) {
+        return {
+          summary: cached.summary,
+          highlights: cached.highlights,
+          commit_count: cached.commit_count,
+          ai_summary_count: cached.ai_summary_count,
+          has_entries: true,
+          stats: cached.stats,
+          cached: true
+        }
+      }
+
+      const result = await manualToolService.generateWeeklyFeatureSummary({
+        provider: aiConfig.provider,
+        model: aiConfig.model,
+        apiKey: aiConfig.apiKey,
+        startDate,
+        endDate,
+        entries,
+        stats
+      })
+
+      setCachedWeeklySummary({
+        project_id,
+        start_date: startDate,
+        end_date: endDate,
+        commit_signature: commitSignature,
+        model: aiConfig.model,
+        ai_summary_count: aiSummaryCount,
+        summary: result.summary,
+        highlights: result.highlights,
+        commit_count: entries.length,
+        stats,
+        created_at: Date.now()
+      })
+
+      return {
+        summary: result.summary,
+        highlights: result.highlights,
+        commit_count: entries.length,
+        ai_summary_count: aiSummaryCount,
+        has_entries: true,
+        stats,
+        cached: false
+      }
+    }
+  )
 
   ipcMain.handle('ai:file:insight', async (_event, project_id: string, file_path: string) => {
     const normalizedPath = (file_path ?? '').replace(/\\/g, '/').trim()

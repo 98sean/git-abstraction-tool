@@ -50,3 +50,35 @@ export function listAiCommitSummaries(project_id: string): AiCommitSummary[] {
     .filter((entry) => entry.project_id === project_id)
     .sort((a, b) => b.created_at - a.created_at)
 }
+
+/**
+ * Return AI summaries whose `created_at` falls inside [startMs, endMs] inclusive.
+ * Both bounds are epoch millis. Used by the weekly-report AI summarizer.
+ */
+export function listAiCommitSummariesInRange(
+  project_id: string,
+  startMs: number,
+  endMs: number
+): AiCommitSummary[] {
+  return listAiCommitSummaries(project_id).filter(
+    (entry) => entry.created_at >= startMs && entry.created_at <= endMs
+  )
+}
+
+/**
+ * Lookup summaries for a specific set of commit hashes within a project.
+ * Returns a Map keyed by full commit hash for O(1) joins against git timelines.
+ */
+export function getAiCommitSummariesByHash(
+  project_id: string,
+  commitHashes: string[]
+): Map<string, AiCommitSummary> {
+  const wanted = new Set(commitHashes)
+  const out = new Map<string, AiCommitSummary>()
+  for (const entry of listAiCommitSummaries(project_id)) {
+    if (wanted.has(entry.commit_hash)) {
+      out.set(entry.commit_hash, entry)
+    }
+  }
+  return out
+}

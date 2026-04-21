@@ -83,6 +83,13 @@ export function mapNameStatus(code: string): WeeklyCommitFile['status'] {
   return 'modified'
 }
 
+/**
+ * Build the week's headline stats. Commits flagged `is_initial_import` are
+ * counted toward `totalCommits` but intentionally NOT rolled into the
+ * file/line aggregates — an initial project import is not "4,333 new
+ * features this week", it's one commit that brought an existing codebase
+ * under version control.
+ */
 export function buildSummary(commits: WeeklyCommit[]): WeeklyReportSummary {
   let filesAdded = 0
   let filesModified = 0
@@ -91,6 +98,7 @@ export function buildSummary(commits: WeeklyCommit[]): WeeklyReportSummary {
   let totalDeletions = 0
 
   for (const commit of commits) {
+    if (commit.is_initial_import) continue
     for (const file of commit.files) {
       if (file.status === 'added') filesAdded++
       else if (file.status === 'deleted') filesDeleted++
@@ -159,6 +167,16 @@ export class GitWeeklyService {
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     )
 
+    // Flag every root commit in this week. A root commit has no parent, so
+    // its name-status lists every file in the project as `A` — which would
+    // otherwise hugely inflate "Files Added" / "Lines Added".
+    const rootHashes = await this.getRootCommitHashes()
+    for (const commit of commits) {
+      if (rootHashes.has(commit.hash)) {
+        commit.is_initial_import = true
+      }
+    }
+
     return {
       projectId,
       projectName,
@@ -167,6 +185,24 @@ export class GitWeeklyService {
       summary: buildSummary(commits),
       dailyBreakdown: buildDailyBreakdown(commits, startDate),
       commits
+    }
+  }
+
+  /**
+   * Return the set of every root commit hash reachable from HEAD. Usually
+   * just one, but merged histories can technically have multiple roots.
+   * Returns an empty set if the repo has no commits yet (safe no-op).
+   */
+  private async getRootCommitHashes(): Promise<Set<string>> {
+    try {
+      const raw = await this.git.raw(['rev-list', '--max-parents=0', 'HEAD'])
+      const hashes = raw
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+      return new Set(hashes)
+    } catch {
+      return new Set()
     }
   }
 }

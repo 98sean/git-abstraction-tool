@@ -139,6 +139,13 @@ export interface WeeklyCommit {
   date: string
   message: string
   files: WeeklyCommitFile[]
+  /**
+   * True when this commit is the repository's root commit (no parent).
+   * Such commits typically bring an entire existing project under version
+   * control in one shot — counting each of their files as "added this week"
+   * would drown out real work, so they are excluded from the summary stats.
+   */
+  is_initial_import?: boolean
 }
 
 export interface WeeklyReportSummary {

@@ -276,3 +276,62 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+.undoAlternatives {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border, #dcdcdc);
+}
+
+.undoAlternativesLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #777);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.undoAlternativeItem {
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid var(--border, #dcdcdc);
+  border-radius: var(--radius);
+  background: var(--surface, #fff);
+  color: var(--text, #222);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.undoAlternativeItem:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: var(--accent);
+}
+
+.undoAlternativeItem:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.undoAlternativeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.undoAlternativeMeta {
+  color: var(--text-muted, #777);
+  font-size: 11px;
+}
+
+.undoAlternativeReason {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text, #444);
+}

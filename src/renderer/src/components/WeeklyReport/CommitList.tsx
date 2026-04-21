@@ -37,9 +37,20 @@ function CommitItem({ commit }: { commit: WeeklyCommit }): React.JSX.Element {
         className="wr-commit-header"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
+        title={commit.message || '(no message)'}
       >
         <span className="wr-commit-toggle">{expanded ? '▾' : '▸'}</span>
-        <span className="wr-commit-message">{commit.message || '(no message)'}</span>
+        <span className="wr-commit-message">
+          {commit.message || '(no message)'}
+          {commit.is_initial_import && (
+            <span
+              className="wr-commit-badge"
+              title="First commit of the repository. Its file counts are excluded from the week's totals."
+            >
+              Initial import
+            </span>
+          )}
+        </span>
         <span className="wr-commit-meta">
           {formatDate(commit.date)} · {commit.files.length} files
         </span>

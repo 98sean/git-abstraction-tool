@@ -363,6 +363,30 @@ function Shell(): JSX.Element {
     }
   }
 
+  /**
+   * Promote alternative[index] into the primary slot of the undo suggestion
+   * and push the old primary to the top of alternatives — lets the user flip
+   * between candidates without re-running the AI.
+   */
+  const handleSelectNaturalUndoAlternative = (alternativeIndex: number): void => {
+    setNaturalUndoSuggestion((current) => {
+      if (!current) return current
+      const picked = current.alternatives[alternativeIndex]
+      if (!picked) return current
+
+      const { alternatives: _drop, query, ...oldPrimary } = current
+      void _drop
+      const remaining = current.alternatives.filter((_, i) => i !== alternativeIndex)
+      const nextAlternatives = [oldPrimary, ...remaining].slice(0, 2)
+
+      return {
+        query,
+        ...picked,
+        alternatives: nextAlternatives
+      }
+    })
+  }
+
   const handleApplyNaturalUndo = async (): Promise<void> => {
     if (!activeProjectId || !naturalUndoSuggestion) return
 
@@ -560,7 +584,7 @@ function Shell(): JSX.Element {
               </header>
 
               {showWeeklyReport ? (
-                <WeeklyReport projectId={activeProjectId} />
+                <WeeklyReport projectId={activeProjectId} aiConnection={connectionStatus} />
               ) : isNotARepo ? (
                 <NotARepo projectPath={activeProject.local_path} onInit={handleInitRepo} />
               ) : (
@@ -639,6 +663,7 @@ function Shell(): JSX.Element {
                 onGenerateAutoMessage={generateAutoMessage}
                 onSuggestNaturalUndo={handleSuggestNaturalUndo}
                 onApplyNaturalUndo={handleApplyNaturalUndo}
+                onSelectNaturalUndoAlternative={handleSelectNaturalUndoAlternative}
               />}
             </>
           ) : showAiPanel ? (
