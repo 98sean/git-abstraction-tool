@@ -36,11 +36,17 @@ export interface AppTerms {
   // Branches
   branchLabel: string
   newBranchBtn: string
+  mergeBranchBtn: string
   deleteBranchBtn: string
+  mergeBranchConfirm: (source: string, target: string) => string
+  mergeDefaultBranchConfirm: (source: string, target: string) => string
   deleteBranchConfirm: (name: string) => string
+  deleteCurrentBranchConfirm: (name: string, fallback: string) => string
+  protectedBranchMsg: (name: string) => string
   branchPlaceholder: string
   switchedBranchToast: (name: string) => string
   createdBranchToast: (name: string) => string
+  mergedBranchToast: (source: string, target: string) => string
   deletedBranchToast: (name: string) => string
 
   // Git setup (not-a-repo / git not installed)
@@ -88,11 +94,20 @@ const PRO: AppTerms = {
 
   branchLabel: 'Branch',
   newBranchBtn: '+ New Branch',
+  mergeBranchBtn: 'Merge',
   deleteBranchBtn: 'Delete',
+  mergeBranchConfirm: (source, target) =>
+    `Merge "${source}" into "${target}"?\n\n"${target}" will include changes from "${source}".`,
+  mergeDefaultBranchConfirm: (source, target) =>
+    `Final check\n\nYou're merging "${source}" into "${target}" (default branch).\nContinue?`,
   deleteBranchConfirm: (name) => `Delete branch "${name}"?`,
+  deleteCurrentBranchConfirm: (name, fallback) =>
+    `Delete current branch "${name}"?\n\nYou are currently on "${name}", so the app will switch to "${fallback}" first and then delete "${name}".\nProceed?`,
+  protectedBranchMsg: (name) => `The "${name}" branch is protected and cannot be deleted.`,
   branchPlaceholder: 'branch-name',
   switchedBranchToast: (name) => `Switched to branch "${name}"`,
   createdBranchToast: (name) => `Created and switched to "${name}"`,
+  mergedBranchToast: (source, target) => `Merged "${source}" into "${target}"`,
   deletedBranchToast: (name) => `Deleted branch "${name}"`,
 
   initRepoBtn: 'Initialize Repository',
@@ -138,11 +153,20 @@ const NEWBIE: AppTerms = {
 
   branchLabel: 'Version',
   newBranchBtn: '+ New Version',
+  mergeBranchBtn: 'Merge',
   deleteBranchBtn: 'Delete',
+  mergeBranchConfirm: (source, target) =>
+    `Merge version "${source}" into "${target}"?\n\n"${target}" will get changes from "${source}".`,
+  mergeDefaultBranchConfirm: (source, target) =>
+    `Final check\n\nYou're merging "${source}" into "${target}" (default version).\nContinue?`,
   deleteBranchConfirm: (name) => `Delete version "${name}"?`,
+  deleteCurrentBranchConfirm: (name, fallback) =>
+    `Delete current version "${name}"?\n\nYou are currently on "${name}", so the app will switch to "${fallback}" first and then delete "${name}".\nProceed?`,
+  protectedBranchMsg: (name) => `"${name}" is protected and cannot be deleted.`,
   branchPlaceholder: 'version-name',
   switchedBranchToast: (name) => `Switched to version "${name}"`,
   createdBranchToast: (name) => `Created and switched to "${name}"`,
+  mergedBranchToast: (source, target) => `Merged "${source}" into "${target}"`,
   deletedBranchToast: (name) => `Deleted version "${name}"`,
 
   initRepoBtn: 'Set up this Project',

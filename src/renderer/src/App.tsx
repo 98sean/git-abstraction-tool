@@ -31,6 +31,9 @@ import { PullUpdatesDialog } from './components/PullUpdatesDialog/PullUpdatesDia
 import { Sidebar } from './components/Sidebar/Sidebar'
 import { ToastContainer } from './components/shared/Toast'
 import {
+  BranchCreateResult,
+  BranchDeleteResult,
+  BranchMergeResult,
   FileInsight,
   PullUpdatesPreview,
   NaturalUndoSuggestion,
@@ -66,6 +69,7 @@ function Shell(): JSX.Element {
   const [pullPreview, setPullPreview] = useState<PullUpdatesPreview | null>(null)
   const [pullPreviewLoading, setPullPreviewLoading] = useState(false)
   const [pullPreviewError, setPullPreviewError] = useState<string | null>(null)
+  const [protectedBranch, setProtectedBranch] = useState<string | null>(null)
   const [gitInstalled, setGitInstalled] = useState<boolean | null>(null)
   const [naturalUndoSuggestion, setNaturalUndoSuggestion] = useState<NaturalUndoSuggestion | null>(null)
   const [naturalUndoLoading, setNaturalUndoLoading] = useState(false)
@@ -107,6 +111,7 @@ function Shell(): JSX.Element {
     setPullPreview(null)
     setPullPreviewError(null)
     setShowPullUpdatesDialog(false)
+    setProtectedBranch(null)
     fileInsightReqRef.current += 1
   }, [activeProjectId])
 
@@ -125,8 +130,10 @@ function Shell(): JSX.Element {
   const {
     branches,
     loading: branchesLoading,
+    fetchDefaultBranch,
     switchBranch,
     createBranch,
+    mergeBranch,
     deleteBranch,
     fetchBranches
   } = useBranches(activeProjectId)
@@ -185,6 +192,45 @@ function Shell(): JSX.Element {
     onReadyToUpload: handleUploadWithTarget
   })
 
+  useEffect(() => {
+    if (!activeProjectId) {
+      setProtectedBranch(null)
+      return
+    }
+
+    const remoteName =
+      cloudSetup.target.mode === 'collaboration' && cloudSetup.target.collaboration?.remoteName
+        ? cloudSetup.target.collaboration.remoteName
+        : 'origin'
+
+    let cancelled = false
+    void (async () => {
+      const detected = await fetchDefaultBranch(remoteName).catch(() => null)
+      if (cancelled) return
+
+      if (detected) {
+        setProtectedBranch(detected)
+        return
+      }
+
+      const fallback =
+        branches.find((branch) => branch.name === 'main')?.name ??
+        branches.find((branch) => branch.name === 'master')?.name ??
+        null
+      setProtectedBranch(fallback)
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    activeProjectId,
+    branches,
+    cloudSetup.target.mode,
+    cloudSetup.target.collaboration?.remoteName,
+    fetchDefaultBranch
+  ])
+
   const handleAddProject = (): void => {
     linkWizard.open()
   }
@@ -233,22 +279,93 @@ function Shell(): JSX.Element {
   const handleSwitchBranch = async (name: string): Promise<void> => {
     await switchBranch(name)
     await fetchStatus()
+    await cloudSetup.refreshTarget()
     addToast(t.switchedBranchToast(name), 'success')
   }
 
   const handleCreateBranch = async (name: string): Promise<void> => {
-    await createBranch(name)
+    const result: BranchCreateResult = await createBranch(name)
     await fetchStatus()
+    await cloudSetup.refreshTarget()
     addToast(t.createdBranchToast(name), 'success')
+
+    if (result.published) {
+      addToast(`Published "${name}" to ${result.remote_name ?? 'origin'}`, 'info')
+      return
+    }
+
+    const reason = result.publish_error
+      ? ` (${result.publish_error})`
+      : ''
+    addToast(`Created locally only. Use Upload to publish "${name}" to GitHub${reason}`, 'info')
   }
 
   const handleDeleteBranch = async (name: string): Promise<void> => {
     try {
-      await deleteBranch(name)
+      if (protectedBranch && name === protectedBranch) {
+        addToast(t.protectedBranchMsg(protectedBranch), 'error')
+        return
+      }
+
+      const currentBranch = status?.current_branch ?? ''
+      const deletingCurrentBranch = currentBranch === name
+
+      if (deletingCurrentBranch) {
+        const fallbackBranch =
+          branches.find((branch) => branch.name === protectedBranch && branch.name !== name)?.name ??
+          branches.find((branch) => branch.name === 'main' && branch.name !== name)?.name ??
+          branches.find((branch) => branch.name === 'master' && branch.name !== name)?.name ??
+          branches.find((branch) => branch.name !== name)?.name ??
+          null
+
+        if (!fallbackBranch) {
+          addToast('Cannot delete the only remaining branch.', 'error')
+          return
+        }
+
+        if (!window.confirm(t.deleteCurrentBranchConfirm(name, fallbackBranch))) {
+          return
+        }
+
+        await switchBranch(fallbackBranch)
+        await fetchBranches()
+        await fetchStatus()
+        await cloudSetup.refreshTarget()
+        addToast(t.switchedBranchToast(fallbackBranch), 'info')
+      } else if (!window.confirm(t.deleteBranchConfirm(name))) {
+        return
+      }
+
+      const result: BranchDeleteResult = await deleteBranch(name)
       await fetchStatus()
+      await fetchBranches()
+      await cloudSetup.refreshTarget()
       addToast(t.deletedBranchToast(name), 'info')
+
+      if (result.remote_deleted) {
+        addToast(`Deleted "${name}" from ${result.remote_name ?? 'origin'}`, 'info')
+        return
+      }
+
+      if (result.remote_name && result.remote_delete_error) {
+        addToast(
+          `Deleted local branch only. Could not delete remote branch on ${result.remote_name} (${result.remote_delete_error})`,
+          'info'
+        )
+      }
     } catch (error) {
       const message = (error as { message?: string })?.message ?? 'Could not delete branch.'
+      addToast(message, 'error')
+    }
+  }
+
+  const handleMergeBranch = async (name: string): Promise<void> => {
+    try {
+      const result: BranchMergeResult = await mergeBranch(name)
+      await fetchStatus()
+      addToast(t.mergedBranchToast(result.source_branch, result.target_branch), 'success')
+    } catch (error) {
+      const message = (error as { message?: string })?.message ?? 'Could not merge branch.'
       addToast(message, 'error')
     }
   }
@@ -535,6 +652,7 @@ function Shell(): JSX.Element {
                       aiConnectionStatus={connectionStatus.connection_status}
                       selectedModel={connectionStatus.selected_model}
                       cloudTarget={cloudSetup.target}
+                      protectedBranch={protectedBranch}
                       onAiChange={(patch) => {
                         void handleProjectAiChange(patch)
                       }}
@@ -553,10 +671,12 @@ function Shell(): JSX.Element {
                 {status && (
                   <BranchSelector
                     currentBranch={status.current_branch}
+                    protectedBranch={protectedBranch}
                     branches={branches}
                     loading={branchesLoading}
                     onSwitch={handleSwitchBranch}
                     onCreate={handleCreateBranch}
+                    onMerge={handleMergeBranch}
                     onDelete={handleDeleteBranch}
                   />
                 )}

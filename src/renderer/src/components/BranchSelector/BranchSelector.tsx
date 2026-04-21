@@ -5,19 +5,23 @@ import styles from './BranchSelector.module.css'
 
 interface Props {
   currentBranch: string
+  protectedBranch: string | null
   branches: BranchInfo[]
   loading: boolean
   onSwitch: (name: string) => Promise<void>
   onCreate: (name: string) => Promise<void>
+  onMerge: (name: string) => Promise<void>
   onDelete: (name: string) => Promise<void>
 }
 
 export function BranchSelector({
   currentBranch,
+  protectedBranch,
   branches,
   loading,
   onSwitch,
   onCreate,
+  onMerge,
   onDelete
 }: Props): JSX.Element {
   const t = useTerms()
@@ -63,11 +67,29 @@ export function BranchSelector({
   }
 
   const handleDelete = async (name: string): Promise<void> => {
-    if (name === currentBranch || busy) return
-    if (!window.confirm(t.deleteBranchConfirm(name))) return
+    if (busy) return
+    if (protectedBranch && name === protectedBranch) return
     setBusy(true)
     try {
       await onDelete(name)
+      setOpen(false)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleMerge = async (name: string): Promise<void> => {
+    if (name === currentBranch || busy) return
+    if (!window.confirm(t.mergeBranchConfirm(name, currentBranch))) return
+    if (protectedBranch && currentBranch === protectedBranch &&
+      !window.confirm(t.mergeDefaultBranchConfirm(name, currentBranch))
+    ) {
+      return
+    }
+    setBusy(true)
+    try {
+      await onMerge(name)
+      setOpen(false)
     } finally {
       setBusy(false)
     }
@@ -107,16 +129,30 @@ export function BranchSelector({
                     <span className={styles.check}>{b.current ? '✓' : ''}</span>
                     <span className={styles.branchName}>{b.name}</span>
                   </button>
-                  {!b.current && (
+                  <div className={styles.rowActions}>
+                    {!b.current && (
+                      <button
+                        className={styles.mergeBtn}
+                        onClick={() => void handleMerge(b.name)}
+                        disabled={busy}
+                        title={t.mergeBranchBtn}
+                      >
+                        {t.mergeBranchBtn}
+                      </button>
+                    )}
                     <button
                       className={styles.deleteBtn}
                       onClick={() => void handleDelete(b.name)}
-                      disabled={busy}
-                      title={t.deleteBranchBtn}
+                      disabled={busy || (protectedBranch ? b.name === protectedBranch : false)}
+                      title={
+                        protectedBranch && b.name === protectedBranch
+                          ? t.protectedBranchMsg(protectedBranch)
+                          : t.deleteBranchBtn
+                      }
                     >
                       {t.deleteBranchBtn}
                     </button>
-                  )}
+                  </div>
                 </div>
               ))
             )}

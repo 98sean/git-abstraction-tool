@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
-import { BranchInfo } from '../types'
+import { BranchCreateResult, BranchDeleteResult, BranchInfo, BranchMergeResult } from '../types'
 import { invokeGit } from '../ipc'
 
 export function useBranches(projectId: string | null): {
   branches: BranchInfo[]
   loading: boolean
   fetchBranches: () => Promise<void>
+  fetchDefaultBranch: (remoteName?: string) => Promise<string | null>
   switchBranch: (name: string) => Promise<void>
-  createBranch: (name: string) => Promise<void>
-  deleteBranch: (name: string) => Promise<void>
+  createBranch: (name: string) => Promise<BranchCreateResult>
+  mergeBranch: (name: string) => Promise<BranchMergeResult>
+  deleteBranch: (name: string) => Promise<BranchDeleteResult>
 } {
   const [branches, setBranches] = useState<BranchInfo[]>([])
   const [loading, setLoading] = useState(false)
@@ -39,21 +41,49 @@ export function useBranches(projectId: string | null): {
     [projectId, fetchBranches]
   )
 
+  const fetchDefaultBranch = useCallback(
+    async (remoteName = 'origin') => {
+      if (!projectId) return null
+      return await invokeGit<string | null>('git:branch:default', projectId, remoteName)
+    },
+    [projectId]
+  )
+
   const createBranch = useCallback(
     async (name: string) => {
-      await invokeGit('git:branch:create', projectId, name)
+      const result = await invokeGit<BranchCreateResult>('git:branch:create', projectId, name)
       await fetchBranches()
+      return result
+    },
+    [projectId, fetchBranches]
+  )
+
+  const mergeBranch = useCallback(
+    async (name: string) => {
+      const result = await invokeGit<BranchMergeResult>('git:branch:merge', projectId, name)
+      await fetchBranches()
+      return result
     },
     [projectId, fetchBranches]
   )
 
   const deleteBranch = useCallback(
     async (name: string) => {
-      await invokeGit('git:branch:delete', projectId, name)
+      const result = await invokeGit<BranchDeleteResult>('git:branch:delete', projectId, name)
       await fetchBranches()
+      return result
     },
     [projectId, fetchBranches]
   )
 
-  return { branches, loading, fetchBranches, switchBranch, createBranch, deleteBranch }
+  return {
+    branches,
+    loading,
+    fetchBranches,
+    fetchDefaultBranch,
+    switchBranch,
+    createBranch,
+    mergeBranch,
+    deleteBranch
+  }
 }

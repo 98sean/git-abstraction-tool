@@ -48,6 +48,27 @@ export interface BranchInfo {
   remote?: string
 }
 
+export interface BranchCreateResult {
+  name: string
+  published: boolean
+  remote_name: string | null
+  publish_error: string | null
+}
+
+export interface BranchDeleteResult {
+  name: string
+  current_branch: string
+  local_deleted: boolean
+  remote_name: string | null
+  remote_deleted: boolean
+  remote_delete_error: string | null
+}
+
+export interface BranchMergeResult {
+  source_branch: string
+  target_branch: string
+}
+
 export type CollaborationBranchMode = 'new_branch' | 'existing_branch' | 'danger_default_branch'
 export type CloudSetupIntent = 'backup' | 'collaboration'
 

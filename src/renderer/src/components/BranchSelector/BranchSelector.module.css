@@ -78,6 +78,12 @@
   padding-right: 6px;
 }
 
+.rowActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .branchItem {
   display: flex;
   align-items: center;
@@ -106,6 +112,27 @@
   border-radius: var(--radius-sm);
   white-space: nowrap;
   transition: all var(--transition);
+}
+
+.mergeBtn {
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--accent);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.mergeBtn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.mergeBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .deleteBtn:hover:not(:disabled) {

@@ -3,7 +3,7 @@ import simpleGit from 'simple-git'
 import { getGitService, removeGitService } from '../git'
 import { getCachedStatus, setCachedStatus, invalidateCache } from '../db/statusCache'
 import { getGithubToken } from '../db/credentials'
-import { getProjectCloudTarget } from '../db/projectCloudTargets'
+import { getProjectCloudTarget, setProjectCloudTarget } from '../db/projectCloudTargets'
 import {
   GitError,
   PullConfiguredTargetInput,
@@ -176,16 +176,103 @@ export function registerGitHandlers(): void {
     run(() => getGitService(project_id).getBranches())
   )
 
+  ipcMain.handle('git:branch:default', (_event, project_id: string, remoteName?: string) =>
+    run(() => getGitService(project_id).getDefaultBranch(remoteName ?? 'origin'))
+  )
+
   ipcMain.handle('git:branch:create', (_event, project_id: string, name: string) =>
-    run(() => getGitService(project_id).createBranch(name))
+    (async () => {
+      const token = getGithubToken() ?? undefined
+      const target = getProjectCloudTarget(project_id)
+      const remoteName =
+        target.mode === 'collaboration' && target.collaboration?.remoteName
+          ? target.collaboration.remoteName
+          : 'origin'
+
+      const result = await run(() =>
+        getGitService(project_id).createBranch(name, {
+          remoteName,
+          token,
+          publishRemote: true
+        })
+      )
+
+      if ('data' in result && target.mode === 'collaboration' && target.collaboration) {
+        setProjectCloudTarget(project_id, {
+          ...target,
+          collaboration: {
+            ...target.collaboration,
+            selectedBranch: name
+          }
+        })
+      }
+
+      invalidateCache(project_id)
+      return result
+    })()
   )
 
   ipcMain.handle('git:branch:switch', (_event, project_id: string, name: string) =>
-    run(() => getGitService(project_id).switchBranch(name))
+    (async () => {
+      const target = getProjectCloudTarget(project_id)
+      const result = await run(() => getGitService(project_id).switchBranch(name))
+
+      if ('data' in result && target.mode === 'collaboration' && target.collaboration) {
+        setProjectCloudTarget(project_id, {
+          ...target,
+          collaboration: {
+            ...target.collaboration,
+            selectedBranch: name
+          }
+        })
+      }
+
+      invalidateCache(project_id)
+      return result
+    })()
   )
 
+  ipcMain.handle('git:branch:merge', async (_event, project_id: string, name: string) => {
+    const result = await run(() => getGitService(project_id).mergeBranch(name))
+    invalidateCache(project_id)
+    return result
+  })
+
   ipcMain.handle('git:branch:delete', (_event, project_id: string, name: string) =>
-    run(() => getGitService(project_id).deleteBranch(name))
+    (async () => {
+      const token = getGithubToken() ?? undefined
+      const target = getProjectCloudTarget(project_id)
+      const remoteName =
+        target.mode === 'collaboration' && target.collaboration?.remoteName
+          ? target.collaboration.remoteName
+          : 'origin'
+
+      const result = await run(() =>
+        getGitService(project_id).deleteBranch(name, {
+          remoteName,
+          token,
+          deleteRemote: true
+        })
+      )
+
+      if (
+        'data' in result &&
+        target.mode === 'collaboration' &&
+        target.collaboration &&
+        target.collaboration.selectedBranch === name
+      ) {
+        setProjectCloudTarget(project_id, {
+          ...target,
+          collaboration: {
+            ...target.collaboration,
+            selectedBranch: result.data.current_branch
+          }
+        })
+      }
+
+      invalidateCache(project_id)
+      return result
+    })()
   )
 
   ipcMain.handle('git:untracked:delete', async (_event, project_id: string, paths: string[]) => {

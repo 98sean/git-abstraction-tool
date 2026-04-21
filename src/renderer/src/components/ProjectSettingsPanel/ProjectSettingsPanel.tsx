@@ -6,6 +6,7 @@ interface Props {
   aiConnectionStatus: AiConnectionStatus
   selectedModel: string | null
   cloudTarget: ProjectCloudTarget
+  protectedBranch: string | null
   onAiChange: (patch: Partial<ProjectAiSettings>) => void
   onOpenAiConnection: () => void
   onOpenCloudSetup: () => void
@@ -29,6 +30,7 @@ export function ProjectSettingsPanel({
   aiConnectionStatus,
   selectedModel,
   cloudTarget,
+  protectedBranch,
   onAiChange,
   onOpenAiConnection,
   onOpenCloudSetup,
@@ -86,6 +88,10 @@ export function ProjectSettingsPanel({
         <div className={styles.metaRow}>
           <span className={styles.metaLabel}>Status</span>
           <span>{cloudStatusLabel}</span>
+        </div>
+        <div className={styles.metaRow}>
+          <span className={styles.metaLabel}>Default branch</span>
+          <span>{protectedBranch ? `${protectedBranch} (protected)` : 'Not detected yet'}</span>
         </div>
         {cloudTarget.mode === 'backup' && cloudTarget.backup && (
           <div className={styles.metaRow}>

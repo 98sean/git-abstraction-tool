@@ -2,7 +2,10 @@ import { access, readFile, rm, writeFile } from 'node:fs/promises'
 import path, { join } from 'node:path'
 import simpleGit, { SimpleGit, StatusResult } from 'simple-git'
 import {
+  BranchCreateResult,
+  BranchDeleteResult,
   BranchInfo,
+  BranchMergeResult,
   CommitInfo,
   FileStatus,
   FileStatusCode,
@@ -260,6 +263,28 @@ export class GitService {
     return status.current ?? 'HEAD'
   }
 
+  async getDefaultBranch(remoteName = 'origin'): Promise<string | null> {
+    try {
+      const symbolic = await this.git.raw([
+        'symbolic-ref',
+        '--short',
+        `refs/remotes/${remoteName}/HEAD`
+      ])
+      const ref = symbolic.trim()
+      if (!ref) return null
+
+      const prefix = `${remoteName}/`
+      if (ref.startsWith(prefix)) {
+        return ref.slice(prefix.length)
+      }
+
+      const parts = ref.split('/')
+      return parts[parts.length - 1] ?? null
+    } catch {
+      return null
+    }
+  }
+
   private async pushRef(
     remoteName: string,
     refspec: string,
@@ -293,6 +318,18 @@ export class GitService {
     }
 
     await this.git.pull(remoteName, branchName)
+  }
+
+  private async deleteRemoteBranch(remoteName: string, branchName: string, token?: string): Promise<void> {
+    const remote = await this.getRemoteDetails(remoteName)
+    const pushUrl = remote?.push ?? null
+
+    if (token && pushUrl?.startsWith('https://')) {
+      await this.git.raw(['push', injectToken(pushUrl, token), '--delete', branchName])
+      return
+    }
+
+    await this.git.raw(['push', remoteName, '--delete', branchName])
   }
 
   private async fetchRef(remoteName: string, branchName: string, token?: string): Promise<void> {
@@ -592,9 +629,52 @@ export class GitService {
     }
   }
 
-  async createBranch(name: string): Promise<void> {
+  async createBranch(
+    name: string,
+    options?: { remoteName?: string; token?: string; publishRemote?: boolean }
+  ): Promise<BranchCreateResult> {
     try {
       await this.git.checkoutLocalBranch(name)
+
+      const publishRemote = options?.publishRemote ?? false
+      const remoteName = options?.remoteName?.trim() || 'origin'
+
+      if (!publishRemote) {
+        return {
+          name,
+          published: false,
+          remote_name: null,
+          publish_error: null
+        }
+      }
+
+      const remote = await this.getRemoteDetails(remoteName)
+      if (!remote) {
+        return {
+          name,
+          published: false,
+          remote_name: null,
+          publish_error: `Remote "${remoteName}" is not configured.`
+        }
+      }
+
+      try {
+        await this.pushRef(remoteName, name, ['-u'], options?.token)
+        return {
+          name,
+          published: true,
+          remote_name: remoteName,
+          publish_error: null
+        }
+      } catch (publishError) {
+        const mapped = mapGitError(publishError)
+        return {
+          name,
+          published: false,
+          remote_name: remoteName,
+          publish_error: mapped.message
+        }
+      }
     } catch (err) {
       throw mapGitError(err)
     }
@@ -608,9 +688,82 @@ export class GitService {
     }
   }
 
-  async deleteBranch(name: string): Promise<void> {
+  async mergeBranch(name: string): Promise<BranchMergeResult> {
     try {
+      const targetBranch = await this.getCurrentBranchName()
+      await this.git.merge([name])
+      return {
+        source_branch: name,
+        target_branch: targetBranch
+      }
+    } catch (err) {
+      throw mapGitError(err)
+    }
+  }
+
+  async deleteBranch(
+    name: string,
+    options?: { remoteName?: string; token?: string; deleteRemote?: boolean }
+  ): Promise<BranchDeleteResult> {
+    try {
+      const remoteName = options?.remoteName?.trim() || 'origin'
+      const protectedBranch = await this.getDefaultBranch(remoteName)
+      if (protectedBranch && name === protectedBranch) {
+        throw {
+          code: 'UNKNOWN',
+          message: `The "${protectedBranch}" branch is protected and cannot be deleted.`
+        } satisfies GitError
+      }
+
       await this.git.deleteLocalBranch(name, true)
+      const currentBranch = await this.getCurrentBranchName()
+
+      const deleteRemote = options?.deleteRemote ?? false
+
+      if (!deleteRemote) {
+        return {
+          name,
+          current_branch: currentBranch,
+          local_deleted: true,
+          remote_name: null,
+          remote_deleted: false,
+          remote_delete_error: null
+        }
+      }
+
+      const remote = await this.getRemoteDetails(remoteName)
+      if (!remote) {
+        return {
+          name,
+          current_branch: currentBranch,
+          local_deleted: true,
+          remote_name: null,
+          remote_deleted: false,
+          remote_delete_error: `Remote "${remoteName}" is not configured.`
+        }
+      }
+
+      try {
+        await this.deleteRemoteBranch(remoteName, name, options?.token)
+        return {
+          name,
+          current_branch: currentBranch,
+          local_deleted: true,
+          remote_name: remoteName,
+          remote_deleted: true,
+          remote_delete_error: null
+        }
+      } catch (remoteDeleteError) {
+        const mapped = mapGitError(remoteDeleteError)
+        return {
+          name,
+          current_branch: currentBranch,
+          local_deleted: true,
+          remote_name: remoteName,
+          remote_deleted: false,
+          remote_delete_error: mapped.message
+        }
+      }
     } catch (err) {
       throw mapGitError(err)
     }
