@@ -33,12 +33,21 @@ interface UntrackedModelResponse {
   }>
 }
 
+const CJK_CHAR_REGEX = /[\u3040-\u30ff\u31f0-\u31ff\u3400-\u9fff\uf900-\ufaff]/u
+
 function normalizeConfidence(value: number | undefined, fallback: number): number {
   if (!Number.isFinite(value)) {
     return fallback
   }
 
   return Math.max(0, Math.min(1, value))
+}
+
+function ensureEnglishText(value: string | undefined, fallback: string): string {
+  const text = value?.trim() ?? ''
+  if (!text) return fallback
+  if (CJK_CHAR_REGEX.test(text)) return fallback
+  return text
 }
 
 function toTimelineInput(commits: GenerateNaturalUndoSuggestionInput['timeline']): Array<{
@@ -97,12 +106,14 @@ export function createManualToolService(deps: {
           'You explain one code file for non-technical users. ' +
           'Return strict JSON only with keys: ' +
           '{"summary":"...","functionality":"...","related_files":[{"path":"...","reason":"..."}]}. ' +
-          'Keep summary/functionality concise. related_files max 5 and paths must come from candidates.',
+          'Keep summary/functionality concise. related_files max 5 and paths must come from candidates. ' +
+          'All user-visible text must be in English only. Never use Japanese or any other language.',
         userPrompt: JSON.stringify({
           file_path: input.filePath,
           content_snippet: input.contentSnippet,
           recent_commits: input.recentCommits,
-          related_candidates: input.relatedCandidates
+          related_candidates: input.relatedCandidates,
+          output_language: 'English'
         })
       })
 
@@ -110,7 +121,7 @@ export function createManualToolService(deps: {
       const relatedFromModel = (model.related_files ?? [])
         .map((item) => ({
           path: item.path?.replace(/\\/g, '/').trim() ?? '',
-          reason: item.reason?.trim() || 'Related behavior or dependencies.'
+          reason: ensureEnglishText(item.reason, 'Related behavior or dependencies.')
         }))
         .filter((item) => item.path && candidateSet.has(item.path))
         .slice(0, 5)
@@ -124,10 +135,14 @@ export function createManualToolService(deps: {
           }))
 
       return {
-        summary: model.summary?.trim() || 'This file is part of the current project workflow.',
-        functionality:
-          model.functionality?.trim() ||
-          'It defines behavior used by the surrounding feature set.',
+        summary: ensureEnglishText(
+          model.summary,
+          'This file is part of the current project workflow.'
+        ),
+        functionality: ensureEnglishText(
+          model.functionality,
+          'It defines behavior used by the surrounding feature set.'
+        ),
         relatedFiles
       }
     },
