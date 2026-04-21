@@ -30,7 +30,15 @@ export interface AiProviderGenerateInput {
   prompt: string
 }
 
+export interface AiProviderStructuredInput {
+  apiKey: string
+  model: string
+  systemPrompt: string
+  userPrompt: string
+}
+
 export interface AiProviderAdapter {
   validateKey(input: AiProviderValidateInput): Promise<AiProviderValidateResult>
   generateMessage(input: AiProviderGenerateInput): Promise<string | null>
+  generateStructured?<T>(input: AiProviderStructuredInput): Promise<T>
 }

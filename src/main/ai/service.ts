@@ -83,6 +83,10 @@ export function createAiService(overrides: Partial<ProviderMap> = {}) {
       ])
 
       return normalizeGeneratedMessage(message)
+    },
+
+    supportsManualTools(provider: AiProviderName): boolean {
+      return typeof providers[provider].generateStructured === 'function'
     }
   }
 }
