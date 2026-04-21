@@ -27,6 +27,9 @@ describe('ConnectAI', () => {
     fireEvent.change(screen.getByLabelText(/API key/i), { target: { value: 'sk-test' } })
     fireEvent.click(screen.getByRole('button', { name: /Connect AI/i }))
 
+    expect(
+      screen.getByText(/save drafts, natural language undo, file insight, and untracked review/i)
+    ).toBeTruthy()
     expect(onConnect).toHaveBeenCalledWith('openai', 'sk-test')
   })
 })

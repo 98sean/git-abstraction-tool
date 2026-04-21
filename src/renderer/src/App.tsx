@@ -71,9 +71,8 @@ function Shell(): JSX.Element {
   const [fileInsightError, setFileInsightError] = useState<string | null>(null)
   const fileInsightReqRef = useRef(0)
 
-  const canUseOpenAiAnalysis =
+  const manualAiToolsEnabled =
     connectionStatus.connection_status === 'connected' &&
-    connectionStatus.provider === 'openai' &&
     Boolean(connectionStatus.selected_model)
 
   const checkGitInstall = (): void => {
@@ -328,9 +327,9 @@ function Shell(): JSX.Element {
     setFileInsightError(null)
     setFileInsight(null)
 
-    if (!canUseOpenAiAnalysis) {
+    if (!manualAiToolsEnabled) {
       setFileInsightLoading(false)
-      setFileInsightError('Connect AI with OpenAI to analyze files.')
+      setFileInsightError('Connect AI to analyze files.')
       return
     }
 
@@ -498,6 +497,7 @@ function Shell(): JSX.Element {
                     selectedPath={selectedFilePath}
                     loading={statusLoading}
                     error={statusError}
+                    aiReviewEnabled={manualAiToolsEnabled}
                     onStage={stage}
                     onUnstage={unstage}
                     onStageAll={stageAll}
@@ -514,7 +514,7 @@ function Shell(): JSX.Element {
                     insight={fileInsight}
                     loading={fileInsightLoading}
                     error={fileInsightError}
-                    enabled={canUseOpenAiAnalysis}
+                    enabled={manualAiToolsEnabled}
                     onRetry={() => {
                       if (selectedFilePath) {
                         void handleSelectFile(selectedFilePath)
@@ -542,7 +542,7 @@ function Shell(): JSX.Element {
                 }
                 forceShowConnect={showGitHubPanel}
                 deviceFlow={deviceFlow}
-                naturalUndoEnabled={canUseOpenAiAnalysis && !isNotARepo}
+                naturalUndoEnabled={manualAiToolsEnabled && !isNotARepo}
                 naturalUndoSuggestion={naturalUndoSuggestion}
                 naturalUndoLoading={naturalUndoLoading}
                 naturalUndoApplying={naturalUndoApplying}

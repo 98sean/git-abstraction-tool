@@ -226,7 +226,7 @@ export function ActionPanel({
       <div className={styles.undoPanel}>
         <div className={styles.undoHeader}>
           <span className={styles.undoTitle}>Natural Language Undo</span>
-          {!naturalUndoEnabled && <span className={styles.undoHint}>OpenAI connection required</span>}
+          {!naturalUndoEnabled && <span className={styles.undoHint}>AI connection required</span>}
         </div>
 
         <div className={styles.undoInputRow}>
