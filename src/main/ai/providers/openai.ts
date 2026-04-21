@@ -54,11 +54,28 @@ function parseStructuredOutput<T>(raw: string | null): T {
     throw new Error('OpenAI did not return a valid structured response.')
   }
 
-  try {
-    return JSON.parse(raw) as T
-  } catch {
-    throw new Error('OpenAI returned invalid structured JSON.')
+  const trimmed = raw.trim()
+  const strippedFence = trimmed
+    .replace(/^```[a-zA-Z]*\s*/, '')
+    .replace(/```$/, '')
+    .trim()
+  const firstBrace = strippedFence.indexOf('{')
+  const lastBrace = strippedFence.lastIndexOf('}')
+
+  const candidates = [trimmed, strippedFence]
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    candidates.push(strippedFence.slice(firstBrace, lastBrace + 1))
   }
+
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate) as T
+    } catch {
+      continue
+    }
+  }
+
+  throw new Error('OpenAI returned invalid structured JSON.')
 }
 
 export function createOpenAiProvider(): AiProviderAdapter {

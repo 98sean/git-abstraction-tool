@@ -99,6 +99,23 @@ export interface PullConfiguredTargetInput {
   token?: string
 }
 
+export interface IncomingCommitInfo {
+  hash: string
+  short_hash: string
+  message: string
+  author_name: string
+  date: string
+}
+
+export interface PullUpdatesPreview {
+  remote_name: string
+  branch_name: string
+  current_branch: string
+  behind_count: number
+  latest_remote_hash: string
+  commits: IncomingCommitInfo[]
+}
+
 export interface StagedDiffContext {
   diff: string
   files: Array<{ path: string; status: FileStatusCode }>

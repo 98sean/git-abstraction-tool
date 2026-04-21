@@ -8,7 +8,9 @@ import {
   FileStatusCode,
   GitError,
   GitStatus,
+  IncomingCommitInfo,
   PullConfiguredTargetInput,
+  PullUpdatesPreview,
   PushConfiguredTargetInput,
   PushConfiguredTargetResult,
   RestorePreview,
@@ -293,6 +295,27 @@ export class GitService {
     await this.git.pull(remoteName, branchName)
   }
 
+  private async fetchRef(remoteName: string, branchName: string, token?: string): Promise<void> {
+    const remote = await this.getRemoteDetails(remoteName)
+    const fetchUrl = remote?.fetch ?? null
+
+    if (token && fetchUrl?.startsWith('https://')) {
+      await this.git.raw(['fetch', injectToken(fetchUrl, token), branchName])
+      return
+    }
+
+    await this.git.fetch(remoteName, branchName)
+  }
+
+  private async hasHeadCommit(): Promise<boolean> {
+    try {
+      await this.git.revparse(['--verify', 'HEAD'])
+      return true
+    } catch {
+      return false
+    }
+  }
+
   private async buildRestorePlan(commitHash: string): Promise<RestorePreview> {
     const diffRaw = await this.git.raw(['diff', '--name-status', '--find-renames', commitHash, 'HEAD'])
     const restoreSet = new Set<string>()
@@ -423,6 +446,76 @@ export class GitService {
   async pullConfiguredTarget(input: PullConfiguredTargetInput): Promise<void> {
     try {
       await this.pullRef(input.remoteName, input.branchName, input.token)
+    } catch (err) {
+      if (isGitError(err)) {
+        throw err
+      }
+
+      throw mapGitError(err)
+    }
+  }
+
+  async previewPullUpdates(input: PullConfiguredTargetInput, limit = 20): Promise<PullUpdatesPreview> {
+    try {
+      await this.fetchRef(input.remoteName, input.branchName, input.token)
+
+      const remoteRef = `${input.remoteName}/${input.branchName}`
+      const currentBranch = await this.getCurrentBranchName()
+      const hasHead = await this.hasHeadCommit()
+      const range = hasHead ? `HEAD..${remoteRef}` : remoteRef
+      const safeLimit = Math.max(1, Math.min(50, Math.floor(limit || 20)))
+      const latestRemoteHash = (await this.git.revparse([remoteRef]).catch(() => '')).trim()
+
+      const countRaw = await this.git.raw([
+        'rev-list',
+        '--count',
+        range
+      ])
+      const behindCount = Number.parseInt(countRaw.trim(), 10) || 0
+
+      if (behindCount <= 0) {
+        return {
+          remote_name: input.remoteName,
+          branch_name: input.branchName,
+          current_branch: currentBranch,
+          behind_count: 0,
+          latest_remote_hash: latestRemoteHash,
+          commits: []
+        }
+      }
+
+      const rawLog = await this.git.raw([
+        'log',
+        `--max-count=${safeLimit}`,
+        '--date=iso-strict',
+        '--pretty=format:%H%x1f%h%x1f%ad%x1f%an%x1f%s',
+        range
+      ])
+
+      const commits: IncomingCommitInfo[] = rawLog
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const [hash, shortHash, date, authorName, message] = line.split('\u001f')
+          return {
+            hash: hash ?? '',
+            short_hash: shortHash ?? '',
+            date: date ?? '',
+            author_name: authorName ?? '',
+            message: message ?? ''
+          }
+        })
+        .filter((commit) => commit.hash && commit.short_hash)
+
+      return {
+        remote_name: input.remoteName,
+        branch_name: input.branchName,
+        current_branch: currentBranch,
+        behind_count: behindCount,
+        latest_remote_hash: latestRemoteHash,
+        commits
+      }
     } catch (err) {
       if (isGitError(err)) {
         throw err

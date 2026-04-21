@@ -27,10 +27,12 @@ import { GitNotInstalled } from './components/GitNotInstalled/GitNotInstalled'
 import { NotARepo } from './components/NotARepo/NotARepo'
 import { ProjectLinkWizard } from './components/ProjectLinkWizard/ProjectLinkWizard'
 import { ProjectSettingsPanel } from './components/ProjectSettingsPanel/ProjectSettingsPanel'
+import { PullUpdatesDialog } from './components/PullUpdatesDialog/PullUpdatesDialog'
 import { Sidebar } from './components/Sidebar/Sidebar'
 import { ToastContainer } from './components/shared/Toast'
 import {
   FileInsight,
+  PullUpdatesPreview,
   NaturalUndoSuggestion,
   ProjectAiSettings,
   ProjectCloudTarget,
@@ -60,6 +62,10 @@ function Shell(): JSX.Element {
   const [showProjectSettingsPanel, setShowProjectSettingsPanel] = useState(false)
   const [showAiConsentDialog, setShowAiConsentDialog] = useState(false)
   const [pendingDangerTarget, setPendingDangerTarget] = useState<ProjectCloudTarget | null>(null)
+  const [showPullUpdatesDialog, setShowPullUpdatesDialog] = useState(false)
+  const [pullPreview, setPullPreview] = useState<PullUpdatesPreview | null>(null)
+  const [pullPreviewLoading, setPullPreviewLoading] = useState(false)
+  const [pullPreviewError, setPullPreviewError] = useState<string | null>(null)
   const [gitInstalled, setGitInstalled] = useState<boolean | null>(null)
   const [naturalUndoSuggestion, setNaturalUndoSuggestion] = useState<NaturalUndoSuggestion | null>(null)
   const [naturalUndoLoading, setNaturalUndoLoading] = useState(false)
@@ -70,6 +76,7 @@ function Shell(): JSX.Element {
   const [fileInsightLoading, setFileInsightLoading] = useState(false)
   const [fileInsightError, setFileInsightError] = useState<string | null>(null)
   const fileInsightReqRef = useRef(0)
+  const lastShownPullUpdateRef = useRef<Record<string, string>>({})
 
   const manualAiToolsEnabled =
     connectionStatus.connection_status === 'connected' &&
@@ -97,6 +104,9 @@ function Shell(): JSX.Element {
     setFileInsight(null)
     setFileInsightError(null)
     setFileInsightLoading(false)
+    setPullPreview(null)
+    setPullPreviewError(null)
+    setShowPullUpdatesDialog(false)
     fileInsightReqRef.current += 1
   }, [activeProjectId])
 
@@ -144,6 +154,7 @@ function Shell(): JSX.Element {
   })
 
   const trackedPaths = status?.tracked_files ?? []
+  const isNotARepo = statusError?.code === 'NOT_A_REPO'
 
   const handleConnectGitHub = async (token: string): Promise<void> => {
     await saveToken(token)
@@ -274,6 +285,84 @@ function Shell(): JSX.Element {
     await handleUploadWithTarget(cloudSetup.target, options)
   }
 
+  const loadPullPreview = async (refreshAfter = false): Promise<PullUpdatesPreview | null> => {
+    if (!activeProjectId) return null
+
+    setPullPreviewLoading(true)
+    setPullPreviewError(null)
+
+    try {
+      const preview = await invokeGit<PullUpdatesPreview>('git:pull:preview', activeProjectId, 20)
+      setPullPreview(preview)
+      if (refreshAfter) {
+        await fetchStatus()
+      }
+      return preview
+    } catch (error) {
+      const message =
+        (error as { message?: string })?.message ?? 'Could not load incoming updates.'
+      setPullPreviewError(message)
+      return null
+    } finally {
+      setPullPreviewLoading(false)
+    }
+  }
+
+  const handlePullRequest = (): void => {
+    void (async () => {
+      const preview = await loadPullPreview(true)
+      if (preview && preview.behind_count > 0) {
+        const fingerprint =
+          preview.latest_remote_hash || `${preview.remote_name}/${preview.branch_name}:${preview.behind_count}`
+        if (activeProjectId) {
+          lastShownPullUpdateRef.current[activeProjectId] = fingerprint
+        }
+        setShowPullUpdatesDialog(true)
+        return
+      }
+
+      await pull()
+    })()
+  }
+
+  const handleConfirmPullFromDialog = (): void => {
+    setShowPullUpdatesDialog(false)
+    void pull()
+  }
+
+  useEffect(() => {
+    if (!activeProjectId) return
+    if (isNotARepo) return
+    if (!status || status.behind <= 0) return
+    if (showPullUpdatesDialog) return
+    if (!cloudSetup.cloudUploadReady) return
+
+    let cancelled = false
+
+    void (async () => {
+      const preview = await loadPullPreview()
+      if (cancelled || !preview || preview.behind_count <= 0) return
+
+      const fingerprint =
+        preview.latest_remote_hash || `${preview.remote_name}/${preview.branch_name}:${preview.behind_count}`
+      if (lastShownPullUpdateRef.current[activeProjectId] === fingerprint) return
+
+      lastShownPullUpdateRef.current[activeProjectId] = fingerprint
+      setShowPullUpdatesDialog(true)
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [
+    activeProjectId,
+    cloudSetup.cloudUploadReady,
+    isNotARepo,
+    showPullUpdatesDialog,
+    status?.behind,
+    status?.current_branch
+  ])
+
   const handleSuggestNaturalUndo = async (query: string): Promise<void> => {
     if (!activeProjectId) return
 
@@ -388,8 +477,6 @@ function Shell(): JSX.Element {
       return [project.project_id, 'unknown'] as const
     })
   ) as Record<string, 'changed' | 'clean' | 'unknown'>
-
-  const isNotARepo = statusError?.code === 'NOT_A_REPO'
 
   return (
     <>
@@ -549,7 +636,7 @@ function Shell(): JSX.Element {
                 naturalUndoError={naturalUndoError}
                 onCommit={commit}
                 onPush={handleUpload}
-                onPull={pull}
+                onPull={handlePullRequest}
                 onOpenCloudSetup={() => {
                   void cloudSetup.open(true)
                 }}
@@ -655,6 +742,19 @@ function Shell(): JSX.Element {
               if (!target) return
               void handleUploadWithTarget(target, { dangerConfirmed: true })
             }}
+          />
+        )}
+
+        {showPullUpdatesDialog && (
+          <PullUpdatesDialog
+            preview={pullPreview}
+            loading={pullPreviewLoading}
+            error={pullPreviewError}
+            onRefresh={() => {
+              void loadPullPreview()
+            }}
+            onClose={() => setShowPullUpdatesDialog(false)}
+            onConfirmPull={handleConfirmPullFromDialog}
           />
         )}
       </div>

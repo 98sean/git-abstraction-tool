@@ -159,6 +159,15 @@ export function registerGitHandlers(): void {
     return result
   })
 
+  ipcMain.handle('git:pull:preview', async (_event, project_id: string, limit?: number) => {
+    const token = getGithubToken() ?? undefined
+    const result = await run(() =>
+      getGitService(project_id).previewPullUpdates(getPullTarget(project_id, token), limit)
+    )
+    invalidateCache(project_id)
+    return result
+  })
+
   ipcMain.handle('git:files:tracked', (_event, project_id: string) =>
     run(() => getGitService(project_id).listTrackedFiles())
   )

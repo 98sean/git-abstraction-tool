@@ -61,6 +61,23 @@ export interface PushConfiguredTargetResult {
   prUrl: string | null
 }
 
+export interface IncomingCommitInfo {
+  hash: string
+  short_hash: string
+  message: string
+  author_name: string
+  date: string
+}
+
+export interface PullUpdatesPreview {
+  remote_name: string
+  branch_name: string
+  current_branch: string
+  behind_count: number
+  latest_remote_hash: string
+  commits: IncomingCommitInfo[]
+}
+
 export interface RestoreResult {
   backup_branch: string
   restored_files: number
