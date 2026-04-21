@@ -12,7 +12,7 @@ import {
 } from '../types/weekly-report'
 
 const COMMIT_MARKER = 'GWEEKLY:'
-const DAY_NAMES_KO = ['일', '월', '화', '수', '목', '금', '토']
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 // ─── 순수 파싱 함수 (테스트 가능하도록 export) ────────────────────────────────
 
@@ -149,7 +149,7 @@ export function buildDailyBreakdown(
     const dateStr = d.toISOString().slice(0, 10)
     breakdown.push({
       date: dateStr,
-      dayOfWeek: DAY_NAMES_KO[d.getDay()],
+      dayOfWeek: DAY_NAMES[d.getDay()],
       commitCount: countByDate[dateStr] ?? 0
     })
   }

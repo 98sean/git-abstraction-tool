@@ -9,10 +9,10 @@ interface Props {
 }
 
 const STATUS_LABELS: Record<WeeklyCommitFile['status'], string> = {
-  added: '추가',
-  modified: '수정',
-  deleted: '삭제',
-  renamed: '이름 변경'
+  added: 'Added',
+  modified: 'Modified',
+  deleted: 'Deleted',
+  renamed: 'Renamed'
 }
 
 const STATUS_DOT_CLASS: Record<WeeklyCommitFile['status'], string> = {
@@ -22,13 +22,13 @@ const STATUS_DOT_CLASS: Record<WeeklyCommitFile['status'], string> = {
   renamed: 'wr-dot--renamed'
 }
 
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
 function formatDate(isoDate: string): string {
   const d = new Date(isoDate)
-  const month = d.getMonth() + 1
-  const day = d.getDate()
   const hours = d.getHours().toString().padStart(2, '0')
   const minutes = d.getMinutes().toString().padStart(2, '0')
-  return `${month}월 ${day}일 ${hours}:${minutes}`
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${hours}:${minutes}`
 }
 
 function CommitItem({ commit }: { commit: WeeklyCommit }): React.JSX.Element {
@@ -42,9 +42,9 @@ function CommitItem({ commit }: { commit: WeeklyCommit }): React.JSX.Element {
         aria-expanded={expanded}
       >
         <span className="wr-commit-toggle">{expanded ? '▾' : '▸'}</span>
-        <span className="wr-commit-message">{commit.message || '(메시지 없음)'}</span>
+        <span className="wr-commit-message">{commit.message || '(no message)'}</span>
         <span className="wr-commit-meta">
-          {formatDate(commit.date)} · {commit.files.length}개 파일
+          {formatDate(commit.date)} · {commit.files.length} files
         </span>
       </button>
 
@@ -80,14 +80,14 @@ export function CommitList({ commits }: Props): React.JSX.Element {
     return (
       <div className="wr-empty">
         <span className="wr-empty-icon">📭</span>
-        <p>이번 주에 저장한 내역이 없습니다.</p>
+        <p>No commits this week.</p>
       </div>
     )
   }
 
   return (
     <div className="wr-commit-list">
-      <h3 className="wr-section-title">저장 내역</h3>
+      <h3 className="wr-section-title">Commit History</h3>
       {commits.map((commit) => (
         <CommitItem key={commit.hash} commit={commit} />
       ))}

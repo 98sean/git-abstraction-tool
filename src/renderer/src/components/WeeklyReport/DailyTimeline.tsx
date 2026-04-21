@@ -10,7 +10,7 @@ export function DailyTimeline({ breakdown }: Props): React.JSX.Element {
 
   return (
     <div className="wr-timeline">
-      <h3 className="wr-section-title">요일별 작업</h3>
+      <h3 className="wr-section-title">Daily Activity</h3>
       <div className="wr-timeline-bars">
         {breakdown.map((day) => {
           const heightPct = (day.commitCount / maxCount) * 100
@@ -23,7 +23,7 @@ export function DailyTimeline({ breakdown }: Props): React.JSX.Element {
                 <div
                   className="wr-bar-fill"
                   style={{ height: `${heightPct}%` }}
-                  aria-label={`${day.dayOfWeek} ${day.commitCount}회`}
+                  aria-label={`${day.dayOfWeek} ${day.commitCount} commits`}
                 />
               </div>
               <span className="wr-bar-label">{day.dayOfWeek}</span>

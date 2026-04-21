@@ -8,7 +8,7 @@ import {
 } from './types'
 
 const COMMIT_MARKER = 'GWEEKLY:'
-const DAY_NAMES_KO = ['일', '월', '화', '수', '목', '금', '토']
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export function parseNameStatus(raw: string): Map<string, WeeklyCommit> {
   const commits = new Map<string, WeeklyCommit>()
@@ -119,7 +119,7 @@ export function buildDailyBreakdown(commits: WeeklyCommit[], startDate: string):
     const dateStr = d.toISOString().slice(0, 10)
     breakdown.push({
       date: dateStr,
-      dayOfWeek: DAY_NAMES_KO[d.getDay()],
+      dayOfWeek: DAY_NAMES[d.getDay()],
       commitCount: countByDate[dateStr] ?? 0
     })
   }

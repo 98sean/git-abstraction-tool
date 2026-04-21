@@ -59,7 +59,7 @@ export function registerWeeklyReportHandlers(): void {
           return {
             error: {
               code: 'NOT_A_REPO',
-              message: '프로젝트를 찾을 수 없습니다. 다시 연결해주세요.'
+              message: 'Project not found. Please reconnect.'
             }
           }
         }
@@ -77,7 +77,7 @@ export function registerWeeklyReportHandlers(): void {
         return {
           error: {
             code: 'UNKNOWN',
-            message: '리포트를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.',
+            message: 'Failed to load report. Please try again.',
             raw
           }
         }

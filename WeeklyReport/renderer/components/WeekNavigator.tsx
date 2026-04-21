@@ -11,17 +11,19 @@ interface Props {
   onNext: () => void
 }
 
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
 function formatDateRange(startDate: string, endDate: string): string {
   const start = new Date(`${startDate}T00:00:00`)
   const end = new Date(`${endDate}T00:00:00`)
 
-  const startStr = `${start.getMonth() + 1}월 ${start.getDate()}일`
+  const startStr = `${MONTHS[start.getMonth()]} ${start.getDate()}`
   const endStr =
     start.getMonth() === end.getMonth()
-      ? `${end.getDate()}일`
-      : `${end.getMonth() + 1}월 ${end.getDate()}일`
+      ? `${end.getDate()}`
+      : `${MONTHS[end.getMonth()]} ${end.getDate()}`
 
-  return `${start.getFullYear()}년 ${startStr} – ${endStr}`
+  return `${startStr} – ${endStr}, ${start.getFullYear()}`
 }
 
 export function WeekNavigator({
@@ -33,22 +35,22 @@ export function WeekNavigator({
 }: Props): React.JSX.Element {
   return (
     <div className="wr-navigator">
-      <button className="wr-nav-btn" onClick={onPrev} aria-label="이전 주">
-        ‹ 이전 주
+      <button className="wr-nav-btn" onClick={onPrev} aria-label="Previous week">
+        ‹ Prev Week
       </button>
 
       <div className="wr-nav-center">
         <span className="wr-date-range">{formatDateRange(startDate, endDate)}</span>
-        {isCurrentWeek && <span className="wr-current-badge">이번 주</span>}
+        {isCurrentWeek && <span className="wr-current-badge">This Week</span>}
       </div>
 
       <button
         className="wr-nav-btn"
         onClick={onNext}
         disabled={isCurrentWeek}
-        aria-label="다음 주"
+        aria-label="Next week"
       >
-        다음 주 ›
+        Next Week ›
       </button>
     </div>
   )

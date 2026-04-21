@@ -96,7 +96,7 @@ export function Sidebar({
             className={`${styles.weeklyReportBtn} ${weeklyReportActive ? styles.active : ''}`}
             onClick={onWeeklyReport}
           >
-            📊 주간 리포트
+            📊 Weekly Report
           </button>
         )}
         {githubSlot}
