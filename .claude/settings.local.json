@@ -5,7 +5,10 @@
       "Bash(npm run:*)",
       "Bash(npm remove:*)",
       "Bash(npm install:*)",
-      "Bash(npm pkg:*)"
+      "Bash(npm pkg:*)",
+      "Bash(npx tsc *)",
+      "Bash(grep *)",
+      "Bash(node *)"
     ]
   }
 }

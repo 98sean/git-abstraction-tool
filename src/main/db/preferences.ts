@@ -2,6 +2,7 @@ import Store from 'electron-store'
 
 export interface PreferencesSchema {
   theme: 'light' | 'dark'
+  mode: 'newbie' | 'pro'
   auto_save_enabled: boolean
   default_save_message_template: string
 }
@@ -10,6 +11,7 @@ const store = new Store<PreferencesSchema>({
   name: 'preferences',
   defaults: {
     theme: 'light',
+    mode: 'pro',
     auto_save_enabled: true,
     default_save_message_template: ''
   }

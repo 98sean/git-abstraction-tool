@@ -16,6 +16,7 @@ export interface FileStatus {
 export interface GitStatus {
   current_branch: string
   files: FileStatus[]
+  tracked_files: string[]  // all files tracked by git (from ls-files)
   ahead: number   // commits ahead of remote
   behind: number  // commits behind remote
   has_conflicts: boolean
@@ -29,6 +30,30 @@ export interface CommitInfo {
   author_name: string
   author_email: string
   date: string  // ISO 8601
+}
+
+export interface TimelineCommitInfo {
+  hash: string
+  short_hash: string
+  message: string
+  date: string
+  changed_files: string[]
+}
+
+export interface RestoreResult {
+  backup_branch: string
+  restored_files: number
+  removed_files: number
+}
+
+export interface RestorePreview {
+  files_to_restore: string[]
+  files_to_remove: string[]
+}
+
+export interface UntrackedDeleteResult {
+  deleted: number
+  failed: string[]
 }
 
 export interface BranchInfo {
