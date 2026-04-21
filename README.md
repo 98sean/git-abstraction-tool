@@ -1,6 +1,6 @@
 # Git Abstraction Tool
 
-A desktop app for saving project history locally, reviewing every tracked file in one panel, optionally drafting save messages with your own AI key, and optionally uploading work to GitHub with explicit safety checks.
+A desktop app for saving project history locally, reviewing every tracked file in one panel, using your own AI key for save assistance and project tools, and optionally uploading work to GitHub with explicit safety checks.
 
 ---
 
@@ -10,7 +10,7 @@ A desktop app for saving project history locally, reviewing every tracked file i
 - **Safe project linking**: inspect a folder before linking it and ask before running `git init`
 - **Full file visibility**: show tracked files and changed files together so the project panel stays understandable
 - **Branch-aware workflow**: create or switch branches from the header before uploading
-- **Optional AI save drafts**: connect one OpenAI or Anthropic key globally, then enable AI per project
+- **Optional AI tools**: connect one OpenAI or Anthropic key globally, then use save assistance and manual AI tools where they are helpful
 - **Explicit cloud upload**: choose a private backup repo or a collaboration target before anything uploads
 
 No shell commands are required in the UI.
@@ -70,6 +70,12 @@ If AI save messages are enabled for that project:
 2. you review or edit it
 3. the second click creates the actual commit
 
+Manual AI tools stay separate from this flow:
+
+- **Natural Language Undo** helps find a restore point from plain-language history
+- **File Insight** explains the currently selected file and related files
+- **Untracked Review** reviews untracked files before you stage or delete them
+
 ### 3. Switch or create a branch
 
 Use the branch pill in the project header to:
@@ -121,6 +127,15 @@ AI keys are also stored with Electron `safeStorage`.
 
 Only staged diffs are sent, and only after that project explicitly grants AI diff consent.
 
+`Connect AI` is the only supported credential-entry path for AI.
+
+### AI Features
+
+- **Auto save message**: project-scoped save assistance, gated by project toggle and one-time diff consent
+- **Natural language undo**: manual AI tool for finding a likely restore point
+- **File insight**: manual AI tool for explaining the selected file
+- **Untracked review**: manual AI tool for reviewing untracked files before staging or deletion
+
 ---
 
 ## Safety Rules
@@ -139,10 +154,12 @@ Only staged diffs are sent, and only after that project explicitly grants AI dif
 
 Each linked project exposes a combined **Project Settings** panel that shows:
 
-- whether AI save drafts are enabled
+- whether AI save assistance is enabled
 - whether diff consent has been granted
 - the currently selected AI model
 - whether cloud upload is unset, backup, or collaboration
+
+The three manual AI tools are not toggled here. They appear contextually in the workspace when an AI connection is available.
 
 ### Upload Modes
 

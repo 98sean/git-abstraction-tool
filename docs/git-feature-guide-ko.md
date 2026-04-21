@@ -15,15 +15,48 @@ git add src/app.ts src/styles.css
 git commit -m "로그인 화면 간격 조정"
 ```
 
+## Connect AI
+
+- 쉬운 설명:
+  앱에서 AI 기능을 쓰기 위한 전역 연결입니다.
+- 내부 동작:
+  사용자가 넣은 OpenAI 또는 Anthropic API key를 안전하게 저장하고,
+  앱 전체에서 하나의 provider/model 상태를 유지합니다.
+- 참고:
+  AI key를 넣는 공식 경로는 `Connect AI` 하나입니다.
+
 ## AI Save Draft
 
 - 쉬운 설명:
-  Save Progress를 누르기 전에 staged diff를 보고 저장 메시지 초안을 만들어 줍니다.
+  Save Progress를 누를 때 staged diff를 보고 저장 메시지 초안을 만들어 줍니다.
 - 내부 동작:
-  프로젝트별 AI 사용이 켜져 있고 diff consent가 승인된 경우에만 staged diff를 AI provider로 보냅니다.
+  프로젝트별 AI auto save가 켜져 있고 diff consent가 승인된 경우에만 staged diff를 AI provider로 보냅니다.
   첫 클릭은 초안 생성, 두 번째 클릭은 실제 commit입니다.
 - 참고:
   AI가 실패해도 수동 저장은 계속 가능합니다.
+
+## Natural Language Undo
+
+- 쉬운 설명:
+  “어제 오후 상태로 돌리고 싶다”처럼 자연어로 복구 지점을 찾는 기능입니다.
+- 내부 동작:
+  현재 프로젝트의 commit timeline을 AI에 보내고, 가장 적절한 restore target commit을 추천받습니다.
+  추천 후에는 사용자가 직접 복구를 승인해야 합니다.
+
+## File Insight
+
+- 쉬운 설명:
+  선택한 파일이 무슨 역할을 하는지와 관련 파일을 설명해 줍니다.
+- 내부 동작:
+  현재 선택한 파일 내용 일부, 최근 commit 정보, 관련 후보 파일을 AI에 보내 요약을 받습니다.
+
+## Untracked Review
+
+- 쉬운 설명:
+  아직 추적되지 않은 파일이 commit할 파일인지, 지워도 되는 파일인지 검토해 줍니다.
+- 내부 동작:
+  먼저 generated/cache 규칙으로 1차 분류하고,
+  애매한 항목만 AI에게 보내 `commit` 또는 `delete` 추천을 받습니다.
 
 ## Upload to Cloud
 
@@ -93,6 +126,10 @@ printf ".env\nnode_modules\n" >> .gitignore
   - 현재 AI 모델
   - cloud target 상태
   - backup 또는 collaboration 요약
+- 참고:
+  `Project Settings`는 auto save message 설정용입니다.
+  `Natural Language Undo`, `File Insight`, `Untracked Review`는 여기서 켜고 끄는 방식이 아니라,
+  작업 화면에서 필요할 때 직접 호출하는 도구입니다.
 
 ## 전역 연결 vs 프로젝트별 설정
 
