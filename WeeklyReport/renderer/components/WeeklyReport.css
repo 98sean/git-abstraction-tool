@@ -192,6 +192,32 @@
   font-weight: 600;
 }
 
+/* ─── 하단 2열 레이아웃 (저장 내역 + 주간 요약본) ──────────────────────────── */
+.wr-bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* ─── 주간 요약본 ────────────────────────────────────────────────────────────── */
+.wr-text-summary {
+  background: var(--wr-surface);
+  border: 1px solid var(--wr-border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.wr-summary-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--wr-text);
+  margin: 0;
+  white-space: pre-line;
+}
+
 /* ─── 커밋 목록 ────────────────────────────────────────────────────────────── */
 .wr-commit-list {
   background: var(--wr-surface);

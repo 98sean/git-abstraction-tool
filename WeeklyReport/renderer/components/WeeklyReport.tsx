@@ -8,11 +8,57 @@ import { WeekNavigator } from './WeekNavigator'
 import { SummaryCards } from './SummaryCards'
 import { DailyTimeline } from './DailyTimeline'
 import { CommitList } from './CommitList'
+import { WeeklyReport as WeeklyReportData } from '../../types/weekly-report'
 import './WeeklyReport.css'
 
 interface Props {
   projectId: string | null
   projectName?: string
+}
+
+// ─── 주간 요약 텍스트 생성 ────────────────────────────────────────────────────
+
+const CONVENTIONAL_RE = /^(?:feat|fix|chore|docs|style|refactor|test|build|ci|perf)(?:\([^)]+\))?:\s*/i
+
+function generateTextSummary(report: WeeklyReportData): string {
+  const { summary, commits } = report
+
+  // 첫 줄: 파일 변경 통계
+  const parts: string[] = []
+  if (summary.filesAdded > 0) parts.push(`새 파일 ${summary.filesAdded}개가 추가`)
+  if (summary.filesModified > 0) parts.push(`${summary.filesModified}개 파일이 수정`)
+  if (summary.filesDeleted > 0) parts.push(`${summary.filesDeleted}개 파일이 삭제`)
+
+  const statLine =
+    parts.length > 0
+      ? `이번 주에는 ${parts.join(', ')}되었습니다.`
+      : '이번 주에는 변경된 파일이 없습니다.'
+
+  // 둘째 줄: 커밋 메시지에서 주요 작업 추출
+  const subjects = commits
+    .map((c) => c.message.replace(CONVENTIONAL_RE, '').trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => (s.length > 42 ? s.slice(0, 40) + '…' : s))
+
+  const workLine =
+    subjects.length > 0
+      ? `주요 작업: ${subjects.join(' 및 ')}.`
+      : ''
+
+  return workLine ? `${statLine} ${workLine}` : statLine
+}
+
+// ─── 주간 요약본 섹션 ─────────────────────────────────────────────────────────
+
+function WeeklyTextSummary({ report }: { report: WeeklyReportData }): React.JSX.Element {
+  const text = generateTextSummary(report)
+  return (
+    <div className="wr-text-summary">
+      <h3 className="wr-section-title">주간 요약본</h3>
+      <p className="wr-summary-text">{text}</p>
+    </div>
+  )
 }
 
 export function WeeklyReport({ projectId }: Props): React.JSX.Element {
@@ -63,7 +109,10 @@ export function WeeklyReport({ projectId }: Props): React.JSX.Element {
         <>
           <SummaryCards summary={report.summary} />
           <DailyTimeline breakdown={report.dailyBreakdown} />
-          <CommitList commits={report.commits} />
+          <div className="wr-bottom-row">
+            <CommitList commits={report.commits} />
+            <WeeklyTextSummary report={report} />
+          </div>
         </>
       )}
     </div>
