@@ -5,6 +5,7 @@ import { createOpenAiProvider } from './providers/openai'
 import {
   AiProviderAdapter,
   AiProviderName,
+  AiProviderStructuredInput,
   ConnectProviderInput,
   GenerateAutoSaveMessageInput
 } from './types'
@@ -83,6 +84,18 @@ export function createAiService(overrides: Partial<ProviderMap> = {}) {
       ])
 
       return normalizeGeneratedMessage(message)
+    },
+
+    async generateStructured<T>(
+      input: AiProviderStructuredInput & { provider: AiProviderName }
+    ): Promise<T> {
+      const provider = pickProvider(providers, input.provider)
+
+      if (typeof provider.generateStructured !== 'function') {
+        throw new Error('The current AI connection does not support this tool.')
+      }
+
+      return provider.generateStructured<T>(input)
     },
 
     supportsManualTools(provider: AiProviderName): boolean {

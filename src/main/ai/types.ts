@@ -35,6 +35,7 @@ export interface AiProviderStructuredInput {
   model: string
   systemPrompt: string
   userPrompt: string
+  timeoutMs?: number
 }
 
 export interface AiProviderAdapter {

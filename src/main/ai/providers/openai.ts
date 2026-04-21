@@ -1,4 +1,10 @@
-import { AiProviderAdapter, AiProviderGenerateInput, AiProviderValidateInput, AiProviderValidateResult } from '../types'
+import {
+  AiProviderAdapter,
+  AiProviderGenerateInput,
+  AiProviderStructuredInput,
+  AiProviderValidateInput,
+  AiProviderValidateResult
+} from '../types'
 
 const OPENAI_MODELS_URL = 'https://api.openai.com/v1/models'
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses'
@@ -41,6 +47,18 @@ function extractOutputText(payload: OpenAiResponsesResponse): string | null {
       .map((entry) => entry.text?.trim())
       .find((value): value is string => Boolean(value)) ?? null
   )
+}
+
+function parseStructuredOutput<T>(raw: string | null): T {
+  if (!raw) {
+    throw new Error('OpenAI did not return a valid structured response.')
+  }
+
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    throw new Error('OpenAI returned invalid structured JSON.')
+  }
 }
 
 export function createOpenAiProvider(): AiProviderAdapter {
@@ -89,6 +107,25 @@ export function createOpenAiProvider(): AiProviderAdapter {
 
       const payload = (await response.json()) as OpenAiResponsesResponse
       return extractOutputText(payload)
+    },
+
+    async generateStructured<T>(input: AiProviderStructuredInput): Promise<T> {
+      const response = await fetch(OPENAI_RESPONSES_URL, {
+        method: 'POST',
+        headers: getHeaders(input.apiKey),
+        body: JSON.stringify({
+          model: input.model,
+          instructions: input.systemPrompt,
+          input: input.userPrompt
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate an OpenAI structured response.')
+      }
+
+      const payload = (await response.json()) as OpenAiResponsesResponse
+      return parseStructuredOutput<T>(extractOutputText(payload))
     }
   }
 }

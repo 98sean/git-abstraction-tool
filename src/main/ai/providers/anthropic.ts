@@ -1,4 +1,10 @@
-import { AiProviderAdapter, AiProviderGenerateInput, AiProviderValidateInput, AiProviderValidateResult } from '../types'
+import {
+  AiProviderAdapter,
+  AiProviderGenerateInput,
+  AiProviderStructuredInput,
+  AiProviderValidateInput,
+  AiProviderValidateResult
+} from '../types'
 
 const ANTHROPIC_MODELS_URL = 'https://api.anthropic.com/v1/models'
 const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages'
@@ -20,6 +26,22 @@ function getHeaders(apiKey: string): HeadersInit {
     'content-type': 'application/json',
     'x-api-key': apiKey,
     'anthropic-version': ANTHROPIC_API_VERSION
+  }
+}
+
+function extractText(payload: AnthropicMessagesResponse): string | null {
+  return payload.content?.find((entry) => entry.type === 'text')?.text?.trim() ?? null
+}
+
+function parseStructuredOutput<T>(raw: string | null): T {
+  if (!raw) {
+    throw new Error('Anthropic did not return a valid structured response.')
+  }
+
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    throw new Error('Anthropic returned invalid structured JSON.')
   }
 }
 
@@ -72,7 +94,32 @@ export function createAnthropicProvider(): AiProviderAdapter {
       }
 
       const payload = (await response.json()) as AnthropicMessagesResponse
-      return payload.content?.find((entry) => entry.type === 'text')?.text?.trim() ?? null
+      return extractText(payload)
+    },
+
+    async generateStructured<T>(input: AiProviderStructuredInput): Promise<T> {
+      const response = await fetch(ANTHROPIC_MESSAGES_URL, {
+        method: 'POST',
+        headers: getHeaders(input.apiKey),
+        body: JSON.stringify({
+          model: input.model,
+          max_tokens: 600,
+          system: input.systemPrompt,
+          messages: [
+            {
+              role: 'user',
+              content: input.userPrompt
+            }
+          ]
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate an Anthropic structured response.')
+      }
+
+      const payload = (await response.json()) as AnthropicMessagesResponse
+      return parseStructuredOutput<T>(extractText(payload))
     }
   }
 }
