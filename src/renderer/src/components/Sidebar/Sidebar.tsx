@@ -15,6 +15,8 @@ interface Props {
   onToggleTheme: () => void
   onToggleMode?: () => void
   onOpenSettings?: () => void
+  onWeeklyReport?: () => void
+  weeklyReportActive?: boolean
   /** Optional: dot colour hint per project — 'changed' | 'clean' | 'unknown' */
   projectStates?: Record<string, 'changed' | 'clean' | 'unknown'>
   /** Optional slot for rendering GitHub connection status in the footer */
@@ -34,6 +36,8 @@ export function Sidebar({
   onToggleTheme,
   onToggleMode,
   onOpenSettings,
+  onWeeklyReport,
+  weeklyReportActive,
   projectStates = {},
   githubSlot,
   aiSlot
@@ -87,6 +91,14 @@ export function Sidebar({
         <button className={styles.linkBtn} onClick={onAddProject}>
           {t.addRepo}
         </button>
+        {onWeeklyReport && (
+          <button
+            className={`${styles.weeklyReportBtn} ${weeklyReportActive ? styles.active : ''}`}
+            onClick={onWeeklyReport}
+          >
+            📊 주간 리포트
+          </button>
+        )}
         {githubSlot}
         {aiSlot}
         {mode && onToggleMode && (

@@ -226,3 +226,44 @@ export interface GithubTokenValidationResult {
   accountLogin: string | null
   reason: string | null
 }
+
+// ─── Weekly Report ────────────────────────────────────────────────────────────
+
+export interface WeeklyCommitFile {
+  path: string
+  status: 'added' | 'modified' | 'deleted' | 'renamed'
+  insertions: number
+  deletions: number
+}
+
+export interface WeeklyCommit {
+  hash: string
+  date: string
+  message: string
+  files: WeeklyCommitFile[]
+}
+
+export interface WeeklyReportSummary {
+  totalCommits: number
+  filesAdded: number
+  filesModified: number
+  filesDeleted: number
+  totalInsertions: number
+  totalDeletions: number
+}
+
+export interface DailyBreakdown {
+  date: string
+  dayOfWeek: string
+  commitCount: number
+}
+
+export interface WeeklyReport {
+  projectId: string
+  projectName: string
+  startDate: string
+  endDate: string
+  summary: WeeklyReportSummary
+  dailyBreakdown: DailyBreakdown[]
+  commits: WeeklyCommit[]
+}

@@ -28,6 +28,7 @@ import { NotARepo } from './components/NotARepo/NotARepo'
 import { ProjectLinkWizard } from './components/ProjectLinkWizard/ProjectLinkWizard'
 import { ProjectSettingsPanel } from './components/ProjectSettingsPanel/ProjectSettingsPanel'
 import { Sidebar } from './components/Sidebar/Sidebar'
+import { WeeklyReport } from './components/WeeklyReport'
 import { ToastContainer } from './components/shared/Toast'
 import {
   FileInsight,
@@ -58,6 +59,7 @@ function Shell(): JSX.Element {
   const [showGitHubPanel, setShowGitHubPanel] = useState(false)
   const [showAiPanel, setShowAiPanel] = useState(false)
   const [showProjectSettingsPanel, setShowProjectSettingsPanel] = useState(false)
+  const [showWeeklyReport, setShowWeeklyReport] = useState(false)
   const [showAiConsentDialog, setShowAiConsentDialog] = useState(false)
   const [pendingDangerTarget, setPendingDangerTarget] = useState<ProjectCloudTarget | null>(null)
   const [gitInstalled, setGitInstalled] = useState<boolean | null>(null)
@@ -89,6 +91,7 @@ function Shell(): JSX.Element {
   useEffect(checkGitInstall, [])
 
   useEffect(() => {
+    setShowWeeklyReport(false)
     setNaturalUndoSuggestion(null)
     setNaturalUndoError(null)
     setNaturalUndoLoading(false)
@@ -406,6 +409,8 @@ function Shell(): JSX.Element {
           onAddProject={handleAddProject}
           onToggleTheme={handleToggleTheme}
           onToggleMode={handleToggleMode}
+          onWeeklyReport={() => setShowWeeklyReport((v) => !v)}
+          weeklyReportActive={showWeeklyReport}
           projectStates={projectStates}
           githubSlot={
             <GitHubStatus
@@ -487,7 +492,9 @@ function Shell(): JSX.Element {
                 )}
               </header>
 
-              {isNotARepo ? (
+              {showWeeklyReport ? (
+                <WeeklyReport projectId={activeProjectId} />
+              ) : isNotARepo ? (
                 <NotARepo projectPath={activeProject.local_path} onInit={handleInitRepo} />
               ) : (
                 <div className={styles.workspace}>
@@ -527,7 +534,7 @@ function Shell(): JSX.Element {
                 </div>
               )}
 
-              <ActionPanel
+              {!showWeeklyReport && <ActionPanel
                 status={status}
                 loading={actionLoading}
                 error={isNotARepo ? null : actionError}
@@ -562,7 +569,7 @@ function Shell(): JSX.Element {
                 onGenerateAutoMessage={generateAutoMessage}
                 onSuggestNaturalUndo={handleSuggestNaturalUndo}
                 onApplyNaturalUndo={handleApplyNaturalUndo}
-              />
+              />}
             </>
           ) : showAiPanel ? (
             <div className={styles.emptyMain}>
