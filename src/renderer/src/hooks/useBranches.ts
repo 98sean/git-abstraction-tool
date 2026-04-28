@@ -2,6 +2,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { BranchCreateResult, BranchDeleteResult, BranchInfo, BranchMergeResult } from '../types'
 import { invokeGit } from '../ipc'
 
+const INTERNAL_BRANCH_PREFIXES = ['gat-backup/']
+
+function isInternalBranch(name: string): boolean {
+  return INTERNAL_BRANCH_PREFIXES.some((prefix) => name.startsWith(prefix))
+}
+
 export function useBranches(projectId: string | null): {
   branches: BranchInfo[]
   loading: boolean
@@ -20,8 +26,8 @@ export function useBranches(projectId: string | null): {
     setLoading(true)
     try {
       const all = await invokeGit<BranchInfo[]>('git:branches', projectId)
-      // Show only local branches in the selector
-      setBranches(all.filter((b) => !b.remote))
+      // Show only user-facing local branches in the selector.
+      setBranches(all.filter((b) => !b.remote && !isInternalBranch(b.name)))
     } catch {
       setBranches([])
     } finally {
