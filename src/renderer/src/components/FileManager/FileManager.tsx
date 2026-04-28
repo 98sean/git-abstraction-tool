@@ -161,7 +161,7 @@ interface Props {
 
 export function FileManager({
   status, trackedPaths, selectedPath, loading, error, aiReviewEnabled = false,
-  onStage, onUnstage, onStageAll, onUnstageAll, onRevert, onSelectFile, onReviewUntracked, onDeleteUntracked
+  onStage, onUnstage, onRevert, onSelectFile, onReviewUntracked, onDeleteUntracked
 }: Props): JSX.Element {
   const t = useTerms()
   const [showDeps, setShowDeps] = useState(false)
@@ -232,9 +232,15 @@ export function FileManager({
   }, [visibleTree])
 
   const flatRows = useMemo(() => flattenTree(visibleTree, collapsed), [visibleTree, collapsed])
+  const visibleFiles = useMemo(
+    () => flattenTree(visibleTree, new Set())
+      .filter((row): row is Extract<FlatRow, { kind: 'file' }> => row.kind === 'file')
+      .map((row) => row.file),
+    [visibleTree]
+  )
 
-  const changedCount = allFiles.filter(f => f.status !== 'clean').length
-  const stagedCount  = allFiles.filter(f => f.staged).length
+  const changedCount = visibleFiles.filter(f => f.status !== 'clean').length
+  const stagedCount  = visibleFiles.filter(f => f.staged).length
   const untrackedCount = allFiles.filter((f) => f.status === 'untracked').length
 
   // ── Handlers ──────────────────────────────────────────────────────────────
@@ -245,6 +251,20 @@ export function FileManager({
     if (file.status === 'clean') return
     if (file.staged) onUnstage([file.path])
     else onStage([file.path])
+  }
+
+  const handleStageVisible = (): void => {
+    const paths = visibleFiles
+      .filter((file) => file.status !== 'clean' && !file.staged)
+      .map((file) => file.path)
+    if (paths.length > 0) onStage(paths)
+  }
+
+  const handleUnstageVisible = (): void => {
+    const paths = visibleFiles
+      .filter((file) => file.staged)
+      .map((file) => file.path)
+    if (paths.length > 0) onUnstage(paths)
   }
 
   const loadUntrackedReview = async (): Promise<void> => {
@@ -346,14 +366,14 @@ export function FileManager({
       <div className={styles.toolbar}>
         <button
           className={styles.toolbarBtn}
-          onClick={onStageAll}
+          onClick={handleStageVisible}
           disabled={changedCount === 0 || stagedCount === changedCount}
         >
           {t.stageAll}
         </button>
         <button
           className={styles.toolbarBtn}
-          onClick={onUnstageAll}
+          onClick={handleUnstageVisible}
           disabled={stagedCount === 0}
         >
           {t.unstageAll}
