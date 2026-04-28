@@ -103,4 +103,25 @@ describe('safe upload', () => {
     expect(context.diff).toContain('diff --git')
     expect(context.files).toEqual([{ path: 'src/app.ts', status: 'modified' }])
   })
+
+  it('does not create a backup branch when restore would change no files', async () => {
+    const git = {
+      revparse: vi.fn().mockResolvedValue('abc123\n'),
+      raw: vi.fn().mockResolvedValue('')
+    }
+
+    const service = new GitService('/tmp/project', git as never)
+
+    await expect(service.restoreToCommit('abc123')).rejects.toMatchObject({
+      code: 'RESTORE_NO_CHANGES'
+    })
+    expect(git.raw).toHaveBeenCalledWith([
+      'diff',
+      '--name-status',
+      '--find-renames',
+      'abc123',
+      'HEAD'
+    ])
+    expect(git.raw).not.toHaveBeenCalledWith(['branch', expect.any(String), 'HEAD'])
+  })
 })

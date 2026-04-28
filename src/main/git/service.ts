@@ -923,6 +923,14 @@ export class GitService {
         this.buildRestorePlan(commitHash)
       ])
       const cleanHash = resolvedHash.trim()
+
+      if (plan.files_to_restore.length === 0 && plan.files_to_remove.length === 0) {
+        throw {
+          code: 'RESTORE_NO_CHANGES',
+          message: 'That restore point already matches your current files.'
+        } satisfies GitError
+      }
+
       const backupBranch = buildBackupBranchName(cleanHash)
 
       await this.git.raw(['branch', backupBranch, 'HEAD'])
@@ -948,6 +956,10 @@ export class GitService {
         removed_files: plan.files_to_remove.length
       }
     } catch (err) {
+      if (isGitError(err)) {
+        throw err
+      }
+
       throw mapGitError(err)
     }
   }
