@@ -15,6 +15,14 @@ function detectCode(raw: string): GitErrorCode {
     r.includes('permission denied')
   )
     return 'AUTH_FAILED'
+  if (r.includes('have diverged') || r.includes('diverged')) return 'BRANCH_DIVERGED'
+  if (
+    r.includes('non-fast-forward') ||
+    r.includes('fetch first') ||
+    r.includes('remote contains work') ||
+    r.includes('updates were rejected')
+  )
+    return 'REMOTE_AHEAD'
   if (
     r.includes('could not resolve host') ||
     r.includes('network is unreachable') ||
@@ -41,6 +49,10 @@ const USER_MESSAGES: Record<GitErrorCode, string> = {
   NETWORK_ERROR: 'Could not reach the cloud. Please check your internet connection.',
   MERGE_CONFLICT: 'There is a version mismatch that needs to be resolved before continuing.',
   UNCOMMITTED_CHANGES: 'Please save your current changes before switching.',
+  REMOTE_AHEAD:
+    'The cloud branch has newer work. Get updates first or upload to a new branch; this app will not force push.',
+  BRANCH_DIVERGED:
+    'Your branch and the cloud branch both changed. Get updates first, resolve the mismatch, or upload to a new branch; this app will not force push.',
   INVALID_BRANCH_NAME: 'Choose a valid branch name before continuing.',
   BRANCH_EXISTS: 'A version with that name already exists.',
   BRANCH_NOT_FOUND: 'The requested version could not be found.',

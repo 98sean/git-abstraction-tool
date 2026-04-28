@@ -32,6 +32,30 @@ describe('mapGitError', () => {
     expect(err.message).toContain('save')
   })
 
+  it('detects remote-ahead push rejections', () => {
+    const err = mapGitError({
+      message: 'Updates were rejected because the remote contains work that you do not have locally.'
+    })
+    expect(err.code).toBe('REMOTE_AHEAD')
+    expect(err.message).toContain('Get updates first')
+    expect(err.message).toContain('will not force push')
+  })
+
+  it('detects non-fast-forward push rejections', () => {
+    const err = mapGitError({
+      message: 'rejected non-fast-forward; fetch first before pushing again'
+    })
+    expect(err.code).toBe('REMOTE_AHEAD')
+  })
+
+  it('detects diverged branch errors', () => {
+    const err = mapGitError({
+      message: 'Your branch and origin/main have diverged, and have 1 and 2 different commits each.'
+    })
+    expect(err.code).toBe('BRANCH_DIVERGED')
+    expect(err.message).toContain('both changed')
+  })
+
   it('detects NOTHING_TO_COMMIT', () => {
     const err = mapGitError({ message: 'nothing to commit, working tree clean' })
     expect(err.code).toBe('NOTHING_TO_COMMIT')
