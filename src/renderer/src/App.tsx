@@ -87,6 +87,7 @@ function Shell(): JSX.Element {
   const [fileInsightLoading, setFileInsightLoading] = useState(false)
   const [fileInsightError, setFileInsightError] = useState<string | null>(null)
   const fileInsightReqRef = useRef(0)
+  const naturalUndoReqRef = useRef(0)
   const lastShownPullUpdateRef = useRef<Record<string, string>>({})
 
   const manualAiToolsEnabled =
@@ -112,6 +113,7 @@ function Shell(): JSX.Element {
     setNaturalUndoError(null)
     setNaturalUndoLoading(false)
     setNaturalUndoApplying(false)
+    naturalUndoReqRef.current += 1
     setSelectedFilePath(null)
     setFileInsight(null)
     setFileInsightError(null)
@@ -553,20 +555,33 @@ function Shell(): JSX.Element {
   const handleSuggestNaturalUndo = async (query: string): Promise<void> => {
     if (!activeProjectId) return
 
+    const requestId = naturalUndoReqRef.current + 1
+    naturalUndoReqRef.current = requestId
     setNaturalUndoLoading(true)
     setNaturalUndoError(null)
 
     try {
       const suggestion = await invokeDb<NaturalUndoSuggestion>('ai:undo:suggest', activeProjectId, query)
+      if (naturalUndoReqRef.current !== requestId) return
       setNaturalUndoSuggestion(suggestion)
     } catch (error) {
+      if (naturalUndoReqRef.current !== requestId) return
       const message =
         (error as { message?: string })?.message ?? 'Could not find a matching point in history.'
       setNaturalUndoError(message)
       setNaturalUndoSuggestion(null)
     } finally {
-      setNaturalUndoLoading(false)
+      if (naturalUndoReqRef.current === requestId) {
+        setNaturalUndoLoading(false)
+      }
     }
+  }
+
+  const handleCancelNaturalUndo = (): void => {
+    naturalUndoReqRef.current += 1
+    setNaturalUndoSuggestion(null)
+    setNaturalUndoError(null)
+    setNaturalUndoLoading(false)
   }
 
   /**
@@ -870,6 +885,7 @@ function Shell(): JSX.Element {
                 onGenerateAutoMessage={generateAutoMessage}
                 onSuggestNaturalUndo={handleSuggestNaturalUndo}
                 onApplyNaturalUndo={handleApplyNaturalUndo}
+                onCancelNaturalUndo={handleCancelNaturalUndo}
                 onSelectNaturalUndoAlternative={handleSelectNaturalUndoAlternative}
               />}
             </>
