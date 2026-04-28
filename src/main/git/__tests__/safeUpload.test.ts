@@ -119,9 +119,28 @@ describe('safe upload', () => {
       'diff',
       '--name-status',
       '--find-renames',
-      'abc123',
-      'HEAD'
+      'abc123'
     ])
     expect(git.raw).not.toHaveBeenCalledWith(['branch', expect.any(String), 'HEAD'])
+  })
+
+  it('previews restore changes against the current working files, not just HEAD', async () => {
+    const git = {
+      raw: vi.fn().mockResolvedValue('M\tsrc/app.ts\nA\tscratch.txt\n')
+    }
+
+    const service = new GitService('/tmp/project', git as never)
+    const preview = await service.getRestorePreview('latest123')
+
+    expect(git.raw).toHaveBeenCalledWith([
+      'diff',
+      '--name-status',
+      '--find-renames',
+      'latest123'
+    ])
+    expect(preview).toEqual({
+      files_to_restore: ['src/app.ts'],
+      files_to_remove: ['scratch.txt']
+    })
   })
 })

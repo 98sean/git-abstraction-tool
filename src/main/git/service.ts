@@ -354,7 +354,7 @@ export class GitService {
   }
 
   private async buildRestorePlan(commitHash: string): Promise<RestorePreview> {
-    const diffRaw = await this.git.raw(['diff', '--name-status', '--find-renames', commitHash, 'HEAD'])
+    const diffRaw = await this.git.raw(['diff', '--name-status', '--find-renames', commitHash])
     const restoreSet = new Set<string>()
     const removeSet = new Set<string>()
 
