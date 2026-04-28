@@ -39,7 +39,6 @@ interface Props {
   onGenerateAutoMessage?: () => Promise<string | null>
   onSuggestNaturalUndo?: (query: string) => Promise<void>
   onApplyNaturalUndo?: () => Promise<void>
-  onCancelNaturalUndo?: () => void
   /**
    * Pick one of the alternative candidates the AI returned. The handler in
    * App.tsx should promote that alternative into `primary` so the rest of the
@@ -81,7 +80,6 @@ export function ActionPanel({
   onGenerateAutoMessage,
   onSuggestNaturalUndo,
   onApplyNaturalUndo,
-  onCancelNaturalUndo,
   onSelectNaturalUndoAlternative
 }: Props): JSX.Element {
   const t = useTerms()
@@ -119,13 +117,6 @@ export function ActionPanel({
     !naturalUndoApplying &&
     !loading &&
     Boolean(onApplyNaturalUndo)
-  const showCancelUndo =
-    naturalUndoEnabled &&
-    Boolean(onCancelNaturalUndo) &&
-    (undoQuery.trim().length > 0 ||
-      naturalUndoLoading ||
-      Boolean(naturalUndoError) ||
-      Boolean(naturalUndoSuggestion))
 
   const handleCommit = async (): Promise<void> => {
     if (!canCommit) return
@@ -165,11 +156,6 @@ export function ActionPanel({
   const handleSuggestUndo = async (): Promise<void> => {
     if (!canSuggestUndo || !onSuggestNaturalUndo) return
     await onSuggestNaturalUndo(undoQuery.trim())
-  }
-
-  const handleCancelUndo = (): void => {
-    setUndoQuery('')
-    onCancelNaturalUndo?.()
   }
 
   return (
@@ -261,21 +247,7 @@ export function ActionPanel({
       <div className={styles.undoPanel}>
         <div className={styles.undoHeader}>
           <span className={styles.undoTitle}>Natural Language Undo</span>
-          <div className={styles.undoHeaderActions}>
-            {!naturalUndoEnabled && <span className={styles.undoHint}>AI connection required</span>}
-            {showCancelUndo && (
-              <button
-                type="button"
-                className={styles.undoCancelBtn}
-                onClick={handleCancelUndo}
-                disabled={naturalUndoApplying}
-                aria-label="Cancel Natural Language Undo"
-                title="Cancel Natural Language Undo"
-              >
-                ×
-              </button>
-            )}
-          </div>
+          {!naturalUndoEnabled && <span className={styles.undoHint}>AI connection required</span>}
         </div>
 
         <div className={styles.undoInputRow}>
