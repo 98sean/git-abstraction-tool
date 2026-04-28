@@ -146,6 +146,27 @@
   color: var(--text);
 }
 
+.weeklyReportBtn {
+  width: 100%;
+  padding: 7px 12px;
+  background: none;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  transition: all var(--transition);
+  text-align: left;
+}
+.weeklyReportBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.weeklyReportBtn.active {
+  background: var(--bg-active);
+  color: var(--text-active);
+  border-color: var(--accent);
+}
+
 .emptyHint {
   padding: 24px 16px;
   text-align: center;

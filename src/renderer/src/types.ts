@@ -115,8 +115,11 @@ export interface UntrackedDeleteResult {
   failed: string[]
 }
 
-export interface NaturalUndoSuggestion {
-  query: string
+/**
+ * One concrete candidate commit returned by the natural-undo AI, including
+ * everything the UI needs to describe and preview a restore.
+ */
+export interface NaturalUndoOption {
   commit_hash: string
   short_hash: string
   commit_message: string
@@ -128,6 +131,53 @@ export interface NaturalUndoSuggestion {
   restore_files_preview: string[]
   remove_files_preview: string[]
   proposal_text: string
+}
+
+export interface NaturalUndoSuggestion extends NaturalUndoOption {
+  query: string
+  /**
+   * Up to 2 additional candidate commits. Populated only when the AI is
+   * unsure; empty when the primary match is high-confidence.
+   */
+  alternatives: NaturalUndoOption[]
+}
+
+/**
+ * Ground-truth numbers pulled straight from `git log` for the week.
+ * Mirrors `WeeklyFeatureStats` in the main process.
+ */
+export interface WeeklyAiStats {
+  totalCommits: number
+  filesAdded: number
+  filesModified: number
+  filesDeleted: number
+  linesAdded: number
+  linesRemoved: number
+  activeDays: number
+}
+
+/**
+ * Result of `ai:weekly:summary`. `has_entries` is false only when there were
+ * no commits at all in the week — in that case the UI shows its built-in
+ * rule-based summary.
+ *
+ * `commit_count` is the real number of commits in the week (from git).
+ * `ai_summary_count` is how many of those commits also had an AI-generated
+ * summary paragraph saved in `ai-summaries.json`.
+ */
+export interface WeeklyAiSummary {
+  summary: string
+  highlights: string[]
+  commit_count: number
+  ai_summary_count: number
+  has_entries: boolean
+  stats: WeeklyAiStats
+  /**
+   * True when the backend served this summary from its persistent cache
+   * instead of calling the AI. Cache is keyed by project + week + commit
+   * signature + model, and auto-invalidates when any of those change.
+   */
+  cached?: boolean
 }
 
 export interface FileInsightRelated {
@@ -214,6 +264,29 @@ export interface Preferences {
   default_save_message_template: string
 }
 
+export type AiCommitChangeKind =
+  | 'feature'
+  | 'fix'
+  | 'content'
+  | 'style'
+  | 'config'
+  | 'refactor'
+  | 'chore'
+  | 'mixed'
+
+export interface AiCommitSuggestion {
+  message: string
+  summary: string
+  change_kind: AiCommitChangeKind
+  user_visible: boolean
+  areas: string[]
+  keywords: string[]
+  fingerprint: string
+  model: string
+}
+
+export interface CommitAiMetadata extends AiCommitSuggestion {}
+
 export interface Toast {
   id: string
   message: string
@@ -263,4 +336,47 @@ export interface GithubTokenValidationResult {
   status: 'ok' | 'invalid' | 'missing_repo_access' | 'approval_required'
   accountLogin: string | null
   reason: string | null
+}
+
+// ─── Weekly Report ────────────────────────────────────────────────────────────
+
+export interface WeeklyCommitFile {
+  path: string
+  status: 'added' | 'modified' | 'deleted' | 'renamed'
+  insertions: number
+  deletions: number
+}
+
+export interface WeeklyCommit {
+  hash: string
+  date: string
+  message: string
+  files: WeeklyCommitFile[]
+  /** True when this commit is the repository's first commit (no parent). */
+  is_initial_import?: boolean
+}
+
+export interface WeeklyReportSummary {
+  totalCommits: number
+  filesAdded: number
+  filesModified: number
+  filesDeleted: number
+  totalInsertions: number
+  totalDeletions: number
+}
+
+export interface DailyBreakdown {
+  date: string
+  dayOfWeek: string
+  commitCount: number
+}
+
+export interface WeeklyReport {
+  projectId: string
+  projectName: string
+  startDate: string
+  endDate: string
+  summary: WeeklyReportSummary
+  dailyBreakdown: DailyBreakdown[]
+  commits: WeeklyCommit[]
 }

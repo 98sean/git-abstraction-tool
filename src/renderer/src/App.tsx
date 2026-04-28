@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AppProvider } from './context/AppContext'
 import { invokeDb, invokeGit } from './ipc'
 import { useAuth } from './hooks/useAuth'
@@ -29,11 +29,14 @@ import { ProjectLinkWizard } from './components/ProjectLinkWizard/ProjectLinkWiz
 import { ProjectSettingsPanel } from './components/ProjectSettingsPanel/ProjectSettingsPanel'
 import { PullUpdatesDialog } from './components/PullUpdatesDialog/PullUpdatesDialog'
 import { Sidebar } from './components/Sidebar/Sidebar'
+import { WeeklyReport } from './components/WeeklyReport'
 import { ToastContainer } from './components/shared/Toast'
 import {
   BranchCreateResult,
   BranchDeleteResult,
   BranchMergeResult,
+  AiCommitSuggestion,
+  CommitAiMetadata,
   FileInsight,
   PullUpdatesPreview,
   NaturalUndoSuggestion,
@@ -63,6 +66,7 @@ function Shell(): JSX.Element {
   const [showGitHubPanel, setShowGitHubPanel] = useState(false)
   const [showAiPanel, setShowAiPanel] = useState(false)
   const [showProjectSettingsPanel, setShowProjectSettingsPanel] = useState(false)
+  const [showWeeklyReport, setShowWeeklyReport] = useState(false)
   const [showAiConsentDialog, setShowAiConsentDialog] = useState(false)
   const [pendingDangerTarget, setPendingDangerTarget] = useState<ProjectCloudTarget | null>(null)
   const [showPullUpdatesDialog, setShowPullUpdatesDialog] = useState(false)
@@ -71,6 +75,9 @@ function Shell(): JSX.Element {
   const [pullPreviewError, setPullPreviewError] = useState<string | null>(null)
   const [protectedBranch, setProtectedBranch] = useState<string | null>(null)
   const [gitInstalled, setGitInstalled] = useState<boolean | null>(null)
+  const [commitMessage, setCommitMessage] = useState('')
+  const [aiSuggestion, setAiSuggestion] = useState<AiCommitSuggestion | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
   const [naturalUndoSuggestion, setNaturalUndoSuggestion] = useState<NaturalUndoSuggestion | null>(null)
   const [naturalUndoLoading, setNaturalUndoLoading] = useState(false)
   const [naturalUndoApplying, setNaturalUndoApplying] = useState(false)
@@ -100,6 +107,7 @@ function Shell(): JSX.Element {
   useEffect(checkGitInstall, [])
 
   useEffect(() => {
+    setShowWeeklyReport(false)
     setNaturalUndoSuggestion(null)
     setNaturalUndoError(null)
     setNaturalUndoLoading(false)
@@ -162,6 +170,26 @@ function Shell(): JSX.Element {
 
   const trackedPaths = status?.tracked_files ?? []
   const isNotARepo = statusError?.code === 'NOT_A_REPO'
+
+  const stagedSignature = useMemo(
+    () =>
+      (status?.files ?? [])
+        .filter((file) => file.staged)
+        .map((file) => `${file.path}:${file.status}:${file.oldPath ?? ''}`)
+        .sort()
+        .join('|'),
+    [status]
+  )
+
+  useEffect(() => {
+    setAiSuggestion(null)
+  }, [activeProjectId, stagedSignature])
+
+  useEffect(() => {
+    if (commitMessage.trim().length === 0) {
+      setCommitMessage(preferences.default_save_message_template)
+    }
+  }, [preferences.default_save_message_template, commitMessage])
 
   const handleConnectGitHub = async (token: string): Promise<void> => {
     await saveToken(token)
@@ -248,6 +276,48 @@ function Shell(): JSX.Element {
 
   const handleToggleMode = (): void => {
     setPreference('mode', preferences.mode === 'pro' ? 'newbie' : 'pro')
+  }
+
+  const handleSuggestCommitMessage = async (): Promise<void> => {
+    if (!activeProjectId || !status) return
+    const stagedCount = status.files.filter((file) => file.staged).length
+    if (stagedCount === 0) return
+
+    setAiLoading(true)
+    clearError()
+    try {
+      const suggestion = await invokeDb<AiCommitSuggestion>('ai:commit-suggestion', activeProjectId)
+      setAiSuggestion(suggestion)
+      setCommitMessage(suggestion.message)
+      addToast('AI suggested a save message. Review it, then click Save Progress again.', 'info')
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'AI could not summarize these changes right now.'
+      addToast(message, 'error')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  const handleCommit = async (): Promise<void> => {
+    if (!status) return
+    const stagedCount = status.files.filter((file) => file.staged).length
+    if (stagedCount === 0) return
+
+    const trimmedMessage = commitMessage.trim()
+    if (trimmedMessage.length === 0) {
+      await handleSuggestCommitMessage()
+      return
+    }
+
+    const metadata: CommitAiMetadata | undefined =
+      aiSuggestion && trimmedMessage === aiSuggestion.message ? aiSuggestion : undefined
+
+    const saved = await commit(trimmedMessage, metadata)
+    if (!saved) return
+
+    setCommitMessage('')
+    setAiSuggestion(null)
   }
 
   const handleOpenGitHubDocs = (): void => {
@@ -499,6 +569,30 @@ function Shell(): JSX.Element {
     }
   }
 
+  /**
+   * Promote alternative[index] into the primary slot of the undo suggestion
+   * and push the old primary to the top of alternatives — lets the user flip
+   * between candidates without re-running the AI.
+   */
+  const handleSelectNaturalUndoAlternative = (alternativeIndex: number): void => {
+    setNaturalUndoSuggestion((current) => {
+      if (!current) return current
+      const picked = current.alternatives[alternativeIndex]
+      if (!picked) return current
+
+      const { alternatives: _drop, query, ...oldPrimary } = current
+      void _drop
+      const remaining = current.alternatives.filter((_, i) => i !== alternativeIndex)
+      const nextAlternatives = [oldPrimary, ...remaining].slice(0, 2)
+
+      return {
+        query,
+        ...picked,
+        alternatives: nextAlternatives
+      }
+    })
+  }
+
   const handleApplyNaturalUndo = async (): Promise<void> => {
     if (!activeProjectId || !naturalUndoSuggestion) return
 
@@ -610,6 +704,8 @@ function Shell(): JSX.Element {
           onAddProject={handleAddProject}
           onToggleTheme={handleToggleTheme}
           onToggleMode={handleToggleMode}
+          onWeeklyReport={() => setShowWeeklyReport((v) => !v)}
+          weeklyReportActive={showWeeklyReport}
           projectStates={projectStates}
           githubSlot={
             <GitHubStatus
@@ -694,7 +790,9 @@ function Shell(): JSX.Element {
                 )}
               </header>
 
-              {isNotARepo ? (
+              {showWeeklyReport ? (
+                <WeeklyReport projectId={activeProjectId} aiConnection={connectionStatus} />
+              ) : isNotARepo ? (
                 <NotARepo projectPath={activeProject.local_path} onInit={handleInitRepo} />
               ) : (
                 <div className={styles.workspace}>
@@ -734,11 +832,12 @@ function Shell(): JSX.Element {
                 </div>
               )}
 
-              <ActionPanel
+              {!showWeeklyReport && <ActionPanel
                 status={status}
                 loading={actionLoading}
+                aiLoading={aiLoading}
                 error={isNotARepo ? null : actionError}
-                messageTemplate={preferences.default_save_message_template}
+                message={commitMessage}
                 tokenExists={tokenExists}
                 cloudUploadReady={cloudSetup.cloudUploadReady}
                 cloudStatusLabel={cloudSetup.cloudStatusLabel}
@@ -754,7 +853,9 @@ function Shell(): JSX.Element {
                 naturalUndoLoading={naturalUndoLoading}
                 naturalUndoApplying={naturalUndoApplying}
                 naturalUndoError={naturalUndoError}
-                onCommit={commit}
+                onMessageChange={setCommitMessage}
+                onCommit={handleCommit}
+                onSuggestMessage={handleSuggestCommitMessage}
                 onPush={handleUpload}
                 onPull={handlePullRequest}
                 onOpenCloudSetup={() => {
@@ -769,7 +870,8 @@ function Shell(): JSX.Element {
                 onGenerateAutoMessage={generateAutoMessage}
                 onSuggestNaturalUndo={handleSuggestNaturalUndo}
                 onApplyNaturalUndo={handleApplyNaturalUndo}
-              />
+                onSelectNaturalUndoAlternative={handleSelectNaturalUndoAlternative}
+              />}
             </>
           ) : showAiPanel ? (
             <div className={styles.emptyMain}>

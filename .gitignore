@@ -27,3 +27,6 @@ pnpm-debug.log*
 
 # Electron
 electron-builder.env
+
+# Local environment secrets
+.env.local

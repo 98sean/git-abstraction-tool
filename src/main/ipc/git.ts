@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import simpleGit from 'simple-git'
 import { getGitService, removeGitService } from '../git'
+import { addAiCommitSummary, AiCommitChangeKind } from '../db/aiSummaries'
 import { getCachedStatus, setCachedStatus, invalidateCache } from '../db/statusCache'
 import { getGithubToken } from '../db/credentials'
 import { getProjectCloudTarget, setProjectCloudTarget } from '../db/projectCloudTargets'
@@ -10,6 +11,17 @@ import {
   PushConfiguredTargetInput,
   PushToCloudOptions
 } from '../git/types'
+
+interface CommitAiMetadata {
+  message: string
+  summary: string
+  fingerprint: string
+  model: string
+  change_kind?: AiCommitChangeKind
+  user_visible?: boolean
+  areas?: string[]
+  keywords?: string[]
+}
 
 // Wrap a git call so IPC errors are serialisable plain objects (Errors don't
 // survive the IPC boundary cleanly in Electron).
@@ -135,11 +147,32 @@ export function registerGitHandlers(): void {
     return result
   })
 
-  ipcMain.handle('git:commit', async (_event, project_id: string, message: string) => {
-    const result = await run(() => getGitService(project_id).commit(message))
-    invalidateCache(project_id)
-    return result
-  })
+  ipcMain.handle(
+    'git:commit',
+    async (_event, project_id: string, message: string, aiMetadata?: CommitAiMetadata) => {
+      const result = await run(async () => {
+        const commitHash = await getGitService(project_id).commitAndGetHash(message)
+        if (aiMetadata?.summary) {
+          addAiCommitSummary({
+            project_id,
+            commit_hash: commitHash,
+            message: aiMetadata.message,
+            summary: aiMetadata.summary,
+            created_at: Date.now(),
+            model: aiMetadata.model,
+            fingerprint: aiMetadata.fingerprint,
+            change_kind: aiMetadata.change_kind,
+            user_visible: aiMetadata.user_visible,
+            areas: aiMetadata.areas,
+            keywords: aiMetadata.keywords
+          })
+        }
+        return commitHash
+      })
+      invalidateCache(project_id)
+      return result
+    }
+  )
 
   ipcMain.handle('git:push', async (_event, project_id: string, options?: PushToCloudOptions) => {
     const token = getGithubToken() ?? undefined

@@ -162,3 +162,51 @@ export interface GitError {
   message: string  // user-friendly; safe to show in the UI
   raw?: string     // original git stderr — for logging only, never shown to user
 }
+
+// ─── Weekly Report ────────────────────────────────────────────────────────────
+
+export interface WeeklyCommitFile {
+  path: string
+  status: 'added' | 'modified' | 'deleted' | 'renamed'
+  insertions: number
+  deletions: number
+}
+
+export interface WeeklyCommit {
+  hash: string
+  date: string
+  message: string
+  files: WeeklyCommitFile[]
+  /**
+   * True when this commit is the repository's root commit (no parent).
+   * Such commits typically bring an entire existing project under version
+   * control in one shot — counting each of their files as "added this week"
+   * would drown out real work, so they are excluded from the summary stats.
+   */
+  is_initial_import?: boolean
+}
+
+export interface WeeklyReportSummary {
+  totalCommits: number
+  filesAdded: number
+  filesModified: number
+  filesDeleted: number
+  totalInsertions: number
+  totalDeletions: number
+}
+
+export interface DailyBreakdown {
+  date: string
+  dayOfWeek: string
+  commitCount: number
+}
+
+export interface WeeklyReport {
+  projectId: string
+  projectName: string
+  startDate: string
+  endDate: string
+  summary: WeeklyReportSummary
+  dailyBreakdown: DailyBreakdown[]
+  commits: WeeklyCommit[]
+}

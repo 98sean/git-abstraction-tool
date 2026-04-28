@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { DeviceFlowState } from '../../hooks/useAuth'
 import { useTerms } from '../../hooks/useTerms'
-import { GitError, GitStatus, NaturalUndoSuggestion, PushToCloudOptions } from '../../types'
+import { GitError, GitStatus, NaturalUndoSuggestion } from '../../types'
 import { ConnectGitHub } from '../ConnectGitHub/ConnectGitHub'
 import { Spinner } from '../shared/Spinner'
 import styles from './ActionPanel.module.css'
@@ -9,8 +9,9 @@ import styles from './ActionPanel.module.css'
 interface Props {
   status: GitStatus | null
   loading: boolean
+  aiLoading: boolean
   error: GitError | null
-  messageTemplate: string
+  message: string
   tokenExists: boolean | null
   cloudUploadReady: boolean
   cloudStatusLabel?: string
@@ -18,13 +19,15 @@ interface Props {
   aiConnectionReady?: boolean
   forceShowConnect?: boolean
   deviceFlow: DeviceFlowState | null
-  naturalUndoEnabled?: boolean
-  naturalUndoSuggestion?: NaturalUndoSuggestion | null
-  naturalUndoLoading?: boolean
-  naturalUndoApplying?: boolean
-  naturalUndoError?: string | null
-  onCommit: (message: string) => void
-  onPush: (options?: PushToCloudOptions) => void
+  naturalUndoEnabled: boolean
+  naturalUndoSuggestion: NaturalUndoSuggestion | null
+  naturalUndoLoading: boolean
+  naturalUndoApplying: boolean
+  naturalUndoError: string | null
+  onMessageChange: (message: string) => void
+  onCommit: () => void
+  onSuggestMessage: () => void
+  onPush: () => void
   onPull: () => void
   onOpenCloudSetup: () => void
   onClearError: () => void
@@ -36,13 +39,20 @@ interface Props {
   onGenerateAutoMessage?: () => Promise<string | null>
   onSuggestNaturalUndo?: (query: string) => Promise<void>
   onApplyNaturalUndo?: () => Promise<void>
+  /**
+   * Pick one of the alternative candidates the AI returned. The handler in
+   * App.tsx should promote that alternative into `primary` so the rest of the
+   * proposal UI (preview, Yes-Restore button) re-renders against it.
+   */
+  onSelectNaturalUndoAlternative?: (alternativeIndex: number) => void
 }
 
 export function ActionPanel({
   status,
   loading,
+  aiLoading,
   error,
-  messageTemplate,
+  message,
   tokenExists,
   cloudUploadReady,
   cloudStatusLabel,
@@ -50,12 +60,14 @@ export function ActionPanel({
   aiConnectionReady = false,
   forceShowConnect = false,
   deviceFlow,
-  naturalUndoEnabled = false,
-  naturalUndoSuggestion = null,
-  naturalUndoLoading = false,
-  naturalUndoApplying = false,
-  naturalUndoError = null,
+  naturalUndoEnabled,
+  naturalUndoSuggestion,
+  naturalUndoLoading,
+  naturalUndoApplying,
+  naturalUndoError,
+  onMessageChange,
   onCommit,
+  onSuggestMessage,
   onPush,
   onPull,
   onOpenCloudSetup,
@@ -67,27 +79,15 @@ export function ActionPanel({
   onCancelDeviceFlow,
   onGenerateAutoMessage,
   onSuggestNaturalUndo,
-  onApplyNaturalUndo
+  onApplyNaturalUndo,
+  onSelectNaturalUndoAlternative
 }: Props): JSX.Element {
   const t = useTerms()
-  const [message, setMessage] = useState(messageTemplate)
-  const [helperText, setHelperText] = useState<string | null>(null)
-  const [draftingAiMessage, setDraftingAiMessage] = useState(false)
   const [undoQuery, setUndoQuery] = useState('')
 
-  const stagedCount = status?.files.filter((file) => file.staged).length ?? 0
-  const shouldGenerateAiDraft =
-    aiAutoSaveEnabled &&
-    aiConnectionReady &&
-    stagedCount > 0 &&
-    message.trim().length === 0 &&
-    Boolean(onGenerateAutoMessage)
-
-  const canCommit =
-    stagedCount > 0 &&
-    !loading &&
-    !draftingAiMessage &&
-    (message.trim().length > 0 || shouldGenerateAiDraft)
+  const stagedCount = status?.files.filter((f) => f.staged).length ?? 0
+  const canCommit = stagedCount > 0 && !loading && !aiLoading
+  const canSuggest = stagedCount > 0 && !loading && !aiLoading
 
   const canSuggestUndo =
     naturalUndoEnabled &&
@@ -106,29 +106,7 @@ export function ActionPanel({
 
   const handleCommit = async (): Promise<void> => {
     if (!canCommit) return
-
-    if (shouldGenerateAiDraft && onGenerateAutoMessage) {
-      setDraftingAiMessage(true)
-
-      try {
-        const suggestion = await onGenerateAutoMessage()
-
-        if (suggestion) {
-          setMessage(suggestion)
-          setHelperText('AI drafted a save message. Review it, then click Save Progress again.')
-          return
-        }
-
-        setHelperText('AI could not draft a save message. Enter one manually to continue.')
-        return
-      } finally {
-        setDraftingAiMessage(false)
-      }
-    }
-
-    onCommit(message.trim())
-    setMessage('')
-    setHelperText(null)
+    onCommit()
   }
 
   const handlePush = (): void => {
@@ -171,10 +149,7 @@ export function ActionPanel({
         <textarea
           className={styles.messageInput}
           value={message}
-          onChange={(event) => {
-            setMessage(event.target.value)
-            setHelperText(null)
-          }}
+          onChange={(e) => onMessageChange(e.target.value)}
           placeholder={t.commitPlaceholder(stagedCount > 0)}
           rows={1}
           onKeyDown={(event) => {
@@ -183,20 +158,20 @@ export function ActionPanel({
             }
           }}
         />
+        <button
+          className={styles.suggestBtn}
+          onClick={onSuggestMessage}
+          disabled={!canSuggest}
+          title="Use AI to suggest a save message"
+        >
+          {aiLoading ? <Spinner size={14} /> : 'AI Suggest'}
+        </button>
       </div>
 
-      {helperText && <div className={styles.helperText}>{helperText}</div>}
-
       <div className={styles.actions}>
-        <button
-          className={styles.saveBtn}
-          onClick={() => {
-            void handleCommit()
-          }}
-          disabled={!canCommit}
-        >
-          {loading || draftingAiMessage ? <Spinner size={14} /> : null}
-          {draftingAiMessage ? 'Drafting…' : loading ? t.committingBtn : t.commitBtn(stagedCount)}
+        <button className={styles.saveBtn} onClick={handleCommit} disabled={!canCommit}>
+          {loading || aiLoading ? <Spinner size={14} /> : null}
+          {loading ? t.committingBtn : aiLoading ? 'Thinking…' : t.commitBtn(stagedCount)}
         </button>
 
         <button className={styles.syncBtn} onClick={onPull} disabled={loading || !status} title={t.pullTitle}>
@@ -301,6 +276,31 @@ export function ActionPanel({
             >
               {naturalUndoApplying ? 'Restoring...' : 'Yes, Restore This Point'}
             </button>
+
+            {naturalUndoSuggestion.alternatives.length > 0 && (
+              <div className={styles.undoAlternatives}>
+                <div className={styles.undoAlternativesLabel}>
+                  Not quite right? Other possible matches:
+                </div>
+                {naturalUndoSuggestion.alternatives.map((alt, index) => (
+                  <button
+                    key={alt.commit_hash}
+                    type="button"
+                    className={styles.undoAlternativeItem}
+                    onClick={() => onSelectNaturalUndoAlternative?.(index)}
+                    disabled={naturalUndoApplying || !onSelectNaturalUndoAlternative}
+                  >
+                    <div className={styles.undoAlternativeHeader}>
+                      <strong>{alt.short_hash}</strong>
+                      <span className={styles.undoAlternativeMeta}>
+                        {new Date(alt.commit_date).toLocaleString()} · {(alt.confidence * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                    <div className={styles.undoAlternativeReason}>{alt.reason}</div>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
