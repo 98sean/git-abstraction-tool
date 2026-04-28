@@ -41,7 +41,6 @@ export interface TimelineCommitInfo {
 }
 
 export interface RestoreResult {
-  backup_branch: string
   restored_files: number
   removed_files: number
 }
@@ -158,6 +157,7 @@ export type GitErrorCode =
   | 'BRANCH_EXISTS'
   | 'BRANCH_NOT_FOUND'
   | 'NOTHING_TO_COMMIT'
+  | 'RESTORE_NO_CHANGES'
   | 'UNKNOWN'
 
 export interface GitError {

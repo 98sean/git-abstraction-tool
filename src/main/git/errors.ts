@@ -57,6 +57,7 @@ const USER_MESSAGES: Record<GitErrorCode, string> = {
   BRANCH_EXISTS: 'A version with that name already exists.',
   BRANCH_NOT_FOUND: 'The requested version could not be found.',
   NOTHING_TO_COMMIT: 'There are no changes to save.',
+  RESTORE_NO_CHANGES: 'That restore point already matches your current files.',
   UNKNOWN: 'Something went wrong. Please try again.'
 }
 

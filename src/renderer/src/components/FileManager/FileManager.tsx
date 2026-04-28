@@ -54,6 +54,10 @@ const DEPENDENCY_DIRS = new Set([
   'dist', 'build', '.next', '.nuxt', 'target', '.cargo', 'out', '.cache', '.turbo'
 ])
 
+function isDependencyDirName(name: string): boolean {
+  return DEPENDENCY_DIRS.has(name) || name.endsWith('.git')
+}
+
 const STATUS_LABELS: Record<DisplayStatus, string> = {
   clean: 'Synced',
   new: 'New',
@@ -157,7 +161,7 @@ interface Props {
 
 export function FileManager({
   status, trackedPaths, selectedPath, loading, error, aiReviewEnabled = false,
-  onStage, onUnstage, onStageAll, onUnstageAll, onRevert, onSelectFile, onReviewUntracked, onDeleteUntracked
+  onStage, onUnstage, onRevert, onSelectFile, onReviewUntracked, onDeleteUntracked
 }: Props): JSX.Element {
   const t = useTerms()
   const [showDeps, setShowDeps] = useState(false)
@@ -195,14 +199,14 @@ export function FileManager({
 
   // ── Filter dependency dirs ─────────────────────────────────────────────────
   const visibleTree = useMemo(
-    () => showDeps ? tree : tree.filter(n => !DEPENDENCY_DIRS.has(n.name)),
+    () => showDeps ? tree : tree.filter(n => !isDependencyDirName(n.name)),
     [tree, showDeps]
   )
 
   const hiddenDepChanges = useMemo(() => {
     if (showDeps) return 0
     return tree
-      .filter((n): n is DirNode => n.type === 'dir' && DEPENDENCY_DIRS.has(n.name))
+      .filter((n): n is DirNode => n.type === 'dir' && isDependencyDirName(n.name))
       .reduce((s, n) => s + n.changedCount, 0)
   }, [tree, showDeps])
 
@@ -228,19 +232,47 @@ export function FileManager({
   }, [visibleTree])
 
   const flatRows = useMemo(() => flattenTree(visibleTree, collapsed), [visibleTree, collapsed])
+  const visibleDirPaths = useMemo(() => collectDirPaths(visibleTree), [visibleTree])
+  const visibleFiles = useMemo(
+    () => flattenTree(visibleTree, new Set())
+      .filter((row): row is Extract<FlatRow, { kind: 'file' }> => row.kind === 'file')
+      .map((row) => row.file),
+    [visibleTree]
+  )
 
-  const changedCount = allFiles.filter(f => f.status !== 'clean').length
-  const stagedCount  = allFiles.filter(f => f.staged).length
+  const changedCount = visibleFiles.filter(f => f.status !== 'clean').length
+  const stagedCount  = visibleFiles.filter(f => f.staged).length
   const untrackedCount = allFiles.filter((f) => f.status === 'untracked').length
+  const hasFolders = visibleDirPaths.length > 0
+  const allFoldersExpanded = hasFolders && visibleDirPaths.every((path) => !collapsed.has(path))
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const toggleDir = (fp: string): void =>
     setCollapsed(prev => { const s = new Set(prev); s.has(fp) ? s.delete(fp) : s.add(fp); return s })
 
+  const handleToggleAllFolders = (): void => {
+    if (!hasFolders) return
+    setCollapsed(allFoldersExpanded ? new Set(visibleDirPaths) : new Set())
+  }
+
   const handleToggleFile = (file: DisplayFile): void => {
     if (file.status === 'clean') return
     if (file.staged) onUnstage([file.path])
     else onStage([file.path])
+  }
+
+  const handleStageVisible = (): void => {
+    const paths = visibleFiles
+      .filter((file) => file.status !== 'clean' && !file.staged)
+      .map((file) => file.path)
+    if (paths.length > 0) onStage(paths)
+  }
+
+  const handleUnstageVisible = (): void => {
+    const paths = visibleFiles
+      .filter((file) => file.staged)
+      .map((file) => file.path)
+    if (paths.length > 0) onUnstage(paths)
   }
 
   const loadUntrackedReview = async (): Promise<void> => {
@@ -274,11 +306,30 @@ export function FileManager({
 
   const handleDeleteSelected = async (): Promise<void> => {
     if (!onDeleteUntracked || deleteSelected.size === 0) return
+    const pathsToDelete = Array.from(deleteSelected)
     setReviewApplying(true)
     setReviewError(null)
     try {
-      await onDeleteUntracked(Array.from(deleteSelected))
-      await loadUntrackedReview()
+      const result = await onDeleteUntracked(pathsToDelete)
+      const failed = new Set(result.failed)
+      const deletedPaths = new Set(pathsToDelete.filter((path) => !failed.has(path)))
+
+      setDeleteSelected((prev) => {
+        const next = new Set(prev)
+        for (const path of deletedPaths) next.delete(path)
+        return next
+      })
+
+      setReview((prev) => {
+        if (!prev) return prev
+        const items = prev.items.filter((item) => !deletedPaths.has(item.path))
+        return {
+          items,
+          total_untracked: items.length,
+          commit_count: items.filter((item) => item.recommendation === 'commit').length,
+          delete_count: items.filter((item) => item.recommendation === 'delete').length
+        }
+      })
     } catch (err) {
       setReviewError((err as { message?: string })?.message ?? 'Could not delete selected files.')
     } finally {
@@ -323,14 +374,14 @@ export function FileManager({
       <div className={styles.toolbar}>
         <button
           className={styles.toolbarBtn}
-          onClick={onStageAll}
+          onClick={handleStageVisible}
           disabled={changedCount === 0 || stagedCount === changedCount}
         >
           {t.stageAll}
         </button>
         <button
           className={styles.toolbarBtn}
-          onClick={onUnstageAll}
+          onClick={handleUnstageVisible}
           disabled={stagedCount === 0}
         >
           {t.unstageAll}
@@ -341,6 +392,14 @@ export function FileManager({
         {status.ahead > 0 && (
           <span className={styles.aheadBadge}>↑ {status.ahead} to push</span>
         )}
+
+        <button
+          className={styles.toolbarBtn}
+          onClick={handleToggleAllFolders}
+          disabled={!hasFolders}
+        >
+          {allFoldersExpanded ? 'Collapse all' : 'Expand all'}
+        </button>
 
         {hiddenDepChanges > 0 && (
           <button className={styles.depWarning} onClick={() => setShowDeps(true)}>

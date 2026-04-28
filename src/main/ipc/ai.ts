@@ -11,7 +11,12 @@ import {
 import { buildFileInsightAnalysisInput } from '../ai/fileInsightInput'
 import { createAiService } from '../ai/service'
 import { AiProviderName } from '../ai/types'
-import { getAiConnectionState, clearAiConnectionState, setAiConnectionState } from '../db/aiConnection'
+import {
+  AiConnectionState,
+  getAiConnectionState,
+  clearAiConnectionState,
+  setAiConnectionState
+} from '../db/aiConnection'
 import {
   getAiCommitSummariesByHash
 } from '../db/aiSummaries'
@@ -239,9 +244,24 @@ function normalizeUntrackedPath(value: string): string {
   return value.replace(/\\/g, '/').replace(/\/+$/, '')
 }
 
+function isGitInternalArtifact(filePath: string): boolean {
+  return normalizeUntrackedPath(filePath)
+    .split('/')
+    .some((segment) => segment === '.git' || segment.endsWith('.git'))
+}
+
 function inferByRule(filePath: string): UntrackedReviewItem | null {
   const normalized = normalizeUntrackedPath(filePath)
   const ext = path.extname(normalized).toLowerCase()
+
+  if (isGitInternalArtifact(normalized)) {
+    return {
+      path: normalized,
+      recommendation: 'delete',
+      reason: 'Looks like an embedded Git repository artifact, not project source.',
+      confidence: 0.99
+    }
+  }
 
   for (const pattern of DELETE_PATH_PATTERNS) {
     if (pattern.test(normalized)) {
@@ -402,9 +422,26 @@ function getConnectedAiConfig(): { provider: AiProviderName; apiKey: string; mod
   }
 }
 
+function getUsableAiConnectionState(): AiConnectionState {
+  const connectionState = getAiConnectionState()
+
+  if (connectionState.connection_status !== 'connected') {
+    return connectionState
+  }
+
+  if (getAiApiKey()) {
+    return connectionState
+  }
+
+  return {
+    ...connectionState,
+    connection_status: 'invalid'
+  }
+}
+
 export function registerAiHandlers(): void {
   registerAiConnectionHandlers({
-    getConnection: () => getAiConnectionState(),
+    getConnection: () => getUsableAiConnectionState(),
     connect: async (provider: AiProviderName, apiKey: string) => {
       const connectionState = await aiService.connectProvider({ provider, apiKey })
 
@@ -554,9 +591,19 @@ export function registerAiHandlers(): void {
       throw new Error('Could not identify a commit for this request. Please be more specific.')
     }
 
+    const previewByHash = new Map<string, Awaited<ReturnType<typeof service.getRestorePreview>>>()
+    const getPreview = async (commitHash: string): Promise<Awaited<ReturnType<typeof service.getRestorePreview>>> => {
+      const cached = previewByHash.get(commitHash)
+      if (cached) return cached
+      const preview = await service.getRestorePreview(commitHash)
+      previewByHash.set(commitHash, preview)
+      return preview
+    }
+
     // Build the full payload for one candidate commit, reusing the preview +
     // labeling helpers. The AI summary (when available) supersedes the
     // file-heuristic `summarizeCommitEvent` output for the user-visible label.
+    // A commit that matches HEAD has an empty preview, so it is not restorable.
     const buildOption = async (
       commit: TimelineCommitInfo,
       reason: string,
@@ -573,8 +620,12 @@ export function registerAiHandlers(): void {
       restore_files_preview: string[]
       remove_files_preview: string[]
       proposal_text: string
-    }> => {
-      const preview = await service.getRestorePreview(commit.hash)
+    } | null> => {
+      const preview = await getPreview(commit.hash)
+      if (preview.files_to_restore.length === 0 && preview.files_to_remove.length === 0) {
+        return null
+      }
+
       const ai = summariesByHash.get(commit.hash)
       const label = ai?.summary
         ? firstSentence(ai.summary)
@@ -594,11 +645,27 @@ export function registerAiHandlers(): void {
       }
     }
 
-    const primaryPayload = await buildOption(
+    let primaryPayload = await buildOption(
       target,
       suggestion.primary.reason,
       suggestion.primary.confidence
     )
+
+    if (!primaryPayload) {
+      for (const commit of timeline) {
+        if (commit.hash === target.hash) continue
+        primaryPayload = await buildOption(
+          commit,
+          'This is the closest earlier point that would actually change your files.',
+          Math.min(suggestion.primary.confidence, 0.7)
+        )
+        if (primaryPayload) break
+      }
+    }
+
+    if (!primaryPayload) {
+      throw new Error('Your files already match the available restore points.')
+    }
 
     const altCommits = suggestion.alternatives
       .map((candidate) => ({ candidate, commit: resolveCommit(timeline, candidate.commitHash) }))
@@ -608,11 +675,11 @@ export function registerAiHandlers(): void {
       )
       .slice(0, 2)
 
-    const alternatives = await Promise.all(
+    const alternatives = (await Promise.all(
       altCommits.map(({ candidate, commit }) =>
         buildOption(commit, candidate.reason, candidate.confidence)
       )
-    )
+    )).filter((option): option is NonNullable<typeof option> => option !== null)
 
     return {
       query: query.trim(),
@@ -625,6 +692,10 @@ export function registerAiHandlers(): void {
     const projectRoot = getProjectPath(project_id)
     const analysisInput = await buildFileInsightAnalysisInput(projectRoot, file_path ?? '')
     const normalizedPath = analysisInput.filePath
+
+    if (isGitInternalArtifact(normalizedPath)) {
+      throw new Error('This looks like an embedded Git system file, so file insight is skipped.')
+    }
 
     const aiConfig = getConnectedAiConfig()
 

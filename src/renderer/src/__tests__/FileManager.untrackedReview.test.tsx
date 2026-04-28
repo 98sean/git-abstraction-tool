@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { FileManager } from '../components/FileManager/FileManager'
 
@@ -21,6 +22,46 @@ afterEach(() => {
 })
 
 describe('FileManager untracked review visibility', () => {
+  it('expands and collapses every visible folder from the toolbar', async () => {
+    const user = userEvent.setup()
+
+    render(
+      <FileManager
+        status={{
+          current_branch: 'main',
+          files: [{ path: 'src/components/App.tsx', status: 'modified', staged: false }],
+          tracked_files: [],
+          ahead: 0,
+          behind: 0,
+          has_conflicts: false,
+          is_clean: false
+        }}
+        trackedPaths={[]}
+        selectedPath={null}
+        loading={false}
+        error={null}
+        aiReviewEnabled={false}
+        onStage={vi.fn()}
+        onUnstage={vi.fn()}
+        onStageAll={vi.fn()}
+        onUnstageAll={vi.fn()}
+        onRevert={vi.fn()}
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByText('App.tsx')).toBeNull()
+    })
+
+    await user.click(screen.getByRole('button', { name: /expand all/i }))
+    expect(screen.getByText('App.tsx')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: /collapse all/i }))
+    await waitFor(() => {
+      expect(screen.queryByText('App.tsx')).toBeNull()
+    })
+  })
+
   it('does not offer untracked review when ai tools are unavailable', () => {
     render(
       <FileManager
@@ -50,22 +91,23 @@ describe('FileManager untracked review visibility', () => {
     expect(screen.queryByRole('button', { name: /review untracked/i })).toBeNull()
   })
 
-  it('deletes only files selected from delete recommendations', async () => {
+  it('deletes only selected delete recommendations without starting another analysis loop', async () => {
+    const user = userEvent.setup()
     const onReviewUntracked = vi.fn().mockResolvedValue({
       total_untracked: 2,
       commit_count: 1,
       delete_count: 1,
       items: [
         {
-          path: 'tmp.log',
+          path: 'dist/bundle.js',
           recommendation: 'delete',
-          reason: 'Temporary log file.',
-          confidence: 0.95
+          reason: 'Generated build output.',
+          confidence: 0.91
         },
         {
-          path: 'src/new-feature.ts',
+          path: 'src/new-quiz.ts',
           recommendation: 'commit',
-          reason: 'Source file.',
+          reason: 'Looks like source work.',
           confidence: 0.82
         }
       ]
@@ -77,8 +119,8 @@ describe('FileManager untracked review visibility', () => {
         status={{
           current_branch: 'main',
           files: [
-            { path: 'tmp.log', status: 'untracked', staged: false },
-            { path: 'src/new-feature.ts', status: 'untracked', staged: false }
+            { path: 'dist/bundle.js', status: 'untracked', staged: false },
+            { path: 'src/new-quiz.ts', status: 'untracked', staged: false }
           ],
           tracked_files: [],
           ahead: 0,
@@ -101,14 +143,18 @@ describe('FileManager untracked review visibility', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: /review untracked/i }))
-    expect((await screen.findAllByText('tmp.log')).length).toBeGreaterThan(0)
-    expect(screen.getByText('src/new-feature.ts')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: /review untracked/i }))
+    expect(await screen.findByText('dist/bundle.js')).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: /Delete selected \(1\)/i }))
+    await user.click(screen.getByRole('button', { name: /delete selected/i }))
 
     await waitFor(() => {
-      expect(onDeleteUntracked).toHaveBeenCalledWith(['tmp.log'])
+      expect(onDeleteUntracked).toHaveBeenCalledWith(['dist/bundle.js'])
     })
+    expect(onReviewUntracked).toHaveBeenCalledTimes(1)
+    await waitFor(() => {
+      expect(screen.queryByText('dist/bundle.js')).toBeNull()
+    })
+    expect(screen.getByText('src/new-quiz.ts')).toBeTruthy()
   })
 })

@@ -50,6 +50,15 @@ import {
 } from './types'
 import styles from './App.module.css'
 
+function getFriendlyErrorMessage(error: unknown, fallback: string): string {
+  const message = (error as { message?: string })?.message?.trim()
+  if (!message || message.endsWith('[object Object]')) {
+    return fallback
+  }
+
+  return message.replace(/^Error invoking remote method '[^']+':\s*/, '')
+}
+
 function Shell(): JSX.Element {
   const { projects, activeProjectId, activeProject, removeProject, setActiveProject } = useProjects()
   const { preferences, setPreference } = usePreferences()
@@ -89,6 +98,7 @@ function Shell(): JSX.Element {
   const [fileInsightLoading, setFileInsightLoading] = useState(false)
   const [fileInsightError, setFileInsightError] = useState<string | null>(null)
   const fileInsightReqRef = useRef(0)
+  const naturalUndoReqRef = useRef(0)
   const lastShownPullUpdateRef = useRef<Record<string, string>>({})
 
   const manualAiToolsEnabled =
@@ -114,6 +124,7 @@ function Shell(): JSX.Element {
     setNaturalUndoError(null)
     setNaturalUndoLoading(false)
     setNaturalUndoApplying(false)
+    naturalUndoReqRef.current += 1
     setSelectedFilePath(null)
     setFileInsight(null)
     setFileInsightError(null)
@@ -528,53 +539,76 @@ function Shell(): JSX.Element {
   useEffect(() => {
     if (!activeProjectId) return
     if (isNotARepo) return
-    if (!status || status.behind <= 0) return
-    if (showPullUpdatesDialog) return
     if (!cloudSetup.cloudUploadReady) return
 
     let cancelled = false
+    let checking = false
 
-    void (async () => {
-      const preview = await loadPullPreview()
-      if (cancelled || !preview || preview.behind_count <= 0) return
+    const checkIncomingUpdates = async (): Promise<void> => {
+      if (checking || cancelled || showPullUpdatesDialog) return
+      checking = true
+      try {
+        const preview = await loadPullPreview()
+        if (cancelled || !preview || preview.behind_count <= 0) return
 
-      const fingerprint =
-        preview.latest_remote_hash || `${preview.remote_name}/${preview.branch_name}:${preview.behind_count}`
-      if (lastShownPullUpdateRef.current[activeProjectId] === fingerprint) return
+        const fingerprint =
+          preview.latest_remote_hash || `${preview.remote_name}/${preview.branch_name}:${preview.behind_count}`
+        if (lastShownPullUpdateRef.current[activeProjectId] === fingerprint) return
 
-      lastShownPullUpdateRef.current[activeProjectId] = fingerprint
-      setShowPullUpdatesDialog(true)
-    })()
+        lastShownPullUpdateRef.current[activeProjectId] = fingerprint
+        setShowPullUpdatesDialog(true)
+      } finally {
+        checking = false
+      }
+    }
+
+    void checkIncomingUpdates()
+    const interval = window.setInterval(() => {
+      void checkIncomingUpdates()
+    }, 60_000)
 
     return () => {
       cancelled = true
+      window.clearInterval(interval)
     }
   }, [
     activeProjectId,
     cloudSetup.cloudUploadReady,
     isNotARepo,
     showPullUpdatesDialog,
-    status?.behind,
     status?.current_branch
   ])
 
   const handleSuggestNaturalUndo = async (query: string): Promise<void> => {
     if (!activeProjectId) return
 
+    const requestId = naturalUndoReqRef.current + 1
+    naturalUndoReqRef.current = requestId
     setNaturalUndoLoading(true)
     setNaturalUndoError(null)
 
     try {
       const suggestion = await invokeDb<NaturalUndoSuggestion>('ai:undo:suggest', activeProjectId, query)
+      if (naturalUndoReqRef.current !== requestId) return
       setNaturalUndoSuggestion(suggestion)
     } catch (error) {
+      if (naturalUndoReqRef.current !== requestId) return
       const message =
         (error as { message?: string })?.message ?? 'Could not find a matching point in history.'
       setNaturalUndoError(message)
       setNaturalUndoSuggestion(null)
     } finally {
-      setNaturalUndoLoading(false)
+      if (naturalUndoReqRef.current === requestId) {
+        setNaturalUndoLoading(false)
+      }
     }
+  }
+
+  const handleCancelNaturalUndo = (): void => {
+    naturalUndoReqRef.current += 1
+    setNaturalUndoSuggestion(null)
+    setNaturalUndoError(null)
+    setNaturalUndoLoading(false)
   }
 
   /**
@@ -616,7 +650,7 @@ function Shell(): JSX.Element {
       await fetchStatus()
       await fetchBranches()
       addToast(
-        `Restore complete (restored ${result.restored_files}, removed ${result.removed_files}) | Backup: ${result.backup_branch}`,
+        `Restore complete (restored ${result.restored_files}, removed ${result.removed_files})`,
         'success'
       )
     } catch (error) {
@@ -652,7 +686,7 @@ function Shell(): JSX.Element {
       setFileInsight(result)
     } catch (error) {
       if (fileInsightReqRef.current !== requestId) return
-      const message = (error as { message?: string })?.message ?? 'Could not analyze this file.'
+      const message = getFriendlyErrorMessage(error, 'Could not analyze this file.')
       setFileInsightError(message)
     } finally {
       if (fileInsightReqRef.current === requestId) {
@@ -879,6 +913,7 @@ function Shell(): JSX.Element {
                 onGenerateAutoMessage={generateAutoMessage}
                 onSuggestNaturalUndo={handleSuggestNaturalUndo}
                 onApplyNaturalUndo={handleApplyNaturalUndo}
+                onCancelNaturalUndo={handleCancelNaturalUndo}
                 onSelectNaturalUndoAlternative={handleSelectNaturalUndoAlternative}
               />}
             </>

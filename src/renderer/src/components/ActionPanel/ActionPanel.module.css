@@ -179,6 +179,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
 }
 
 .undoTitle {
@@ -191,6 +192,36 @@
 .undoHint {
   font-size: 11px;
   color: var(--text-muted);
+}
+
+.undoHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.undoCancelBtn {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-sidebar);
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.undoCancelBtn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.undoCancelBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .undoInputRow {
@@ -325,10 +356,10 @@
 .undoAlternativeItem {
   text-align: left;
   padding: 8px 10px;
-  border: 1px solid var(--border, #dcdcdc);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--surface, #fff);
-  color: var(--text, #222);
+  background: var(--bg-sidebar);
+  color: var(--text);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -354,12 +385,12 @@
 }
 
 .undoAlternativeMeta {
-  color: var(--text-muted, #777);
+  color: var(--text-muted);
   font-size: 11px;
 }
 
 .undoAlternativeReason {
   font-size: 12px;
   line-height: 1.45;
-  color: var(--text, #444);
+  color: var(--text);
 }

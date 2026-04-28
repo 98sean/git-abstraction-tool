@@ -174,15 +174,6 @@ function chunk<T>(items: T[], size: number): T[][] {
   return result
 }
 
-function buildBackupBranchName(commitHash: string): string {
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[-:]/g, '')
-    .replace(/\..+/, '')
-
-  return `gat-backup/${timestamp}-${commitHash.slice(0, 7)}`
-}
-
 function resolveProjectPath(projectRoot: string, relativePath: string): string {
   const normalized = relativePath.replace(/\\/g, '/')
   const absolute = path.resolve(projectRoot, normalized)
@@ -380,7 +371,7 @@ export class GitService {
   }
 
   private async buildRestorePlan(commitHash: string): Promise<RestorePreview> {
-    const diffRaw = await this.git.raw(['diff', '--name-status', '--find-renames', commitHash, 'HEAD'])
+    const diffRaw = await this.git.raw(['diff', '--name-status', '--find-renames', commitHash])
     const restoreSet = new Set<string>()
     const removeSet = new Set<string>()
 
@@ -963,9 +954,13 @@ export class GitService {
         this.buildRestorePlan(commitHash)
       ])
       const cleanHash = resolvedHash.trim()
-      const backupBranch = buildBackupBranchName(cleanHash)
 
-      await this.git.raw(['branch', backupBranch, 'HEAD'])
+      if (plan.files_to_restore.length === 0 && plan.files_to_remove.length === 0) {
+        throw {
+          code: 'RESTORE_NO_CHANGES',
+          message: 'That restore point already matches your current files.'
+        } satisfies GitError
+      }
 
       for (const group of chunk(plan.files_to_remove, 150)) {
         await this.git.raw(['rm', '-f', '--ignore-unmatch', '--', ...group])
@@ -983,11 +978,14 @@ export class GitService {
       }
 
       return {
-        backup_branch: backupBranch,
         restored_files: plan.files_to_restore.length,
         removed_files: plan.files_to_remove.length
       }
     } catch (err) {
+      if (isGitError(err)) {
+        throw err
+      }
+
       throw mapGitError(err)
     }
   }

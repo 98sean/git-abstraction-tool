@@ -103,4 +103,72 @@ describe('safe upload', () => {
     expect(context.diff).toContain('diff --git')
     expect(context.files).toEqual([{ path: 'src/app.ts', status: 'modified' }])
   })
+
+  it('does not create a backup branch when restore would change no files', async () => {
+    const git = {
+      revparse: vi.fn().mockResolvedValue('abc123\n'),
+      raw: vi.fn().mockResolvedValue('')
+    }
+
+    const service = new GitService('/tmp/project', git as never)
+
+    await expect(service.restoreToCommit('abc123')).rejects.toMatchObject({
+      code: 'RESTORE_NO_CHANGES'
+    })
+    expect(git.raw).toHaveBeenCalledWith([
+      'diff',
+      '--name-status',
+      '--find-renames',
+      'abc123'
+    ])
+    expect(git.raw).not.toHaveBeenCalledWith(['branch', expect.any(String), 'HEAD'])
+  })
+
+  it('restores files without creating an internal backup branch', async () => {
+    const git = {
+      revparse: vi.fn().mockResolvedValue('abc123\n'),
+      raw: vi
+        .fn()
+        .mockResolvedValueOnce('M\tsrc/app.ts\nA\tscratch.txt\n')
+        .mockResolvedValue(undefined)
+    }
+
+    const service = new GitService('/tmp/project', git as never)
+    const result = await service.restoreToCommit('abc123')
+
+    expect(git.raw).not.toHaveBeenCalledWith(['branch', expect.any(String), 'HEAD'])
+    expect(git.raw).toHaveBeenCalledWith(['rm', '-f', '--ignore-unmatch', '--', 'scratch.txt'])
+    expect(git.raw).toHaveBeenCalledWith([
+      'restore',
+      '--source=abc123',
+      '--staged',
+      '--worktree',
+      '--',
+      'src/app.ts'
+    ])
+    expect(result).toEqual({
+      restored_files: 1,
+      removed_files: 1
+    })
+  })
+
+  it('previews restore changes against the current working files, not just HEAD', async () => {
+    const git = {
+      raw: vi.fn().mockResolvedValue('M\tsrc/app.ts\nA\tscratch.txt\n')
+    }
+
+    const service = new GitService('/tmp/project', git as never)
+    const preview = await service.getRestorePreview('latest123')
+
+    expect(git.raw).toHaveBeenCalledWith([
+      'diff',
+      '--name-status',
+      '--find-renames',
+      'latest123'
+    ])
+    expect(preview).toEqual({
+      files_to_restore: ['src/app.ts'],
+      files_to_remove: ['scratch.txt']
+    })
+  })
 })
