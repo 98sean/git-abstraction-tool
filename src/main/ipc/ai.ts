@@ -240,9 +240,24 @@ function normalizeUntrackedPath(value: string): string {
   return value.replace(/\\/g, '/').replace(/\/+$/, '')
 }
 
+function isGitInternalArtifact(filePath: string): boolean {
+  return normalizeUntrackedPath(filePath)
+    .split('/')
+    .some((segment) => segment === '.git' || segment.endsWith('.git'))
+}
+
 function inferByRule(filePath: string): UntrackedReviewItem | null {
   const normalized = normalizeUntrackedPath(filePath)
   const ext = path.extname(normalized).toLowerCase()
+
+  if (isGitInternalArtifact(normalized)) {
+    return {
+      path: normalized,
+      recommendation: 'delete',
+      reason: 'Looks like an embedded Git repository artifact, not project source.',
+      confidence: 0.99
+    }
+  }
 
   for (const pattern of DELETE_PATH_PATTERNS) {
     if (pattern.test(normalized)) {
@@ -789,6 +804,10 @@ export function registerAiHandlers(): void {
     const normalizedPath = (file_path ?? '').replace(/\\/g, '/').trim()
     if (!normalizedPath) {
       throw new Error('Please select a file first.')
+    }
+
+    if (isGitInternalArtifact(normalizedPath)) {
+      throw new Error('This looks like an embedded Git system file, so file insight is skipped.')
     }
 
     const aiConfig = getConnectedAiConfig()

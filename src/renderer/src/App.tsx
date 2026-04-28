@@ -49,6 +49,15 @@ import {
 } from './types'
 import styles from './App.module.css'
 
+function getFriendlyErrorMessage(error: unknown, fallback: string): string {
+  const message = (error as { message?: string })?.message?.trim()
+  if (!message || message.endsWith('[object Object]')) {
+    return fallback
+  }
+
+  return message.replace(/^Error invoking remote method '[^']+':\s*/, '')
+}
+
 function Shell(): JSX.Element {
   const { projects, activeProjectId, activeProject, removeProject, setActiveProject } = useProjects()
   const { preferences, setPreference } = usePreferences()
@@ -644,7 +653,7 @@ function Shell(): JSX.Element {
       setFileInsight(result)
     } catch (error) {
       if (fileInsightReqRef.current !== requestId) return
-      const message = (error as { message?: string })?.message ?? 'Could not analyze this file.'
+      const message = getFriendlyErrorMessage(error, 'Could not analyze this file.')
       setFileInsightError(message)
     } finally {
       if (fileInsightReqRef.current === requestId) {

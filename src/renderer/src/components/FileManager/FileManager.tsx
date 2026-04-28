@@ -54,6 +54,10 @@ const DEPENDENCY_DIRS = new Set([
   'dist', 'build', '.next', '.nuxt', 'target', '.cargo', 'out', '.cache', '.turbo'
 ])
 
+function isDependencyDirName(name: string): boolean {
+  return DEPENDENCY_DIRS.has(name) || name.endsWith('.git')
+}
+
 const STATUS_LABELS: Record<DisplayStatus, string> = {
   clean: 'Synced',
   new: 'New',
@@ -195,14 +199,14 @@ export function FileManager({
 
   // ── Filter dependency dirs ─────────────────────────────────────────────────
   const visibleTree = useMemo(
-    () => showDeps ? tree : tree.filter(n => !DEPENDENCY_DIRS.has(n.name)),
+    () => showDeps ? tree : tree.filter(n => !isDependencyDirName(n.name)),
     [tree, showDeps]
   )
 
   const hiddenDepChanges = useMemo(() => {
     if (showDeps) return 0
     return tree
-      .filter((n): n is DirNode => n.type === 'dir' && DEPENDENCY_DIRS.has(n.name))
+      .filter((n): n is DirNode => n.type === 'dir' && isDependencyDirName(n.name))
       .reduce((s, n) => s + n.changedCount, 0)
   }, [tree, showDeps])
 
