@@ -50,6 +50,11 @@
 }
 .suggestBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.helperText {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .actions {
   display: flex;
   gap: 8px;

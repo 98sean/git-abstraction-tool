@@ -35,14 +35,22 @@ describe('ActionPanel AI save flow', () => {
           is_clean: false
         }}
         loading={false}
+        aiLoading={false}
         error={null}
-        messageTemplate=""
+        message=""
         tokenExists={true}
         deviceFlow={null}
         cloudUploadReady={true}
         aiAutoSaveEnabled={true}
         aiConnectionReady={true}
+        naturalUndoEnabled={false}
+        naturalUndoSuggestion={null}
+        naturalUndoLoading={false}
+        naturalUndoApplying={false}
+        naturalUndoError={null}
+        onMessageChange={vi.fn()}
         onCommit={vi.fn()}
+        onSuggestMessage={vi.fn()}
         onPush={vi.fn()}
         onPull={vi.fn()}
         onOpenCloudSetup={vi.fn()}

@@ -83,11 +83,25 @@ export function ActionPanel({
   onSelectNaturalUndoAlternative
 }: Props): JSX.Element {
   const t = useTerms()
+  const [helperText, setHelperText] = useState<string | null>(null)
+  const [draftingAiMessage, setDraftingAiMessage] = useState(false)
   const [undoQuery, setUndoQuery] = useState('')
 
   const stagedCount = status?.files.filter((f) => f.staged).length ?? 0
-  const canCommit = stagedCount > 0 && !loading && !aiLoading
-  const canSuggest = stagedCount > 0 && !loading && !aiLoading
+  const shouldGenerateAiDraft =
+    aiAutoSaveEnabled &&
+    aiConnectionReady &&
+    stagedCount > 0 &&
+    message.trim().length === 0 &&
+    Boolean(onGenerateAutoMessage)
+
+  const canCommit =
+    stagedCount > 0 &&
+    !loading &&
+    !aiLoading &&
+    !draftingAiMessage &&
+    (message.trim().length > 0 || shouldGenerateAiDraft)
+  const canSuggest = stagedCount > 0 && !loading && !aiLoading && !draftingAiMessage
 
   const canSuggestUndo =
     naturalUndoEnabled &&
@@ -106,6 +120,27 @@ export function ActionPanel({
 
   const handleCommit = async (): Promise<void> => {
     if (!canCommit) return
+
+    if (shouldGenerateAiDraft && onGenerateAutoMessage) {
+      setDraftingAiMessage(true)
+
+      try {
+        const suggestion = await onGenerateAutoMessage()
+
+        if (suggestion) {
+          onMessageChange(suggestion)
+          setHelperText('AI drafted a save message. Review it, then click Save Progress again.')
+          return
+        }
+
+        setHelperText('AI could not draft a save message. Enter one manually to continue.')
+        return
+      } finally {
+        setDraftingAiMessage(false)
+      }
+    }
+
+    setHelperText(null)
     onCommit()
   }
 
@@ -149,7 +184,10 @@ export function ActionPanel({
         <textarea
           className={styles.messageInput}
           value={message}
-          onChange={(e) => onMessageChange(e.target.value)}
+          onChange={(e) => {
+            onMessageChange(e.target.value)
+            setHelperText(null)
+          }}
           placeholder={t.commitPlaceholder(stagedCount > 0)}
           rows={1}
           onKeyDown={(event) => {
@@ -168,10 +206,18 @@ export function ActionPanel({
         </button>
       </div>
 
+      {helperText && <div className={styles.helperText}>{helperText}</div>}
+
       <div className={styles.actions}>
         <button className={styles.saveBtn} onClick={handleCommit} disabled={!canCommit}>
-          {loading || aiLoading ? <Spinner size={14} /> : null}
-          {loading ? t.committingBtn : aiLoading ? 'Thinking…' : t.commitBtn(stagedCount)}
+          {loading || aiLoading || draftingAiMessage ? <Spinner size={14} /> : null}
+          {loading
+            ? t.committingBtn
+            : draftingAiMessage
+              ? 'Drafting…'
+              : aiLoading
+                ? 'Thinking…'
+                : t.commitBtn(stagedCount)}
         </button>
 
         <button className={styles.syncBtn} onClick={onPull} disabled={loading || !status} title={t.pullTitle}>
