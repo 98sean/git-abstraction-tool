@@ -274,11 +274,30 @@ export function FileManager({
 
   const handleDeleteSelected = async (): Promise<void> => {
     if (!onDeleteUntracked || deleteSelected.size === 0) return
+    const pathsToDelete = Array.from(deleteSelected)
     setReviewApplying(true)
     setReviewError(null)
     try {
-      await onDeleteUntracked(Array.from(deleteSelected))
-      await loadUntrackedReview()
+      const result = await onDeleteUntracked(pathsToDelete)
+      const failed = new Set(result.failed)
+      const deletedPaths = new Set(pathsToDelete.filter((path) => !failed.has(path)))
+
+      setDeleteSelected((prev) => {
+        const next = new Set(prev)
+        for (const path of deletedPaths) next.delete(path)
+        return next
+      })
+
+      setReview((prev) => {
+        if (!prev) return prev
+        const items = prev.items.filter((item) => !deletedPaths.has(item.path))
+        return {
+          items,
+          total_untracked: items.length,
+          commit_count: items.filter((item) => item.recommendation === 'commit').length,
+          delete_count: items.filter((item) => item.recommendation === 'delete').length
+        }
+      })
     } catch (err) {
       setReviewError((err as { message?: string })?.message ?? 'Could not delete selected files.')
     } finally {

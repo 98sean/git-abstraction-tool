@@ -11,7 +11,12 @@ import {
 } from '../ai/manualToolTypes'
 import { createAiService } from '../ai/service'
 import { AiProviderName } from '../ai/types'
-import { getAiConnectionState, clearAiConnectionState, setAiConnectionState } from '../db/aiConnection'
+import {
+  AiConnectionState,
+  getAiConnectionState,
+  clearAiConnectionState,
+  setAiConnectionState
+} from '../db/aiConnection'
 import {
   getAiCommitSummariesByHash
 } from '../db/aiSummaries'
@@ -398,9 +403,26 @@ function getConnectedAiConfig(): { provider: AiProviderName; apiKey: string; mod
   }
 }
 
+function getUsableAiConnectionState(): AiConnectionState {
+  const connectionState = getAiConnectionState()
+
+  if (connectionState.connection_status !== 'connected') {
+    return connectionState
+  }
+
+  if (getAiApiKey()) {
+    return connectionState
+  }
+
+  return {
+    ...connectionState,
+    connection_status: 'invalid'
+  }
+}
+
 export function registerAiHandlers(): void {
   ipcMain.handle('ai:connection:get', () => {
-    return getAiConnectionState()
+    return getUsableAiConnectionState()
   })
 
   ipcMain.handle('ai:connection:connect', async (_event, provider: AiProviderName, apiKey: string) => {
