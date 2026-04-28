@@ -14,6 +14,13 @@ export interface GenerateAutoSaveMessageInput {
   diffContext: StagedDiffContext
 }
 
+export interface GenerateCommitSuggestionInput {
+  provider: AiProviderName
+  model: string
+  apiKey: string
+  diff: string
+}
+
 export interface AiProviderValidateInput {
   apiKey: string
 }

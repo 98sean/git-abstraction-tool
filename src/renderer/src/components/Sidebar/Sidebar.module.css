@@ -157,6 +157,14 @@
   transition: all var(--transition);
   text-align: left;
 }
+
+.centeredFooterButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
 .weeklyReportBtn:hover {
   border-color: var(--accent);
   color: var(--accent);

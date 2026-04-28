@@ -1,5 +1,11 @@
 import { AiConnectionState } from '../db/aiConnection'
 import { buildAutoSavePrompt } from './buildAutoSavePrompt'
+import {
+  buildCommitSuggestionUserPrompt,
+  COMMIT_SUGGESTION_SYSTEM_PROMPT,
+  CommitSuggestion,
+  finalizeCommitSuggestion
+} from './commitSuggestion'
 import { createAnthropicProvider } from './providers/anthropic'
 import { createOpenAiProvider } from './providers/openai'
 import {
@@ -7,6 +13,7 @@ import {
   AiProviderName,
   AiProviderStructuredInput,
   ConnectProviderInput,
+  GenerateCommitSuggestionInput,
   GenerateAutoSaveMessageInput
 } from './types'
 
@@ -84,6 +91,27 @@ export function createAiService(overrides: Partial<ProviderMap> = {}) {
       ])
 
       return normalizeGeneratedMessage(message)
+    },
+
+    async generateCommitSuggestion(input: GenerateCommitSuggestionInput): Promise<CommitSuggestion> {
+      if (!input.diff.trim()) {
+        throw new Error('There are no staged changes to summarize.')
+      }
+
+      const provider = pickProvider(providers, input.provider)
+
+      if (typeof provider.generateStructured !== 'function') {
+        throw new Error('The current AI connection does not support AI suggestions.')
+      }
+
+      const payload = await provider.generateStructured({
+        apiKey: input.apiKey,
+        model: input.model,
+        systemPrompt: COMMIT_SUGGESTION_SYSTEM_PROMPT,
+        userPrompt: buildCommitSuggestionUserPrompt(input.diff)
+      })
+
+      return finalizeCommitSuggestion(payload, input.model, input.diff)
     },
 
     async generateStructured<T>(

@@ -1,7 +1,6 @@
 import { ipcMain } from 'electron'
 import { readdir, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
-import { generateCommitSuggestion } from '../ai/openai'
 import {
   createManualToolService
 } from '../ai/manualToolService'
@@ -493,11 +492,20 @@ export function registerAiHandlers(): void {
   })
 
   ipcMain.handle('ai:commit-suggestion', async (_event, project_id: string) => {
-    const diff = await getGitService(project_id).getStagedDiff()
-    if (!diff.trim()) {
-      throw new Error('There are no staged changes to summarize.')
+    const connectionState = getAiConnectionState()
+    const apiKey = getAiApiKey()
+
+    if (!connectionState.provider || !connectionState.selected_model || !apiKey) {
+      throw new Error('Connect AI to use AI Suggest.')
     }
-    return generateCommitSuggestion(diff)
+
+    const diff = await getGitService(project_id).getStagedDiff()
+    return aiService.generateCommitSuggestion({
+      provider: connectionState.provider,
+      model: connectionState.selected_model,
+      apiKey,
+      diff
+    })
   })
 
   ipcMain.handle('ai:undo:suggest', async (_event, project_id: string, query: string) => {

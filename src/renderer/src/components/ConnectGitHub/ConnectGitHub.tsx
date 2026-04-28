@@ -127,9 +127,9 @@ export function GitHubStatus({ connected, onConnect, onDisconnect }: SidebarStat
   if (connected) {
     return (
       <div className={styles.connectedRow}>
-        <div className={styles.sidebarStatus}>
+        <div className={`${styles.sidebarStatus} ${styles.sidebarStatusCentered}`}>
           <span className={`${styles.dot} ${styles.connected}`} />
-          <span className={styles.connectedLabel}>GitHub connected</span>
+          <span className={`${styles.connectedLabel} ${styles.connectedLabelCentered}`}>GitHub connected</span>
         </div>
         <button
           className={styles.disconnectBtn}
@@ -144,7 +144,7 @@ export function GitHubStatus({ connected, onConnect, onDisconnect }: SidebarStat
 
   return (
     <button
-      className={styles.sidebarStatus}
+      className={`${styles.sidebarStatus} ${styles.sidebarStatusCentered}`}
       onClick={onConnect}
       title="Connect GitHub"
     >

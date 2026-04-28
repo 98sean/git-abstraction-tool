@@ -93,7 +93,7 @@ export function Sidebar({
         </button>
         {onWeeklyReport && (
           <button
-            className={`${styles.weeklyReportBtn} ${weeklyReportActive ? styles.active : ''}`}
+            className={`${styles.weeklyReportBtn} ${styles.centeredFooterButton} ${weeklyReportActive ? styles.active : ''}`}
             onClick={onWeeklyReport}
           >
             📊 Weekly Report

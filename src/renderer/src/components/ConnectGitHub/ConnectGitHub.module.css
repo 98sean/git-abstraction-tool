@@ -175,6 +175,10 @@
   color: var(--accent);
 }
 
+.sidebarStatusCentered {
+  justify-content: center;
+}
+
 /* Connected state: status row + separate disconnect button */
 .connectedRow {
   display: flex;
@@ -190,7 +194,11 @@
 }
 
 .connectedLabel {
-  flex: 1;
+  min-width: 0;
+}
+
+.connectedLabelCentered {
+  text-align: center;
 }
 
 .disconnectBtn {

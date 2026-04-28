@@ -21,15 +21,13 @@ export interface CommitSuggestion {
   model: string
 }
 
-interface OpenAIResponse {
-  choices?: Array<{
-    message?: {
-      content?: string
-    }
-  }>
-  error?: {
-    message?: string
-  }
+interface StructuredCommitSuggestionPayload {
+  message?: unknown
+  summary?: unknown
+  change_kind?: unknown
+  user_visible?: unknown
+  areas?: unknown
+  keywords?: unknown
 }
 
 const VALID_CHANGE_KINDS: CommitChangeKind[] = [
@@ -43,7 +41,7 @@ const VALID_CHANGE_KINDS: CommitChangeKind[] = [
   'mixed'
 ]
 
-const SYSTEM_PROMPT = `You are an assistant embedded inside a desktop app that helps non-technical users (vibe coders, designers, writers, students) save their work to Git without knowing Git. Your job is to read a staged git diff and describe what actually changed, for two audiences:
+export const COMMIT_SUGGESTION_SYSTEM_PROMPT = `You are an assistant embedded inside a desktop app that helps non-technical users (vibe coders, designers, writers, students) save their work to Git without knowing Git. Your job is to read a staged git diff and describe what actually changed, for two audiences:
 
 1. The user, who will see ONE short plain-language sentence used as the commit message.
 2. The app itself, which will store a richer paragraph internally and later use it to (a) help the user find a past point in history from a natural-language query like "before I removed the red button", and (b) generate a weekly changelog. The user never sees this paragraph directly, but it must be truthful, specific, and written as prose.
@@ -117,15 +115,13 @@ function normalizeText(value: unknown, fallback: string): string {
   return normalized.length > 0 ? normalized : fallback
 }
 
-function normalizeStringList(value: unknown, min: number, max: number): string[] {
+function normalizeStringList(value: unknown, max: number): string[] {
   if (!Array.isArray(value)) return []
   const cleaned = value
     .map((item) => (typeof item === 'string' ? item.replace(/\s+/g, ' ').trim().toLowerCase() : ''))
     .filter((item) => item.length > 0)
   const deduped = Array.from(new Set(cleaned))
-  if (deduped.length > max) return deduped.slice(0, max)
-  if (deduped.length < min) return deduped
-  return deduped
+  return deduped.length > max ? deduped.slice(0, max) : deduped
 }
 
 function normalizeChangeKind(value: unknown): CommitChangeKind {
@@ -146,87 +142,32 @@ function normalizeUserVisible(value: unknown): boolean {
   return true
 }
 
-interface ParsedSuggestion {
-  message: string
-  summary: string
-  change_kind: CommitChangeKind
-  user_visible: boolean
-  areas: string[]
-  keywords: string[]
+export function buildCommitSuggestionUserPrompt(diff: string): string {
+  const truncatedDiff = diff.slice(0, 18000)
+  return (
+    'Here is the staged git diff to summarize. Follow the system rules and output only the JSON object.\n\n' +
+    '---BEGIN DIFF---\n' +
+    truncatedDiff +
+    '\n---END DIFF---'
+  )
 }
 
-function parseSuggestion(raw: string): ParsedSuggestion {
-  const parsed = JSON.parse(raw) as {
-    message?: unknown
-    summary?: unknown
-    change_kind?: unknown
-    user_visible?: unknown
-    areas?: unknown
-    keywords?: unknown
-  }
+export function finalizeCommitSuggestion(
+  payload: StructuredCommitSuggestionPayload,
+  model: string,
+  diff: string
+): CommitSuggestion {
   return {
-    message: normalizeText(parsed.message, 'Update project files'),
+    message: normalizeText(payload.message, 'Update project files'),
     summary: normalizeText(
-      parsed.summary,
+      payload.summary,
       'Updated project files and recorded the main changes for future summaries.'
     ),
-    change_kind: normalizeChangeKind(parsed.change_kind),
-    user_visible: normalizeUserVisible(parsed.user_visible),
-    areas: normalizeStringList(parsed.areas, 1, 5),
-    keywords: normalizeStringList(parsed.keywords, 3, 8)
-  }
-}
-
-export async function generateCommitSuggestion(diff: string): Promise<CommitSuggestion> {
-  const apiKey = process.env['OPENAI_API_KEY']
-  if (!apiKey) {
-    throw new Error('OPENAI_API_KEY is not configured.')
-  }
-
-  const model = process.env['OPENAI_MODEL'] ?? 'gpt-4.1-mini'
-  const fingerprint = createHash('sha256').update(diff).digest('hex')
-  const truncatedDiff = diff.slice(0, 18000)
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model,
-      response_format: { type: 'json_object' },
-      messages: [
-        {
-          role: 'system',
-          content: SYSTEM_PROMPT
-        },
-        {
-          role: 'user',
-          content:
-            'Here is the staged git diff to summarize. Follow the system rules and output only the JSON object.\n\n' +
-            '---BEGIN DIFF---\n' +
-            truncatedDiff +
-            '\n---END DIFF---'
-        }
-      ]
-    })
-  })
-
-  const body = (await response.json()) as OpenAIResponse
-  if (!response.ok) {
-    throw new Error(body.error?.message ?? 'OpenAI request failed.')
-  }
-
-  const content = body.choices?.[0]?.message?.content
-  if (!content) {
-    throw new Error('OpenAI returned an empty response.')
-  }
-
-  const suggestion = parseSuggestion(content)
-  return {
-    ...suggestion,
-    fingerprint,
+    change_kind: normalizeChangeKind(payload.change_kind),
+    user_visible: normalizeUserVisible(payload.user_visible),
+    areas: normalizeStringList(payload.areas, 5),
+    keywords: normalizeStringList(payload.keywords, 8),
+    fingerprint: createHash('sha256').update(diff).digest('hex'),
     model
   }
 }
