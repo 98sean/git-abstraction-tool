@@ -232,6 +232,7 @@ export function FileManager({
   }, [visibleTree])
 
   const flatRows = useMemo(() => flattenTree(visibleTree, collapsed), [visibleTree, collapsed])
+  const visibleDirPaths = useMemo(() => collectDirPaths(visibleTree), [visibleTree])
   const visibleFiles = useMemo(
     () => flattenTree(visibleTree, new Set())
       .filter((row): row is Extract<FlatRow, { kind: 'file' }> => row.kind === 'file')
@@ -242,10 +243,17 @@ export function FileManager({
   const changedCount = visibleFiles.filter(f => f.status !== 'clean').length
   const stagedCount  = visibleFiles.filter(f => f.staged).length
   const untrackedCount = allFiles.filter((f) => f.status === 'untracked').length
+  const hasFolders = visibleDirPaths.length > 0
+  const allFoldersExpanded = hasFolders && visibleDirPaths.every((path) => !collapsed.has(path))
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const toggleDir = (fp: string): void =>
     setCollapsed(prev => { const s = new Set(prev); s.has(fp) ? s.delete(fp) : s.add(fp); return s })
+
+  const handleToggleAllFolders = (): void => {
+    if (!hasFolders) return
+    setCollapsed(allFoldersExpanded ? new Set(visibleDirPaths) : new Set())
+  }
 
   const handleToggleFile = (file: DisplayFile): void => {
     if (file.status === 'clean') return
@@ -384,6 +392,14 @@ export function FileManager({
         {status.ahead > 0 && (
           <span className={styles.aheadBadge}>↑ {status.ahead} to push</span>
         )}
+
+        <button
+          className={styles.toolbarBtn}
+          onClick={handleToggleAllFolders}
+          disabled={!hasFolders}
+        >
+          {allFoldersExpanded ? 'Collapse all' : 'Expand all'}
+        </button>
 
         {hiddenDepChanges > 0 && (
           <button className={styles.depWarning} onClick={() => setShowDeps(true)}>
