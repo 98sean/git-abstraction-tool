@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { validateBranchName } from '../../branchValidation'
 import { CloudSetupIntent, CollaborationBranchMode, ProjectRemote } from '../../types'
 import styles from './CloudSetupWizard.module.css'
 
@@ -36,6 +37,25 @@ export function CloudSetupWizard({
   onContinueCollaboration
 }: Props): JSX.Element {
   const [showDangerOptions, setShowDangerOptions] = useState(false)
+  const [branchError, setBranchError] = useState<string | null>(null)
+
+  const shownError = error ?? branchError
+
+  function handleBranchChange(nextBranch: string): void {
+    setBranchError(null)
+    onSelectBranch?.(nextBranch)
+  }
+
+  function handleContinueCollaboration(): void {
+    const branchValidation = validateBranchName(selectedBranch)
+    if (!branchValidation.ok) {
+      setBranchError(branchValidation.message)
+      return
+    }
+
+    setBranchError(null)
+    onContinueCollaboration?.()
+  }
 
   return (
     <div className={styles.backdrop} role="presentation">
@@ -52,7 +72,7 @@ export function CloudSetupWizard({
           </button>
         </div>
 
-        {error && <div className={styles.errorBanner}>{error}</div>}
+        {shownError && <div className={styles.errorBanner}>{shownError}</div>}
 
         {!intent && (
           <div className={styles.intentGrid}>
@@ -159,7 +179,7 @@ export function CloudSetupWizard({
               <input
                 className={styles.input}
                 value={selectedBranch}
-                onChange={(event) => onSelectBranch?.(event.target.value)}
+                onChange={(event) => handleBranchChange(event.target.value)}
                 placeholder={branchMode === 'new_branch' ? 'gat/my-update' : 'main'}
               />
             </label>
@@ -170,7 +190,7 @@ export function CloudSetupWizard({
               </button>
               <button
                 className={styles.primaryButton}
-                onClick={onContinueCollaboration}
+                onClick={handleContinueCollaboration}
                 disabled={loading || remotes.length === 0}
               >
                 {loading ? 'Saving target...' : 'Save team upload target'}

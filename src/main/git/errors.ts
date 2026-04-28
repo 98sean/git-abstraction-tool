@@ -25,6 +25,7 @@ function detectCode(raw: string): GitErrorCode {
   if (r.includes('merge conflict') || r.includes('automatic merge failed'))
     return 'MERGE_CONFLICT'
   if (r.includes('please commit or stash')) return 'UNCOMMITTED_CHANGES'
+  if (r.includes('invalid branch name')) return 'INVALID_BRANCH_NAME'
   if (r.includes('already exists') && r.includes('branch')) return 'BRANCH_EXISTS'
   if (r.includes('did not match any') || r.includes('unknown revision'))
     return 'BRANCH_NOT_FOUND'
@@ -40,6 +41,7 @@ const USER_MESSAGES: Record<GitErrorCode, string> = {
   NETWORK_ERROR: 'Could not reach the cloud. Please check your internet connection.',
   MERGE_CONFLICT: 'There is a version mismatch that needs to be resolved before continuing.',
   UNCOMMITTED_CHANGES: 'Please save your current changes before switching.',
+  INVALID_BRANCH_NAME: 'Choose a valid branch name before continuing.',
   BRANCH_EXISTS: 'A version with that name already exists.',
   BRANCH_NOT_FOUND: 'The requested version could not be found.',
   NOTHING_TO_COMMIT: 'There are no changes to save.',

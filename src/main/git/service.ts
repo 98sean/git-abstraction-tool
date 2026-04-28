@@ -107,6 +107,32 @@ function defaultBranchProtectedError(): GitError {
   }
 }
 
+export function validateBranchName(name: string): { ok: boolean; message: string | null } {
+  const trimmed = name.trim()
+
+  if (!trimmed) return { ok: false, message: 'Choose a branch name.' }
+  if (/\s/.test(trimmed)) return { ok: false, message: 'Branch names cannot contain spaces.' }
+  if (trimmed.startsWith('/') || trimmed.endsWith('/')) {
+    return { ok: false, message: 'Branch names cannot start or end with "/".' }
+  }
+  if (trimmed.includes('..')) {
+    return { ok: false, message: 'Branch names cannot contain "..".' }
+  }
+  if (/[\x00-\x20~^:?*[\\]/.test(trimmed)) {
+    return { ok: false, message: 'Branch name contains unsupported characters.' }
+  }
+
+  return { ok: true, message: null }
+}
+
+function invalidBranchNameError(message: string): GitError {
+  return {
+    code: 'INVALID_BRANCH_NAME',
+    message,
+    raw: message
+  }
+}
+
 interface DiffLine {
   status: string
   path: string
@@ -473,6 +499,11 @@ export class GitService {
         throw defaultBranchProtectedError()
       }
 
+      const branchValidation = validateBranchName(input.branchName)
+      if (!branchValidation.ok) {
+        throw invalidBranchNameError(branchValidation.message ?? 'Invalid branch name.')
+      }
+
       if (input.branchMode === 'new_branch') {
         await this.git.checkoutLocalBranch(input.branchName)
         await this.pushRef(input.remoteName, input.branchName, ['-u'], input.token)
@@ -652,6 +683,11 @@ export class GitService {
     options?: { remoteName?: string; token?: string; publishRemote?: boolean }
   ): Promise<BranchCreateResult> {
     try {
+      const branchValidation = validateBranchName(name)
+      if (!branchValidation.ok) {
+        throw invalidBranchNameError(branchValidation.message ?? 'Invalid branch name.')
+      }
+
       await this.git.checkoutLocalBranch(name)
 
       const publishRemote = options?.publishRemote ?? false
@@ -694,6 +730,10 @@ export class GitService {
         }
       }
     } catch (err) {
+      if (isGitError(err)) {
+        throw err
+      }
+
       throw mapGitError(err)
     }
   }

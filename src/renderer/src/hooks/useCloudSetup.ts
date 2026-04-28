@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { validateBranchName } from '../branchValidation'
 import { invokeDb } from '../ipc'
 import {
   CloudSetupIntent,
@@ -191,8 +192,9 @@ export function useCloudSetup(
       return
     }
 
-    if (!selectedBranch.trim()) {
-      setError('Choose a branch name before saving the team upload target.')
+    const branchValidation = validateBranchName(selectedBranch)
+    if (!branchValidation.ok) {
+      setError(branchValidation.message)
       return
     }
 
