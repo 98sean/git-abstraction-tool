@@ -62,6 +62,10 @@ The folder is only registered after that preparation succeeds.
 
 The main panel shows tracked files and current changes together.
 
+Use **Show deps** / **Hide deps** to reveal or collapse dependency and generated folders such as
+`node_modules` or build output. Hiding deps keeps the normal review focused; showing deps is useful
+when you deliberately need to inspect those files.
+
 Stage the changes you want, write a message, and click **Save Progress**.
 
 If AI save messages are enabled for that project:
@@ -93,6 +97,11 @@ On first use, the app opens a setup wizard:
 - **Upload work to a team repository**: chooses a specific remote and branch mode for collaboration
 
 Uploads do not happen until one of those targets is explicitly configured.
+
+For team upload, the recommended path is a new work branch such as `gat/my-update`.
+That branch is pushed to GitHub and the app shows an **Open pull request** handoff link when GitHub
+can provide a compare URL. Your changes will not appear on `main` until the team reviews and merges
+that branch.
 
 ---
 
@@ -135,6 +144,7 @@ Only staged diffs are sent, and only after that project explicitly grants AI dif
 - **Natural language undo**: manual AI tool for finding a likely restore point
 - **File insight**: manual AI tool for explaining the selected file
 - **Untracked review**: manual AI tool for reviewing untracked files before staging or deletion
+- **Weekly summary**: optional feature-focused weekly report when AI is connected
 
 ---
 

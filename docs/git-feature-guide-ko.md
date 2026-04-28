@@ -48,7 +48,8 @@ git commit -m "로그인 화면 간격 조정"
 - 쉬운 설명:
   선택한 파일이 무슨 역할을 하는지와 관련 파일을 설명해 줍니다.
 - 내부 동작:
-  현재 선택한 파일 내용 일부, 최근 commit 정보, 관련 후보 파일을 AI에 보내 요약을 받습니다.
+  현재 선택한 텍스트 파일 내용 일부, 최근 commit 정보, 관련 후보 파일을 AI에 보내 요약을 받습니다.
+  바이너리 파일이나 프로젝트 폴더 밖 경로는 분석 전에 차단합니다.
 
 ## Untracked Review
 
@@ -73,6 +74,11 @@ git commit -m "로그인 화면 간격 조정"
 git push gat-backup HEAD
 git push -u origin gat/my-update
 ```
+
+- 브랜치로 올릴 때:
+  `gat/my-update` 같은 작업 브랜치를 GitHub에 올리는 것입니다.
+  이 단계만으로 팀의 `main` 내용이 바뀌지는 않습니다.
+  앱이 GitHub compare URL을 만들 수 있으면 `Open pull request` 링크를 보여줍니다.
 
 ## Get Updates
 
@@ -109,6 +115,14 @@ printf ".env\nnode_modules\n" >> .gitignore
   backup은 `gat-backup` remote를 사용합니다.
   collaboration은 사용자가 명시적으로 고른 remote와 branch mode를 저장해서 사용합니다.
 
+## Show deps / Hide deps
+
+- 쉬운 설명:
+  `node_modules`, build output 같은 dependency/generated 폴더를 파일 패널에서 접거나 보여주는 기능입니다.
+- 내부 의미:
+  Git 상태 자체를 바꾸는 기능이 아닙니다.
+  파일 목록을 보기 쉽게 필터링할 뿐이고, 실제 stage/commit 여부는 사용자가 선택한 파일에 따라 결정됩니다.
+
 ## Dangerous Default Branch Upload
 
 - 쉬운 설명:
@@ -130,6 +144,14 @@ printf ".env\nnode_modules\n" >> .gitignore
   `Project Settings`는 auto save message 설정용입니다.
   `Natural Language Undo`, `File Insight`, `Untracked Review`는 여기서 켜고 끄는 방식이 아니라,
   작업 화면에서 필요할 때 직접 호출하는 도구입니다.
+
+## Weekly Report
+
+- 쉬운 설명:
+  이번 주에 어떤 작업을 했는지 요약해서 보여줍니다.
+- 내부 동작:
+  기본 요약은 Git 기록의 commit 수, 변경 파일 수, 날짜별 기록으로 만듭니다.
+  AI가 연결되어 있으면 같은 Git 기록을 기준으로 더 자연스러운 기능 중심 요약을 추가로 만들 수 있습니다.
 
 ## 전역 연결 vs 프로젝트별 설정
 
