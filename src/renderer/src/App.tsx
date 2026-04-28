@@ -617,7 +617,7 @@ function Shell(): JSX.Element {
       await fetchStatus()
       await fetchBranches()
       addToast(
-        `Restore complete (restored ${result.restored_files}, removed ${result.removed_files}) | Backup: ${result.backup_branch}`,
+        `Restore complete (restored ${result.restored_files}, removed ${result.removed_files})`,
         'success'
       )
     } catch (error) {

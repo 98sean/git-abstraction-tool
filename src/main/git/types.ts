@@ -41,7 +41,6 @@ export interface TimelineCommitInfo {
 }
 
 export interface RestoreResult {
-  backup_branch: string
   restored_files: number
   removed_files: number
 }

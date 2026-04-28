@@ -148,15 +148,6 @@ function chunk<T>(items: T[], size: number): T[][] {
   return result
 }
 
-function buildBackupBranchName(commitHash: string): string {
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[-:]/g, '')
-    .replace(/\..+/, '')
-
-  return `gat-backup/${timestamp}-${commitHash.slice(0, 7)}`
-}
-
 function resolveProjectPath(projectRoot: string, relativePath: string): string {
   const normalized = relativePath.replace(/\\/g, '/')
   const absolute = path.resolve(projectRoot, normalized)
@@ -931,10 +922,6 @@ export class GitService {
         } satisfies GitError
       }
 
-      const backupBranch = buildBackupBranchName(cleanHash)
-
-      await this.git.raw(['branch', backupBranch, 'HEAD'])
-
       for (const group of chunk(plan.files_to_remove, 150)) {
         await this.git.raw(['rm', '-f', '--ignore-unmatch', '--', ...group])
       }
@@ -951,7 +938,6 @@ export class GitService {
       }
 
       return {
-        backup_branch: backupBranch,
         restored_files: plan.files_to_restore.length,
         removed_files: plan.files_to_remove.length
       }
