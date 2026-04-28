@@ -55,6 +55,29 @@
   color: var(--text-muted);
 }
 
+.uploadHandoff {
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.uploadHandoffLink {
+  color: var(--accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.uploadHandoffLink:hover {
+  text-decoration: underline;
+}
+
 .actions {
   display: flex;
   gap: 8px;

@@ -42,6 +42,7 @@ import {
   NaturalUndoSuggestion,
   ProjectAiSettings,
   ProjectCloudTarget,
+  PushConfiguredTargetResult,
   PushToCloudOptions,
   RestoreResult,
   UntrackedDeleteResult,
@@ -69,6 +70,7 @@ function Shell(): JSX.Element {
   const [showWeeklyReport, setShowWeeklyReport] = useState(false)
   const [showAiConsentDialog, setShowAiConsentDialog] = useState(false)
   const [pendingDangerTarget, setPendingDangerTarget] = useState<ProjectCloudTarget | null>(null)
+  const [uploadHandoff, setUploadHandoff] = useState<PushConfiguredTargetResult | null>(null)
   const [showPullUpdatesDialog, setShowPullUpdatesDialog] = useState(false)
   const [pullPreview, setPullPreview] = useState<PullUpdatesPreview | null>(null)
   const [pullPreviewLoading, setPullPreviewLoading] = useState(false)
@@ -120,6 +122,7 @@ function Shell(): JSX.Element {
     setPullPreviewError(null)
     setShowPullUpdatesDialog(false)
     setProtectedBranch(null)
+    setUploadHandoff(null)
     fileInsightReqRef.current += 1
   }, [activeProjectId])
 
@@ -213,7 +216,12 @@ function Shell(): JSX.Element {
       return
     }
 
-    await push(options)
+    const result = await push(options)
+    if (result?.prUrl) {
+      setUploadHandoff(result)
+    } else if (result) {
+      setUploadHandoff(null)
+    }
   }
 
   const cloudSetup = useCloudSetup(activeProject, {
@@ -841,6 +849,7 @@ function Shell(): JSX.Element {
                 tokenExists={tokenExists}
                 cloudUploadReady={cloudSetup.cloudUploadReady}
                 cloudStatusLabel={cloudSetup.cloudStatusLabel}
+                uploadHandoff={uploadHandoff}
                 aiAutoSaveEnabled={projectAiSettings.auto_save_message_enabled}
                 aiConnectionReady={
                   connectionStatus.connection_status === 'connected' &&

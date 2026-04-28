@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { DeviceFlowState } from '../../hooks/useAuth'
 import { useTerms } from '../../hooks/useTerms'
-import { GitError, GitStatus, NaturalUndoSuggestion } from '../../types'
+import { GitError, GitStatus, NaturalUndoSuggestion, PushConfiguredTargetResult } from '../../types'
 import { ConnectGitHub } from '../ConnectGitHub/ConnectGitHub'
 import { Spinner } from '../shared/Spinner'
 import styles from './ActionPanel.module.css'
@@ -15,6 +15,7 @@ interface Props {
   tokenExists: boolean | null
   cloudUploadReady: boolean
   cloudStatusLabel?: string
+  uploadHandoff?: PushConfiguredTargetResult | null
   aiAutoSaveEnabled?: boolean
   aiConnectionReady?: boolean
   forceShowConnect?: boolean
@@ -56,6 +57,7 @@ export function ActionPanel({
   tokenExists,
   cloudUploadReady,
   cloudStatusLabel,
+  uploadHandoff = null,
   aiAutoSaveEnabled = false,
   aiConnectionReady = false,
   forceShowConnect = false,
@@ -207,6 +209,20 @@ export function ActionPanel({
       </div>
 
       {helperText && <div className={styles.helperText}>{helperText}</div>}
+
+      {uploadHandoff?.prUrl && (
+        <div className={styles.uploadHandoff}>
+          <span>Uploaded branch {uploadHandoff.branchName}</span>
+          <a
+            className={styles.uploadHandoffLink}
+            href={uploadHandoff.prUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open pull request
+          </a>
+        </div>
+      )}
 
       <div className={styles.actions}>
         <button className={styles.saveBtn} onClick={handleCommit} disabled={!canCommit}>

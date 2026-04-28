@@ -1,12 +1,14 @@
 import { useCallback, useState } from 'react'
 import { invokeGit } from '../ipc'
-import { CommitAiMetadata, GitError, PushToCloudOptions } from '../types'
+import { CommitAiMetadata, GitError, PushConfiguredTargetResult, PushToCloudOptions } from '../types'
 
 interface UseGitActionsOptions {
   onCommitSuccess?: () => void
-  onPushSuccess?: () => void
+  onPushSuccess?: (result: PushConfiguredTargetResult) => void
   onPullSuccess?: () => void
 }
+
+type ActionResult<T> = { ok: true; data: T } | { ok: false; error: GitError }
 
 export function useGitActions(
   project_id: string | null,
@@ -15,7 +17,7 @@ export function useGitActions(
   loading: boolean
   error: GitError | null
   commit: (message: string, aiMetadata?: CommitAiMetadata) => Promise<boolean>
-  push: (options?: PushToCloudOptions) => Promise<boolean>
+  push: (options?: PushToCloudOptions) => Promise<PushConfiguredTargetResult | null>
   pull: () => Promise<boolean>
   clearError: () => void
 } {
@@ -40,6 +42,25 @@ export function useGitActions(
     []
   )
 
+  const runWithResult = useCallback(
+    async <T,>(fn: () => Promise<T>, onSuccess?: (data: T) => void): Promise<ActionResult<T>> => {
+      setLoading(true)
+      setError(null)
+      try {
+        const data = await fn()
+        onSuccess?.(data)
+        return { ok: true, data }
+      } catch (err) {
+        const gitError = err as GitError
+        setError(gitError)
+        return { ok: false, error: gitError }
+      } finally {
+        setLoading(false)
+      }
+    },
+    []
+  )
+
   const commit = useCallback(
     (message: string, aiMetadata?: CommitAiMetadata): Promise<boolean> => {
       if (!project_id) return Promise.resolve(false)
@@ -52,11 +73,15 @@ export function useGitActions(
   )
 
   const push = useCallback(
-    (pushOptions?: PushToCloudOptions): Promise<boolean> => {
-      if (!project_id) return Promise.resolve(false)
-      return run(() => invokeGit('git:push', project_id, pushOptions), callbacks.onPushSuccess)
+    async (pushOptions?: PushToCloudOptions): Promise<PushConfiguredTargetResult | null> => {
+      if (!project_id) return null
+      const result = await runWithResult(
+        () => invokeGit<PushConfiguredTargetResult>('git:push', project_id, pushOptions),
+        callbacks.onPushSuccess
+      )
+      return result.ok ? result.data : null
     },
-    [callbacks.onPushSuccess, project_id, run]
+    [callbacks.onPushSuccess, project_id, runWithResult]
   )
 
   const pull = useCallback((): Promise<boolean> => {
