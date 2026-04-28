@@ -9,6 +9,7 @@ import {
   WeeklyFeatureStats,
   WeeklyFeatureSummaryEntry
 } from '../ai/manualToolTypes'
+import { buildFileInsightAnalysisInput } from '../ai/fileInsightInput'
 import { createAiService } from '../ai/service'
 import { AiProviderName } from '../ai/types'
 import { getAiConnectionState, clearAiConnectionState, setAiConnectionState } from '../db/aiConnection'
@@ -764,10 +765,9 @@ export function registerAiHandlers(): void {
   )
 
   ipcMain.handle('ai:file:insight', async (_event, project_id: string, file_path: string) => {
-    const normalizedPath = (file_path ?? '').replace(/\\/g, '/').trim()
-    if (!normalizedPath) {
-      throw new Error('Please select a file first.')
-    }
+    const projectRoot = getProjectPath(project_id)
+    const analysisInput = await buildFileInsightAnalysisInput(projectRoot, file_path ?? '')
+    const normalizedPath = analysisInput.filePath
 
     const aiConfig = getConnectedAiConfig()
 
@@ -776,15 +776,6 @@ export function registerAiHandlers(): void {
       service.getTimeline(260),
       service.listTrackedFiles()
     ])
-
-    const projectRoot = getProjectPath(project_id)
-    const absolutePath = toSafeAbsolutePath(projectRoot, normalizedPath)
-    let rawContent = ''
-    try {
-      rawContent = await readFile(absolutePath, 'utf8')
-    } catch {
-      throw new Error('Could not read this file for analysis.')
-    }
 
     const relatedCandidates = buildRelatedCandidates(normalizedPath, trackedFiles, timeline)
     const recentCommits = timeline
@@ -797,7 +788,7 @@ export function registerAiHandlers(): void {
       model: aiConfig.model,
       apiKey: aiConfig.apiKey,
       filePath: normalizedPath,
-      contentSnippet: toTextSnippet(rawContent),
+      contentSnippet: analysisInput.contentSnippet,
       recentCommits: recentCommits,
       relatedCandidates: relatedCandidates
     })
