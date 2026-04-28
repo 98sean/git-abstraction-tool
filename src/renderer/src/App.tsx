@@ -531,33 +531,43 @@ function Shell(): JSX.Element {
   useEffect(() => {
     if (!activeProjectId) return
     if (isNotARepo) return
-    if (!status || status.behind <= 0) return
-    if (showPullUpdatesDialog) return
     if (!cloudSetup.cloudUploadReady) return
 
     let cancelled = false
+    let checking = false
 
-    void (async () => {
-      const preview = await loadPullPreview()
-      if (cancelled || !preview || preview.behind_count <= 0) return
+    const checkIncomingUpdates = async (): Promise<void> => {
+      if (checking || cancelled || showPullUpdatesDialog) return
+      checking = true
+      try {
+        const preview = await loadPullPreview()
+        if (cancelled || !preview || preview.behind_count <= 0) return
 
-      const fingerprint =
-        preview.latest_remote_hash || `${preview.remote_name}/${preview.branch_name}:${preview.behind_count}`
-      if (lastShownPullUpdateRef.current[activeProjectId] === fingerprint) return
+        const fingerprint =
+          preview.latest_remote_hash || `${preview.remote_name}/${preview.branch_name}:${preview.behind_count}`
+        if (lastShownPullUpdateRef.current[activeProjectId] === fingerprint) return
 
-      lastShownPullUpdateRef.current[activeProjectId] = fingerprint
-      setShowPullUpdatesDialog(true)
-    })()
+        lastShownPullUpdateRef.current[activeProjectId] = fingerprint
+        setShowPullUpdatesDialog(true)
+      } finally {
+        checking = false
+      }
+    }
+
+    void checkIncomingUpdates()
+    const interval = window.setInterval(() => {
+      void checkIncomingUpdates()
+    }, 60_000)
 
     return () => {
       cancelled = true
+      window.clearInterval(interval)
     }
   }, [
     activeProjectId,
     cloudSetup.cloudUploadReady,
     isNotARepo,
     showPullUpdatesDialog,
-    status?.behind,
     status?.current_branch
   ])
 
