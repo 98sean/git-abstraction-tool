@@ -6,6 +6,7 @@ import {
   buildFileInsightAnalysisInput,
   FILE_INSIGHT_SNIPPET_MAX_CHARS
 } from '../fileInsightInput'
+import { generateFileInsight } from '../fileInsightService'
 import { createManualToolService } from '../manualToolService'
 import { createAiService } from '../service'
 
@@ -66,5 +67,76 @@ describe('file insight input safety', () => {
     expect(result.relatedFiles).toEqual([
       { path: 'src/routes.ts', reason: 'Frequently changed together in commit history.' }
     ])
+  })
+
+  it('builds service input with recent commits and related candidates', async () => {
+    const projectRoot = await makeProject()
+    await mkdir(join(projectRoot, 'src'))
+    await writeFile(join(projectRoot, 'src', 'app.ts'), 'export function app() {}')
+
+    const manualToolService = {
+      generateFileInsight: vi.fn().mockResolvedValue({
+        summary: 'App shell',
+        functionality: 'Coordinates rendering',
+        relatedFiles: [{ path: 'src/routes.ts', reason: 'Frequently changed together.' }]
+      })
+    }
+
+    const result = await generateFileInsight({
+      projectRoot,
+      filePath: 'src/app.ts',
+      aiConfig: { provider: 'openai', model: 'test-model', apiKey: 'test-key' },
+      gitService: {
+        getTimeline: vi.fn().mockResolvedValue([
+          {
+            hash: 'abc123',
+            short_hash: 'abc123',
+            date: '2026-04-28T12:00:00.000Z',
+            message: 'Update app shell',
+            changed_files: ['src/app.ts', 'src/routes.ts']
+          }
+        ]),
+        listTrackedFiles: vi.fn().mockResolvedValue(['src/app.ts', 'src/routes.ts'])
+      },
+      manualToolService
+    })
+
+    expect(manualToolService.generateFileInsight).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: 'openai',
+        model: 'test-model',
+        apiKey: 'test-key',
+        filePath: 'src/app.ts',
+        recentCommits: [{ date: '2026-04-28T12:00:00.000Z', message: 'Update app shell' }],
+        relatedCandidates: [expect.objectContaining({ path: 'src/routes.ts' })]
+      })
+    )
+    expect(result).toEqual({
+      file_path: 'src/app.ts',
+      summary: 'App shell',
+      functionality: 'Coordinates rendering',
+      related_files: [{ path: 'src/routes.ts', reason: 'Frequently changed together.' }]
+    })
+  })
+
+  it('rejects embedded git internals at the service boundary', async () => {
+    const projectRoot = await makeProject()
+    await mkdir(join(projectRoot, 'nested.git'))
+    await writeFile(join(projectRoot, 'nested.git', 'config'), '[core]')
+
+    await expect(
+      generateFileInsight({
+        projectRoot,
+        filePath: 'nested.git/config',
+        aiConfig: { provider: 'openai', model: 'test-model', apiKey: 'test-key' },
+        gitService: {
+          getTimeline: vi.fn(),
+          listTrackedFiles: vi.fn()
+        },
+        manualToolService: {
+          generateFileInsight: vi.fn()
+        }
+      })
+    ).rejects.toThrow(/embedded Git system file/i)
   })
 })

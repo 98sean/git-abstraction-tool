@@ -8,7 +8,7 @@ import {
   WeeklyFeatureStats,
   WeeklyFeatureSummaryEntry
 } from '../ai/manualToolTypes'
-import { buildFileInsightAnalysisInput } from '../ai/fileInsightInput'
+import { generateFileInsight, isGitInternalArtifact } from '../ai/fileInsightService'
 import { createAiService } from '../ai/service'
 import { AiProviderName } from '../ai/types'
 import {
@@ -38,11 +38,6 @@ import { registerAiWeeklyHandlers } from './aiWeeklyHandlers'
 
 const aiService = createAiService()
 const manualToolService = createManualToolService({ aiService })
-
-interface RelatedCandidate {
-  path: string
-  score: number
-}
 
 type UntrackedRecommendation = 'commit' | 'delete'
 
@@ -132,43 +127,6 @@ function toTextSnippet(content: string, maxChars = 12000): string {
   return content.length > maxChars ? `${content.slice(0, maxChars)}\n...` : content
 }
 
-function buildRelatedCandidates(
-  filePath: string,
-  trackedFiles: string[],
-  timeline: TimelineCommitInfo[]
-): RelatedCandidate[] {
-  const scoreMap = new Map<string, number>()
-  const fileDir = path.posix.dirname(filePath.replace(/\\/g, '/'))
-  const fileBase = basename(filePath)
-  const fileStem = fileBase.replace(/\.[^.]+$/, '')
-
-  const addScore = (candidate: string, score: number): void => {
-    if (!candidate || candidate === filePath) return
-    scoreMap.set(candidate, (scoreMap.get(candidate) ?? 0) + score)
-  }
-
-  for (const commit of timeline) {
-    if (!commit.changed_files.includes(filePath)) continue
-    for (const changed of commit.changed_files) {
-      addScore(changed, 3)
-    }
-  }
-
-  for (const tracked of trackedFiles) {
-    if (tracked === filePath) continue
-    const trackedNorm = tracked.replace(/\\/g, '/')
-    if (path.posix.dirname(trackedNorm) === fileDir) addScore(trackedNorm, 2)
-    if (basename(trackedNorm).includes(fileStem) || fileStem.includes(basename(trackedNorm).replace(/\.[^.]+$/, ''))) {
-      addScore(trackedNorm, 1)
-    }
-  }
-
-  return Array.from(scoreMap.entries())
-    .map(([candidatePath, score]) => ({ path: candidatePath, score }))
-    .sort((a, b) => b.score - a.score || a.path.localeCompare(b.path))
-    .slice(0, 12)
-}
-
 const DELETE_PATH_PATTERNS = [
   /(^|\/)\.DS_Store$/i,
   /(^|\/)Thumbs\.db$/i,
@@ -242,12 +200,6 @@ interface UntrackedContext {
 
 function normalizeUntrackedPath(value: string): string {
   return value.replace(/\\/g, '/').replace(/\/+$/, '')
-}
-
-function isGitInternalArtifact(filePath: string): boolean {
-  return normalizeUntrackedPath(filePath)
-    .split('/')
-    .some((segment) => segment === '.git' || segment.endsWith('.git'))
 }
 
 function inferByRule(filePath: string): UntrackedReviewItem | null {
@@ -690,43 +642,16 @@ export function registerAiHandlers(): void {
 
     generateFileInsight: async (project_id: string, file_path: string) => {
     const projectRoot = getProjectPath(project_id)
-    const analysisInput = await buildFileInsightAnalysisInput(projectRoot, file_path ?? '')
-    const normalizedPath = analysisInput.filePath
-
-    if (isGitInternalArtifact(normalizedPath)) {
-      throw new Error('This looks like an embedded Git system file, so file insight is skipped.')
-    }
-
     const aiConfig = getConnectedAiConfig()
-
     const service = getGitService(project_id)
-    const [timeline, trackedFiles] = await Promise.all([
-      service.getTimeline(260),
-      service.listTrackedFiles()
-    ])
 
-    const relatedCandidates = buildRelatedCandidates(normalizedPath, trackedFiles, timeline)
-    const recentCommits = timeline
-      .filter((c) => c.changed_files.includes(normalizedPath))
-      .slice(0, 8)
-      .map((c) => ({ date: c.date, message: c.message }))
-
-    const insight = await manualToolService.generateFileInsight({
-      provider: aiConfig.provider,
-      model: aiConfig.model,
-      apiKey: aiConfig.apiKey,
-      filePath: normalizedPath,
-      contentSnippet: analysisInput.contentSnippet,
-      recentCommits: recentCommits,
-      relatedCandidates: relatedCandidates
+    return generateFileInsight({
+      projectRoot,
+      filePath: file_path ?? '',
+      aiConfig,
+      gitService: service,
+      manualToolService
     })
-
-    return {
-      file_path: normalizedPath,
-      summary: insight.summary,
-      functionality: insight.functionality,
-      related_files: insight.relatedFiles
-    }
     },
 
     reviewUntracked: async (project_id: string) => {
