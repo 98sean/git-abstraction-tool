@@ -6,6 +6,7 @@ import { useAiConnection } from './hooks/useAiConnection'
 import { useAutoSaveMessage } from './hooks/useAutoSaveMessage'
 import { useBranches } from './hooks/useBranches'
 import { useCloudSetup } from './hooks/useCloudSetup'
+import { useFileInsight } from './hooks/useFileInsight'
 import { useFileStatus } from './hooks/useFileStatus'
 import { useGitActions } from './hooks/useGitActions'
 import { usePreferences } from './hooks/usePreferences'
@@ -38,7 +39,6 @@ import {
   BranchMergeResult,
   AiCommitSuggestion,
   CommitAiMetadata,
-  FileInsight,
   PullUpdatesPreview,
   ProjectAiSettings,
   ProjectCloudTarget,
@@ -48,15 +48,6 @@ import {
   UntrackedReviewResult
 } from './types'
 import styles from './App.module.css'
-
-function getFriendlyErrorMessage(error: unknown, fallback: string): string {
-  const message = (error as { message?: string })?.message?.trim()
-  if (!message || message.endsWith('[object Object]')) {
-    return fallback
-  }
-
-  return message.replace(/^Error invoking remote method '[^']+':\s*/, '')
-}
 
 function Shell(): JSX.Element {
   const { projects, activeProjectId, activeProject, removeProject, setActiveProject } = useProjects()
@@ -88,11 +79,6 @@ function Shell(): JSX.Element {
   const [commitMessage, setCommitMessage] = useState('')
   const [aiSuggestion, setAiSuggestion] = useState<AiCommitSuggestion | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
-  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null)
-  const [fileInsight, setFileInsight] = useState<FileInsight | null>(null)
-  const [fileInsightLoading, setFileInsightLoading] = useState(false)
-  const [fileInsightError, setFileInsightError] = useState<string | null>(null)
-  const fileInsightReqRef = useRef(0)
   const lastShownPullUpdateRef = useRef<Record<string, string>>({})
 
   const manualAiToolsEnabled =
@@ -114,16 +100,11 @@ function Shell(): JSX.Element {
 
   useEffect(() => {
     setShowWeeklyReport(false)
-    setSelectedFilePath(null)
-    setFileInsight(null)
-    setFileInsightError(null)
-    setFileInsightLoading(false)
     setPullPreview(null)
     setPullPreviewError(null)
     setShowPullUpdatesDialog(false)
     setProtectedBranch(null)
     setUploadHandoff(null)
-    fileInsightReqRef.current += 1
   }, [activeProjectId])
 
   const {
@@ -172,6 +153,24 @@ function Shell(): JSX.Element {
   useEffect(() => {
     resetNaturalUndo()
   }, [activeProjectId, resetNaturalUndo])
+
+  const fileInsightState = useFileInsight({
+    activeProjectId,
+    enabled: manualAiToolsEnabled,
+    invokeDb
+  })
+  const {
+    selectedPath: selectedFilePath,
+    insight: fileInsight,
+    loading: fileInsightLoading,
+    error: fileInsightError,
+    selectFile: handleSelectFile,
+    reset: resetFileInsight
+  } = fileInsightState
+
+  useEffect(() => {
+    resetFileInsight()
+  }, [activeProjectId, resetFileInsight])
 
   const {
     loading: actionLoading,
@@ -591,39 +590,6 @@ function Shell(): JSX.Element {
     showPullUpdatesDialog,
     status?.current_branch
   ])
-
-  const handleSelectFile = async (filePath: string): Promise<void> => {
-    if (!activeProjectId) return
-
-    setSelectedFilePath(filePath)
-    setFileInsightError(null)
-    setFileInsight(null)
-
-    if (!manualAiToolsEnabled) {
-      setFileInsightLoading(false)
-      setFileInsightError('Connect AI to analyze files.')
-      return
-    }
-
-    setFileInsightLoading(true)
-
-    const requestId = fileInsightReqRef.current + 1
-    fileInsightReqRef.current = requestId
-
-    try {
-      const result = await invokeDb<FileInsight>('ai:file:insight', activeProjectId, filePath)
-      if (fileInsightReqRef.current !== requestId) return
-      setFileInsight(result)
-    } catch (error) {
-      if (fileInsightReqRef.current !== requestId) return
-      const message = getFriendlyErrorMessage(error, 'Could not analyze this file.')
-      setFileInsightError(message)
-    } finally {
-      if (fileInsightReqRef.current === requestId) {
-        setFileInsightLoading(false)
-      }
-    }
-  }
 
   const handleReviewUntracked = async (): Promise<UntrackedReviewResult> => {
     if (!activeProjectId) {
