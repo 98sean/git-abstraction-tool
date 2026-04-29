@@ -1,6 +1,7 @@
 # Git Abstraction Tool
 
-[English](README.md) | 한국어
+[![English](https://img.shields.io/badge/lang-English-blue)](README.md)
+[![한국어](https://img.shields.io/badge/lang-%ED%95%9C%EA%B5%AD%EC%96%B4-green)](README.ko.md)
 
 프로젝트 변경 이력을 로컬에 안전하게 저장하고, 파일 상태를 한 화면에서 검토하며, 사용자가 직접 연결한 AI provider 키로 저장 메시지와 보조 기능을 사용할 수 있게 해주는 데스크톱 앱입니다. 필요할 때는 명시적인 안전 확인을 거쳐 GitHub에 업로드할 수 있습니다.
 

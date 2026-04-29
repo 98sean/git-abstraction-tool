@@ -1,6 +1,7 @@
 # Git Abstraction Tool
 
-English | [한국어](README.ko.md)
+[![English](https://img.shields.io/badge/lang-English-blue)](README.md)
+[![한국어](https://img.shields.io/badge/lang-%ED%95%9C%EA%B5%AD%EC%96%B4-green)](README.ko.md)
 
 A desktop app for saving project history locally, reviewing project files in one panel, using your own AI provider key for save assistance and project tools, and optionally uploading work to GitHub with explicit safety checks.
 
