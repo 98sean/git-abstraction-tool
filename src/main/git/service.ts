@@ -1,6 +1,7 @@
 import { access, readFile, rm, writeFile } from 'node:fs/promises'
 import path, { join } from 'node:path'
 import simpleGit, { SimpleGit, StatusResult } from 'simple-git'
+import { validateBranchName } from '../../shared/branchValidation'
 import {
   BranchCreateResult,
   BranchDeleteResult,
@@ -105,24 +106,6 @@ function defaultBranchProtectedError(): GitError {
     code: 'DEFAULT_BRANCH_PROTECTED',
     message: 'Default branch upload requires danger-mode confirmation.'
   }
-}
-
-export function validateBranchName(name: string): { ok: boolean; message: string | null } {
-  const trimmed = name.trim()
-
-  if (!trimmed) return { ok: false, message: 'Choose a branch name.' }
-  if (/\s/.test(trimmed)) return { ok: false, message: 'Branch names cannot contain spaces.' }
-  if (trimmed.startsWith('/') || trimmed.endsWith('/')) {
-    return { ok: false, message: 'Branch names cannot start or end with "/".' }
-  }
-  if (trimmed.includes('..')) {
-    return { ok: false, message: 'Branch names cannot contain "..".' }
-  }
-  if (/[\x00-\x20~^:?*[\\]/.test(trimmed)) {
-    return { ok: false, message: 'Branch name contains unsupported characters.' }
-  }
-
-  return { ok: true, message: null }
 }
 
 function invalidBranchNameError(message: string): GitError {

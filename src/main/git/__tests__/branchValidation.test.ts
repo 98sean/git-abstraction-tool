@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { GitService, validateBranchName } from '../service'
+import { validateBranchName } from '../../../shared/branchValidation'
+import { GitService } from '../service'
 
 describe('branch name validation', () => {
   it('rejects branch names with spaces', () => {
