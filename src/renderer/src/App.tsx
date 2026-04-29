@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { AppProvider } from './context/AppContext'
 import { invokeDb, invokeGit } from './ipc'
 import { useAuth } from './hooks/useAuth'
@@ -14,6 +14,7 @@ import { useProjectAiSettings } from './hooks/useProjectAiSettings'
 import { useProjectLinkWizard } from './hooks/useProjectLinkWizard'
 import { useProjects } from './hooks/useProjects'
 import { useNaturalUndo } from './hooks/useNaturalUndo'
+import { usePullUpdates } from './hooks/usePullUpdates'
 import { useTerms } from './hooks/useTerms'
 import { useToast } from './hooks/useToast'
 import { AIConsentDialog } from './components/AIConsentDialog/AIConsentDialog'
@@ -39,7 +40,6 @@ import {
   BranchMergeResult,
   AiCommitSuggestion,
   CommitAiMetadata,
-  PullUpdatesPreview,
   ProjectAiSettings,
   ProjectCloudTarget,
   PushConfiguredTargetResult,
@@ -70,16 +70,11 @@ function Shell(): JSX.Element {
   const [showAiConsentDialog, setShowAiConsentDialog] = useState(false)
   const [pendingDangerTarget, setPendingDangerTarget] = useState<ProjectCloudTarget | null>(null)
   const [uploadHandoff, setUploadHandoff] = useState<PushConfiguredTargetResult | null>(null)
-  const [showPullUpdatesDialog, setShowPullUpdatesDialog] = useState(false)
-  const [pullPreview, setPullPreview] = useState<PullUpdatesPreview | null>(null)
-  const [pullPreviewLoading, setPullPreviewLoading] = useState(false)
-  const [pullPreviewError, setPullPreviewError] = useState<string | null>(null)
   const [protectedBranch, setProtectedBranch] = useState<string | null>(null)
   const [gitInstalled, setGitInstalled] = useState<boolean | null>(null)
   const [commitMessage, setCommitMessage] = useState('')
   const [aiSuggestion, setAiSuggestion] = useState<AiCommitSuggestion | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
-  const lastShownPullUpdateRef = useRef<Record<string, string>>({})
 
   const manualAiToolsEnabled =
     connectionStatus.connection_status === 'connected' &&
@@ -100,9 +95,6 @@ function Shell(): JSX.Element {
 
   useEffect(() => {
     setShowWeeklyReport(false)
-    setPullPreview(null)
-    setPullPreviewError(null)
-    setShowPullUpdatesDialog(false)
     setProtectedBranch(null)
     setUploadHandoff(null)
   }, [activeProjectId])
@@ -196,6 +188,29 @@ function Shell(): JSX.Element {
 
   const trackedPaths = status?.tracked_files ?? []
   const isNotARepo = statusError?.code === 'NOT_A_REPO'
+  const pullUpdates = usePullUpdates({
+    activeProjectId,
+    enabled: cloudSetup.cloudUploadReady && !isNotARepo,
+    currentBranch: status?.current_branch ?? null,
+    invokeGit,
+    pull,
+    refreshStatus: fetchStatus
+  })
+  const {
+    preview: pullPreview,
+    loading: pullPreviewLoading,
+    error: pullPreviewError,
+    showDialog: showPullUpdatesDialog,
+    loadPreview: loadPullPreview,
+    requestPull: handlePullRequest,
+    confirmPull: handleConfirmPullFromDialog,
+    close: closePullUpdatesDialog,
+    reset: resetPullUpdates
+  } = pullUpdates
+
+  useEffect(() => {
+    resetPullUpdates()
+  }, [activeProjectId, resetPullUpdates])
 
   const stagedSignature = useMemo(
     () =>
@@ -502,94 +517,6 @@ function Shell(): JSX.Element {
 
     await handleUploadWithTarget(cloudSetup.target, options)
   }
-
-  const loadPullPreview = async (refreshAfter = false): Promise<PullUpdatesPreview | null> => {
-    if (!activeProjectId) return null
-
-    setPullPreviewLoading(true)
-    setPullPreviewError(null)
-
-    try {
-      const preview = await invokeGit<PullUpdatesPreview>('git:pull:preview', activeProjectId, 20)
-      setPullPreview(preview)
-      if (refreshAfter) {
-        await fetchStatus()
-      }
-      return preview
-    } catch (error) {
-      const message =
-        (error as { message?: string })?.message ?? 'Could not load incoming updates.'
-      setPullPreviewError(message)
-      return null
-    } finally {
-      setPullPreviewLoading(false)
-    }
-  }
-
-  const handlePullRequest = (): void => {
-    void (async () => {
-      const preview = await loadPullPreview(true)
-      if (preview && preview.behind_count > 0) {
-        const fingerprint =
-          preview.latest_remote_hash || `${preview.remote_name}/${preview.branch_name}:${preview.behind_count}`
-        if (activeProjectId) {
-          lastShownPullUpdateRef.current[activeProjectId] = fingerprint
-        }
-        setShowPullUpdatesDialog(true)
-        return
-      }
-
-      await pull()
-    })()
-  }
-
-  const handleConfirmPullFromDialog = (): void => {
-    setShowPullUpdatesDialog(false)
-    void pull()
-  }
-
-  useEffect(() => {
-    if (!activeProjectId) return
-    if (isNotARepo) return
-    if (!cloudSetup.cloudUploadReady) return
-
-    let cancelled = false
-    let checking = false
-
-    const checkIncomingUpdates = async (): Promise<void> => {
-      if (checking || cancelled || showPullUpdatesDialog) return
-      checking = true
-      try {
-        const preview = await loadPullPreview()
-        if (cancelled || !preview || preview.behind_count <= 0) return
-
-        const fingerprint =
-          preview.latest_remote_hash || `${preview.remote_name}/${preview.branch_name}:${preview.behind_count}`
-        if (lastShownPullUpdateRef.current[activeProjectId] === fingerprint) return
-
-        lastShownPullUpdateRef.current[activeProjectId] = fingerprint
-        setShowPullUpdatesDialog(true)
-      } finally {
-        checking = false
-      }
-    }
-
-    void checkIncomingUpdates()
-    const interval = window.setInterval(() => {
-      void checkIncomingUpdates()
-    }, 60_000)
-
-    return () => {
-      cancelled = true
-      window.clearInterval(interval)
-    }
-  }, [
-    activeProjectId,
-    cloudSetup.cloudUploadReady,
-    isNotARepo,
-    showPullUpdatesDialog,
-    status?.current_branch
-  ])
 
   const handleReviewUntracked = async (): Promise<UntrackedReviewResult> => {
     if (!activeProjectId) {
@@ -915,7 +842,7 @@ function Shell(): JSX.Element {
             onRefresh={() => {
               void loadPullPreview()
             }}
-            onClose={() => setShowPullUpdatesDialog(false)}
+            onClose={closePullUpdatesDialog}
             onConfirmPull={handleConfirmPullFromDialog}
           />
         )}
