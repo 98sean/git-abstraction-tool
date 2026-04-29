@@ -143,6 +143,78 @@ GitHub credentials are stored with Electron `safeStorage`, not as plain text.
 
 ---
 
+## Feature Guide
+
+### Project Linking
+
+Use **+ Link a Project** to register a folder with the app.
+
+The app checks whether the folder already has Git history, whether it has remotes, and whether it contains files that are usually unsafe or noisy to track. Recommended excludes are shown before setup completes so the first save does not accidentally include generated folders, local OS files, secrets, or large binaries.
+
+If the folder is not a Git repository, the app asks before running `git init`. If a linked project later loses its `.git` metadata, recovery is also explicit: the user must choose the repair action.
+
+### File Review
+
+The project file panel is designed to show the whole project state, not only changed files.
+
+- **Tracked clean files** are visible so users know what is already part of history
+- **Modified, staged, and untracked files** are marked by status
+- **Dependency and generated folders** are hidden by default to keep review focused
+- **Show deps** reveals dependency and generated folders when explicit inspection is needed
+- **Hide deps** collapses them again after review
+
+### Save Progress
+
+Use **Save Progress** to create a local commit.
+
+The normal flow is:
+
+1. review changed files
+2. stage the files that belong in the save
+3. write or generate a message
+4. save the commit locally
+
+The app does not require GitHub or AI to save local history.
+
+### Branch Management
+
+Use the branch controls in the project header to create, switch, merge, or delete local branches.
+
+Branch names are validated before use. The app blocks deleting the default branch, requires a fallback branch before deleting the current branch, and asks for explicit confirmation before risky default-branch operations.
+
+### GitHub Upload
+
+Use **Upload to Cloud** after local changes are saved.
+
+- **Back up to my GitHub** creates an app-managed private backup repository and uses the `gat-backup` remote
+- **Upload work to a team repository** uses an explicitly selected collaboration remote and branch mode
+- **New branch upload** is the recommended team workflow because it lets GitHub review happen through a pull request
+- **Default branch upload** is treated as dangerous and requires explicit confirmation
+
+The app does not automatically reuse `origin` for upload. A cloud target must be selected first.
+
+### Get Updates
+
+Use **Get Updates** to inspect incoming remote commits before pulling.
+
+The app previews commits and changed files when Git can report them cleanly. If pulling would create a conflict, the app reports the conflict instead of attempting automatic resolution.
+
+### Project Settings
+
+Each linked project has a combined **Project Settings** panel.
+
+Project Settings shows:
+
+- AI save-message status
+- AI diff-consent status
+- selected AI model
+- cloud setup status
+- an entry point to **Connect AI**
+
+Project Settings does not collect raw GitHub tokens or AI API keys. Credentials are handled through the dedicated connection flows.
+
+---
+
 ## AI Providers
 
 The app currently supports these AI provider types:
@@ -157,14 +229,82 @@ Only staged diffs are sent, and only after that project explicitly grants AI dif
 `Connect AI` is the only supported credential-entry path for AI.
 Project Settings can open that flow and configure project AI behavior, but it does not collect or store raw API keys itself.
 
-### AI Features
+### AI Suggest
 
-- **AI Suggest**: manual commit-message drafting from the staged diff
-- **Auto save message**: project-scoped save assistance, gated by project toggle and one-time diff consent
-- **Natural Language Undo**: manual AI tool for finding a likely restore point before reverting
-- **File Insight**: manual AI tool for explaining the selected file and nearby context
-- **Untracked Review**: manual AI tool for reviewing untracked files before staging or deletion
-- **Weekly Report**: feature-focused weekly report with AI output when connected and a deterministic fallback otherwise
+Use **AI Suggest** near the save-message area.
+
+What it does:
+
+- reads the staged diff
+- drafts a commit message
+- leaves the message editable before saving
+
+Required state:
+
+- an AI provider is connected
+- the project has granted diff consent
+- at least one file is staged
+
+If any requirement is missing, the app shows a clear error instead of using an environment variable or hidden fallback key.
+
+### Auto Save Message
+
+Auto save message is a project-level assistant for **Save Progress**.
+
+When enabled:
+
+1. the first save action drafts a message from the staged diff
+2. the user reviews or edits the message
+3. the next save action creates the commit
+
+This feature is gated by the project toggle and one-time diff consent. Users can leave it off and write messages manually.
+
+### Natural Language Undo
+
+Use **Natural Language Undo** when you want to find a restore point using plain language.
+
+Example inputs:
+
+- `go back to before I changed the upload flow`
+- `undo the last UI cleanup`
+- `restore the version before the AI settings change`
+
+The tool searches project history and proposes likely restore points with a file preview. The restore is only applied when the user explicitly chooses the apply action.
+
+### File Insight
+
+Use **File Insight** from the file review context when a file is selected.
+
+What it does:
+
+- explains what the selected file appears to do
+- summarizes relevant nearby changes or related context
+- helps decide whether the file should be reviewed, staged, or left alone
+
+Common failure cases:
+
+- no AI provider is connected
+- no file is selected
+- the file is too large or cannot be read safely
+- the provider rejects the request or the API key is invalid
+
+### Untracked Review
+
+Use **Untracked Review** when new files appear and it is unclear whether they should be staged.
+
+What it does:
+
+- reviews untracked files before they enter history
+- calls out likely generated files, local machine files, or suspicious sensitive files
+- helps separate source files from files that belong in `.gitignore`
+
+It is advisory only. The user still chooses what to stage or exclude.
+
+### Weekly Report
+
+Use **Weekly Report** to summarize recent project work.
+
+When AI is connected, the report can produce a feature-focused summary from recent history. When AI is unavailable, the app can still provide a deterministic local summary from Git data.
 
 ---
 
@@ -180,37 +320,17 @@ Project Settings can open that flow and configure project AI behavior, but it do
 - No AI key collection inside Project Settings
 - No automatic conflict resolution during pull or merge
 
+## Current Limitations
+
+- Backup repositories are currently created as app-managed private GitHub repositories
+- Public versus private backup selection is not part of the current release behavior
+- Pull and merge conflicts are reported, not automatically resolved
+- Team collaboration upload is branch-first; pull request creation is handed off to GitHub through the compare URL
+- AI tools require a connected provider and project consent before sending diffs
+
 ---
 
-## Features Overview
-
-### Project Settings
-
-Each linked project exposes a combined **Project Settings** panel that shows:
-
-- whether AI save assistance is enabled
-- whether diff consent has been granted
-- the currently selected AI model
-- whether cloud upload is unset, backup, or collaboration
-
-The three manual AI tools are not toggled here. They appear contextually in the workspace when an AI connection is available.
-
-### Upload Modes
-
-- **Backup** uses an app-managed `gat-backup` remote
-- **Collaboration** uses the exact remote and branch mode the user selected
-
-The backup flow currently creates an app-managed private GitHub repository. Choosing public versus private backup visibility is not part of the current release behavior.
-
-### Pull Updates
-
-Incoming updates are previewed before pull. The preview includes commits and changed files when Git can report them cleanly.
-
-### Branch Safety
-
-Branch operations use shared validation rules across the renderer and main process so branch names are checked consistently before create, switch, merge, delete, or upload actions.
-
-### Development
+## Development
 
 ```bash
 npm install
@@ -219,7 +339,9 @@ npm test
 npm run typecheck
 ```
 
-### Korean Git Guide
+---
+
+## Korean Git Guide
 
 A Korean guide that maps the app UI to real Git behavior lives here:
 
