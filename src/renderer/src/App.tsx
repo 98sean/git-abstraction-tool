@@ -188,29 +188,6 @@ function Shell(): JSX.Element {
 
   const trackedPaths = status?.tracked_files ?? []
   const isNotARepo = statusError?.code === 'NOT_A_REPO'
-  const pullUpdates = usePullUpdates({
-    activeProjectId,
-    enabled: cloudSetup.cloudUploadReady && !isNotARepo,
-    currentBranch: status?.current_branch ?? null,
-    invokeGit,
-    pull,
-    refreshStatus: fetchStatus
-  })
-  const {
-    preview: pullPreview,
-    loading: pullPreviewLoading,
-    error: pullPreviewError,
-    showDialog: showPullUpdatesDialog,
-    loadPreview: loadPullPreview,
-    requestPull: handlePullRequest,
-    confirmPull: handleConfirmPullFromDialog,
-    close: closePullUpdatesDialog,
-    reset: resetPullUpdates
-  } = pullUpdates
-
-  useEffect(() => {
-    resetPullUpdates()
-  }, [activeProjectId, resetPullUpdates])
 
   const stagedSignature = useMemo(
     () =>
@@ -265,6 +242,30 @@ function Shell(): JSX.Element {
   const cloudSetup = useCloudSetup(activeProject, {
     onReadyToUpload: handleUploadWithTarget
   })
+
+  const pullUpdates = usePullUpdates({
+    activeProjectId,
+    enabled: cloudSetup.cloudUploadReady && !isNotARepo,
+    currentBranch: status?.current_branch ?? null,
+    invokeGit,
+    pull,
+    refreshStatus: fetchStatus
+  })
+  const {
+    preview: pullPreview,
+    loading: pullPreviewLoading,
+    error: pullPreviewError,
+    showDialog: showPullUpdatesDialog,
+    loadPreview: loadPullPreview,
+    requestPull: handlePullRequest,
+    confirmPull: handleConfirmPullFromDialog,
+    close: closePullUpdatesDialog,
+    reset: resetPullUpdates
+  } = pullUpdates
+
+  useEffect(() => {
+    resetPullUpdates()
+  }, [activeProjectId, resetPullUpdates])
 
   useEffect(() => {
     if (!activeProjectId) {
