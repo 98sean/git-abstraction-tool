@@ -12,6 +12,7 @@ import { usePreferences } from './hooks/usePreferences'
 import { useProjectAiSettings } from './hooks/useProjectAiSettings'
 import { useProjectLinkWizard } from './hooks/useProjectLinkWizard'
 import { useProjects } from './hooks/useProjects'
+import { useNaturalUndo } from './hooks/useNaturalUndo'
 import { useTerms } from './hooks/useTerms'
 import { useToast } from './hooks/useToast'
 import { AIConsentDialog } from './components/AIConsentDialog/AIConsentDialog'
@@ -39,12 +40,10 @@ import {
   CommitAiMetadata,
   FileInsight,
   PullUpdatesPreview,
-  NaturalUndoSuggestion,
   ProjectAiSettings,
   ProjectCloudTarget,
   PushConfiguredTargetResult,
   PushToCloudOptions,
-  RestoreResult,
   UntrackedDeleteResult,
   UntrackedReviewResult
 } from './types'
@@ -89,16 +88,11 @@ function Shell(): JSX.Element {
   const [commitMessage, setCommitMessage] = useState('')
   const [aiSuggestion, setAiSuggestion] = useState<AiCommitSuggestion | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
-  const [naturalUndoSuggestion, setNaturalUndoSuggestion] = useState<NaturalUndoSuggestion | null>(null)
-  const [naturalUndoLoading, setNaturalUndoLoading] = useState(false)
-  const [naturalUndoApplying, setNaturalUndoApplying] = useState(false)
-  const [naturalUndoError, setNaturalUndoError] = useState<string | null>(null)
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null)
   const [fileInsight, setFileInsight] = useState<FileInsight | null>(null)
   const [fileInsightLoading, setFileInsightLoading] = useState(false)
   const [fileInsightError, setFileInsightError] = useState<string | null>(null)
   const fileInsightReqRef = useRef(0)
-  const naturalUndoReqRef = useRef(0)
   const lastShownPullUpdateRef = useRef<Record<string, string>>({})
 
   const manualAiToolsEnabled =
@@ -120,11 +114,6 @@ function Shell(): JSX.Element {
 
   useEffect(() => {
     setShowWeeklyReport(false)
-    setNaturalUndoSuggestion(null)
-    setNaturalUndoError(null)
-    setNaturalUndoLoading(false)
-    setNaturalUndoApplying(false)
-    naturalUndoReqRef.current += 1
     setSelectedFilePath(null)
     setFileInsight(null)
     setFileInsightError(null)
@@ -159,6 +148,30 @@ function Shell(): JSX.Element {
     deleteBranch,
     fetchBranches
   } = useBranches(activeProjectId)
+
+  const naturalUndo = useNaturalUndo({
+    activeProjectId,
+    invokeDb,
+    invokeGit,
+    refreshStatus: fetchStatus,
+    refreshBranches: fetchBranches,
+    addToast
+  })
+  const {
+    suggestion: naturalUndoSuggestion,
+    loading: naturalUndoLoading,
+    applying: naturalUndoApplying,
+    error: naturalUndoError,
+    suggest: handleSuggestNaturalUndo,
+    apply: handleApplyNaturalUndo,
+    cancel: handleCancelNaturalUndo,
+    selectAlternative: handleSelectNaturalUndoAlternative,
+    reset: resetNaturalUndo
+  } = naturalUndo
+
+  useEffect(() => {
+    resetNaturalUndo()
+  }, [activeProjectId, resetNaturalUndo])
 
   const {
     loading: actionLoading,
@@ -578,89 +591,6 @@ function Shell(): JSX.Element {
     showPullUpdatesDialog,
     status?.current_branch
   ])
-
-  const handleSuggestNaturalUndo = async (query: string): Promise<void> => {
-    if (!activeProjectId) return
-
-    const requestId = naturalUndoReqRef.current + 1
-    naturalUndoReqRef.current = requestId
-    setNaturalUndoLoading(true)
-    setNaturalUndoError(null)
-
-    try {
-      const suggestion = await invokeDb<NaturalUndoSuggestion>('ai:undo:suggest', activeProjectId, query)
-      if (naturalUndoReqRef.current !== requestId) return
-      setNaturalUndoSuggestion(suggestion)
-    } catch (error) {
-      if (naturalUndoReqRef.current !== requestId) return
-      const message =
-        (error as { message?: string })?.message ?? 'Could not find a matching point in history.'
-      setNaturalUndoError(message)
-      setNaturalUndoSuggestion(null)
-    } finally {
-      if (naturalUndoReqRef.current === requestId) {
-        setNaturalUndoLoading(false)
-      }
-    }
-  }
-
-  const handleCancelNaturalUndo = (): void => {
-    naturalUndoReqRef.current += 1
-    setNaturalUndoSuggestion(null)
-    setNaturalUndoError(null)
-    setNaturalUndoLoading(false)
-  }
-
-  /**
-   * Promote alternative[index] into the primary slot of the undo suggestion
-   * and push the old primary to the top of alternatives — lets the user flip
-   * between candidates without re-running the AI.
-   */
-  const handleSelectNaturalUndoAlternative = (alternativeIndex: number): void => {
-    setNaturalUndoSuggestion((current) => {
-      if (!current) return current
-      const picked = current.alternatives[alternativeIndex]
-      if (!picked) return current
-
-      const { alternatives: _drop, query, ...oldPrimary } = current
-      void _drop
-      const remaining = current.alternatives.filter((_, i) => i !== alternativeIndex)
-      const nextAlternatives = [oldPrimary, ...remaining].slice(0, 2)
-
-      return {
-        query,
-        ...picked,
-        alternatives: nextAlternatives
-      }
-    })
-  }
-
-  const handleApplyNaturalUndo = async (): Promise<void> => {
-    if (!activeProjectId || !naturalUndoSuggestion) return
-
-    setNaturalUndoApplying(true)
-    setNaturalUndoError(null)
-
-    try {
-      const result = await invokeGit<RestoreResult>(
-        'git:restore:apply',
-        activeProjectId,
-        naturalUndoSuggestion.commit_hash
-      )
-      await fetchStatus()
-      await fetchBranches()
-      addToast(
-        `Restore complete (restored ${result.restored_files}, removed ${result.removed_files})`,
-        'success'
-      )
-    } catch (error) {
-      const message =
-        (error as { message?: string })?.message ?? 'Restore failed due to an unexpected error.'
-      setNaturalUndoError(message)
-    } finally {
-      setNaturalUndoApplying(false)
-    }
-  }
 
   const handleSelectFile = async (filePath: string): Promise<void> => {
     if (!activeProjectId) return
