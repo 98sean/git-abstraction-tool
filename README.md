@@ -1,5 +1,7 @@
 # Git Abstraction Tool
 
+English | [한국어](README.ko.md)
+
 A desktop app for saving project history locally, reviewing project files in one panel, using your own AI provider key for save assistance and project tools, and optionally uploading work to GitHub with explicit safety checks.
 
 ---
