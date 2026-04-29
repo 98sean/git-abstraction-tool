@@ -3,6 +3,7 @@ out
 dist
 .worktrees
 .vitest
+*.tsbuildinfo
 
 # OS
 .DS_Store
@@ -30,3 +31,4 @@ electron-builder.env
 
 # Local environment secrets
 .env.local
+.claude/settings.local.json

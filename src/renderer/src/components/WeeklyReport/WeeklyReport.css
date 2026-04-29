@@ -1,6 +1,4 @@
-/* WeeklyReport/renderer/components/WeeklyReport.css
-   기존 앱의 CSS 변수(--bg-primary 등)를 재사용한다.
-   통합 시 앱 전역 CSS 변수 이름에 맞게 조정 필요. */
+/* Weekly report styles reuse the app-level theme variables. */
 
 /* ─── 변수 (기존 앱 변수 재사용, 없을 경우 폴백) ───────────────────────────── */
 :root {
