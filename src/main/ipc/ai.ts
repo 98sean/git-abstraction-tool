@@ -1,15 +1,12 @@
 import {
   createManualToolService
 } from '../ai/manualToolService'
-import {
-  WeeklyFeatureStats,
-  WeeklyFeatureSummaryEntry
-} from '../ai/manualToolTypes'
 import { generateFileInsight } from '../ai/fileInsightService'
 import { createAiService } from '../ai/service'
 import { AiProviderName } from '../ai/types'
 import { generateNaturalUndoSuggestion } from '../ai/naturalUndoService'
 import { reviewUntrackedFiles } from '../ai/untrackedReviewService'
+import { generateWeeklySummary } from '../ai/weeklySummaryService'
 import {
   AiConnectionState,
   getAiConnectionState,
@@ -23,13 +20,11 @@ import {
   getCachedWeeklySummary,
   setCachedWeeklySummary
 } from '../db/weeklySummaryCache'
-import { createHash } from 'node:crypto'
 import { clearAiApiKey, getAiApiKey, setAiApiKey } from '../db/credentials'
 import { getProjectAiSettings, ProjectAiSettings, setProjectAiSettings } from '../db/projectAiSettings'
 import { listProjects } from '../db/projects'
 import { getGitService } from '../git'
 import { GitWeeklyService } from '../git/weekly-service'
-import { WeeklyCommit } from '../git/types'
 import { registerAiConnectionHandlers } from './aiConnectionHandlers'
 import { registerAiManualToolHandlers } from './aiManualToolHandlers'
 import { registerAiSaveHandlers } from './aiSaveHandlers'
@@ -235,117 +230,18 @@ export function registerAiHandlers(): void {
       }
 
       const weeklyService = new GitWeeklyService(project.local_path)
-      const weeklyReport = await weeklyService.getWeeklyLog(
+      return generateWeeklySummary({
+        projectId: project_id,
+        projectName: project.friendly_name,
         startDate,
         endDate,
-        project_id,
-        project.friendly_name
-      )
-      const weekCommits: WeeklyCommit[] = weeklyReport.commits
-
-      const stats: WeeklyFeatureStats = {
-        totalCommits: weeklyReport.summary.totalCommits,
-        filesAdded: weeklyReport.summary.filesAdded,
-        filesModified: weeklyReport.summary.filesModified,
-        filesDeleted: weeklyReport.summary.filesDeleted,
-        linesAdded: weeklyReport.summary.totalInsertions,
-        linesRemoved: weeklyReport.summary.totalDeletions,
-        activeDays: weeklyReport.dailyBreakdown.filter((d) => d.commitCount > 0).length
-      }
-
-      if (weekCommits.length === 0) {
-        return {
-          summary: '',
-          highlights: [] as string[],
-          commit_count: 0,
-          ai_summary_count: 0,
-          has_entries: false,
-          stats
-        }
-      }
-
-      const summariesByHash = getAiCommitSummariesByHash(
-        project_id,
-        weekCommits.map((c) => c.hash)
-      )
-
-      const entries: WeeklyFeatureSummaryEntry[] = weekCommits
-        .slice()
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        .map((commit) => {
-          const ai = summariesByHash.get(commit.hash)
-          return {
-            hash: commit.hash,
-            date: commit.date,
-            message: commit.message,
-            ai_summary: ai?.summary,
-            change_kind: ai?.change_kind,
-            user_visible: ai?.user_visible,
-            areas: ai?.areas,
-            keywords: ai?.keywords,
-            is_initial_import: commit.is_initial_import
-          }
-        })
-
-      const aiSummaryCount = entries.filter((entry) => Boolean(entry.ai_summary)).length
-      const commitSignature = createHash('sha256')
-        .update(entries.map((e) => `${e.hash}:${e.ai_summary ? 1 : 0}`).join('|'))
-        .digest('hex')
-
-      const cached = getCachedWeeklySummary({
-        project_id,
-        start_date: startDate,
-        end_date: endDate,
-        commit_signature: commitSignature,
-        model: aiConfig.model,
-        ai_summary_count: aiSummaryCount
+        aiConfig,
+        weeklyService,
+        manualToolService,
+        getSummariesByHash: getAiCommitSummariesByHash,
+        getCachedSummary: getCachedWeeklySummary,
+        setCachedSummary: setCachedWeeklySummary
       })
-
-      if (cached) {
-        return {
-          summary: cached.summary,
-          highlights: cached.highlights,
-          commit_count: cached.commit_count,
-          ai_summary_count: cached.ai_summary_count,
-          has_entries: true,
-          stats: cached.stats,
-          cached: true
-        }
-      }
-
-      const result = await manualToolService.generateWeeklyFeatureSummary({
-        provider: aiConfig.provider,
-        model: aiConfig.model,
-        apiKey: aiConfig.apiKey,
-        startDate,
-        endDate,
-        entries,
-        stats
-      })
-
-      setCachedWeeklySummary({
-        project_id,
-        start_date: startDate,
-        end_date: endDate,
-        commit_signature: commitSignature,
-        model: aiConfig.model,
-        ai_summary_count: aiSummaryCount,
-        summary: result.summary,
-        highlights: result.highlights,
-        commit_count: entries.length,
-        stats,
-        created_at: Date.now()
-      })
-
-      return {
-        summary: result.summary,
-        highlights: result.highlights,
-        commit_count: entries.length,
-        ai_summary_count: aiSummaryCount,
-        has_entries: true,
-        stats,
-        cached: false
-      }
     }
   })
 }
