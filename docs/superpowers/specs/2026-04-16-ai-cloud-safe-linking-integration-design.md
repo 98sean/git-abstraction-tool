@@ -70,6 +70,10 @@ The `newbie` / `pro` setting is a terminology mode, not a feature mode.
 - `pro` can use more Git-like language.
 - Both modes must expose the same capabilities and safety rules.
 
+Language selection is tracked separately from terminology mode. See:
+
+- `docs/superpowers/specs/2026-04-29-language-mode-design.md`
+
 ## Current Feature Baseline
 
 ### Project Linking And Local Setup
