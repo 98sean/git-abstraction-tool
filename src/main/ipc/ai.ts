@@ -4,13 +4,13 @@ import {
   createManualToolService
 } from '../ai/manualToolService'
 import {
-  NaturalUndoTimelineEntry,
   WeeklyFeatureStats,
   WeeklyFeatureSummaryEntry
 } from '../ai/manualToolTypes'
 import { generateFileInsight, isGitInternalArtifact } from '../ai/fileInsightService'
 import { createAiService } from '../ai/service'
 import { AiProviderName } from '../ai/types'
+import { generateNaturalUndoSuggestion } from '../ai/naturalUndoService'
 import {
   AiConnectionState,
   getAiConnectionState,
@@ -30,7 +30,7 @@ import { getProjectAiSettings, ProjectAiSettings, setProjectAiSettings } from '.
 import { listProjects } from '../db/projects'
 import { getGitService } from '../git'
 import { GitWeeklyService } from '../git/weekly-service'
-import { TimelineCommitInfo, WeeklyCommit } from '../git/types'
+import { WeeklyCommit } from '../git/types'
 import { registerAiConnectionHandlers } from './aiConnectionHandlers'
 import { registerAiManualToolHandlers } from './aiManualToolHandlers'
 import { registerAiSaveHandlers } from './aiSaveHandlers'
@@ -54,57 +54,6 @@ const UNTRACKED_AI_SNIPPET_MAX_BYTES = 100_000
 const UNTRACKED_AI_TIMEOUT_BASE_MS = 12_000
 const UNTRACKED_AI_TIMEOUT_PER_FILE_MS = 220
 const UNTRACKED_AI_TIMEOUT_MAX_MS = 45_000
-
-function basename(path: string): string {
-  const normalized = path.replace(/\\/g, '/')
-  const parts = normalized.split('/')
-  return parts[parts.length - 1] ?? normalized
-}
-
-function summarizeCommitEvent(commit: TimelineCommitInfo): string {
-  const files = commit.changed_files
-  if (files.length === 0) {
-    return commit.message.trim() || 'changes were made'
-  }
-
-  const imagePath = files.find((f) => /\.(png|jpe?g|gif|svg|webp|avif)$/i.test(f))
-  if (imagePath) {
-    const lower = imagePath.toLowerCase()
-    if (
-      lower.includes('main') ||
-      lower.includes('hero') ||
-      lower.includes('banner') ||
-      lower.includes('cover')
-    ) {
-      return 'main image updated'
-    }
-    return `${basename(imagePath)} updated`
-  }
-
-  if (files.length === 1) {
-    return `${basename(files[0])} changed`
-  }
-  return `${basename(files[0])} and ${files.length - 1} more files changed`
-}
-
-function formatCommitDate(isoDate: string): string {
-  const date = new Date(isoDate)
-  if (Number.isNaN(date.getTime())) return isoDate
-  return date.toLocaleString()
-}
-
-/**
- * Extract the first sentence of a paragraph, capped at 120 chars, so an AI
- * summary paragraph can be reused as an at-a-glance proposal label without
- * dumping the whole paragraph into a button.
- */
-function firstSentence(paragraph: string): string {
-  const trimmed = paragraph.trim()
-  if (!trimmed) return 'changes were made'
-  const match = trimmed.match(/^(.+?[.!?])(\s|$)/u)
-  const picked = match ? match[1] : trimmed
-  return picked.length > 120 ? `${picked.slice(0, 117).trimEnd()}…` : picked
-}
 
 function getProjectPath(projectId: string): string {
   const project = listProjects().find((p) => p.project_id === projectId)
@@ -344,17 +293,6 @@ function getUntrackedReviewTimeoutMs(itemCount: number): number {
   return Math.min(timeout, UNTRACKED_AI_TIMEOUT_MAX_MS)
 }
 
-function resolveCommit(commits: TimelineCommitInfo[], suggestedHash?: string): TimelineCommitInfo | null {
-  const hash = suggestedHash?.trim()
-  if (!hash) return null
-  return (
-    commits.find((c) => c.hash === hash) ??
-    commits.find((c) => c.hash.startsWith(hash)) ??
-    commits.find((c) => c.short_hash === hash) ??
-    null
-  )
-}
-
 function getConnectedAiConfig(): { provider: AiProviderName; apiKey: string; model: string } {
   const connectionState = getAiConnectionState()
   const apiKey = getAiApiKey()
@@ -495,149 +433,17 @@ export function registerAiHandlers(): void {
 
   registerAiManualToolHandlers({
     suggestUndo: async (project_id: string, query: string) => {
-    if (!query?.trim()) {
-      throw new Error('Please describe the point in time you want to restore to.')
-    }
-
     const aiConfig = getConnectedAiConfig()
-
     const service = getGitService(project_id)
-    const timeline = await service.getTimeline(120)
-    if (timeline.length === 0) {
-      throw new Error('No commit history is available for restoration.')
-    }
 
-    // Join the raw git timeline with any AI-generated summaries saved when the
-    // commits were made, so the AI can match vague user queries against rich
-    // feature descriptions rather than just file paths.
-    const summariesByHash = getAiCommitSummariesByHash(
-      project_id,
-      timeline.map((entry) => entry.hash)
-    )
-    const enrichedTimeline: NaturalUndoTimelineEntry[] = timeline.map((entry) => {
-      const ai = summariesByHash.get(entry.hash)
-      return {
-        hash: entry.hash,
-        short_hash: entry.short_hash,
-        date: entry.date,
-        message: entry.message,
-        changed_files: entry.changed_files,
-        ai_summary: ai?.summary,
-        change_kind: ai?.change_kind,
-        user_visible: ai?.user_visible,
-        areas: ai?.areas,
-        keywords: ai?.keywords
-      }
+    return generateNaturalUndoSuggestion({
+      projectId: project_id,
+      query,
+      aiConfig,
+      gitService: service,
+      manualToolService,
+      getSummariesByHash: getAiCommitSummariesByHash
     })
-
-    const suggestion = await manualToolService.generateNaturalUndoSuggestion({
-      provider: aiConfig.provider,
-      model: aiConfig.model,
-      apiKey: aiConfig.apiKey,
-      query: query.trim(),
-      timeline: enrichedTimeline
-    })
-
-    const target = resolveCommit(timeline, suggestion.primary.commitHash)
-    if (!target) {
-      throw new Error('Could not identify a commit for this request. Please be more specific.')
-    }
-
-    const previewByHash = new Map<string, Awaited<ReturnType<typeof service.getRestorePreview>>>()
-    const getPreview = async (commitHash: string): Promise<Awaited<ReturnType<typeof service.getRestorePreview>>> => {
-      const cached = previewByHash.get(commitHash)
-      if (cached) return cached
-      const preview = await service.getRestorePreview(commitHash)
-      previewByHash.set(commitHash, preview)
-      return preview
-    }
-
-    // Build the full payload for one candidate commit, reusing the preview +
-    // labeling helpers. The AI summary (when available) supersedes the
-    // file-heuristic `summarizeCommitEvent` output for the user-visible label.
-    // A commit that matches HEAD has an empty preview, so it is not restorable.
-    const buildOption = async (
-      commit: TimelineCommitInfo,
-      reason: string,
-      confidence: number
-    ): Promise<{
-      commit_hash: string
-      short_hash: string
-      commit_message: string
-      commit_date: string
-      reason: string
-      confidence: number
-      total_restore_files: number
-      total_remove_files: number
-      restore_files_preview: string[]
-      remove_files_preview: string[]
-      proposal_text: string
-    } | null> => {
-      const preview = await getPreview(commit.hash)
-      if (preview.files_to_restore.length === 0 && preview.files_to_remove.length === 0) {
-        return null
-      }
-
-      const ai = summariesByHash.get(commit.hash)
-      const label = ai?.summary
-        ? firstSentence(ai.summary)
-        : summarizeCommitEvent(commit)
-      return {
-        commit_hash: commit.hash,
-        short_hash: commit.short_hash,
-        commit_message: commit.message,
-        commit_date: commit.date,
-        reason,
-        confidence,
-        total_restore_files: preview.files_to_restore.length,
-        total_remove_files: preview.files_to_remove.length,
-        restore_files_preview: preview.files_to_restore.slice(0, 6),
-        remove_files_preview: preview.files_to_remove.slice(0, 6),
-        proposal_text: `Restore to this point (${formatCommitDate(commit.date)}: ${label})?`
-      }
-    }
-
-    let primaryPayload = await buildOption(
-      target,
-      suggestion.primary.reason,
-      suggestion.primary.confidence
-    )
-
-    if (!primaryPayload) {
-      for (const commit of timeline) {
-        if (commit.hash === target.hash) continue
-        primaryPayload = await buildOption(
-          commit,
-          'This is the closest earlier point that would actually change your files.',
-          Math.min(suggestion.primary.confidence, 0.7)
-        )
-        if (primaryPayload) break
-      }
-    }
-
-    if (!primaryPayload) {
-      throw new Error('Your files already match the available restore points.')
-    }
-
-    const altCommits = suggestion.alternatives
-      .map((candidate) => ({ candidate, commit: resolveCommit(timeline, candidate.commitHash) }))
-      .filter(
-        (entry): entry is { candidate: (typeof suggestion.alternatives)[number]; commit: TimelineCommitInfo } =>
-          entry.commit !== null && entry.commit.hash !== target.hash
-      )
-      .slice(0, 2)
-
-    const alternatives = (await Promise.all(
-      altCommits.map(({ candidate, commit }) =>
-        buildOption(commit, candidate.reason, candidate.confidence)
-      )
-    )).filter((option): option is NonNullable<typeof option> => option !== null)
-
-    return {
-      query: query.trim(),
-      ...primaryPayload,
-      alternatives
-    }
     },
 
     generateFileInsight: async (project_id: string, file_path: string) => {
