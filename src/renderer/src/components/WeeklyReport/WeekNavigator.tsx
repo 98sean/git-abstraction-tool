@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTerms } from '../../hooks/useTerms'
 
 interface Props {
   startDate: string
@@ -24,19 +25,21 @@ function formatDateRange(startDate: string, endDate: string): string {
 }
 
 export function WeekNavigator({ startDate, endDate, isCurrentWeek, onPrev, onNext }: Props): React.JSX.Element {
+  const t = useTerms()
+
   return (
     <div className="wr-navigator">
-      <button className="wr-nav-btn" onClick={onPrev} aria-label="Previous week">
-        ‹ Prev Week
+      <button className="wr-nav-btn" onClick={onPrev} aria-label={t.weeklyPrevWeekLabel}>
+        ‹ {t.weeklyPrevWeekLabel}
       </button>
 
       <div className="wr-nav-center">
         <span className="wr-date-range">{formatDateRange(startDate, endDate)}</span>
-        {isCurrentWeek && <span className="wr-current-badge">This Week</span>}
+        {isCurrentWeek && <span className="wr-current-badge">{t.weeklyCurrentWeekLabel}</span>}
       </div>
 
-      <button className="wr-nav-btn" onClick={onNext} disabled={isCurrentWeek} aria-label="Next week">
-        Next Week ›
+      <button className="wr-nav-btn" onClick={onNext} disabled={isCurrentWeek} aria-label={t.weeklyNextWeekLabel}>
+        {t.weeklyNextWeekLabel} ›
       </button>
     </div>
   )

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { WeeklyCommit, WeeklyCommitFile } from '../../types'
+import { useTerms } from '../../hooks/useTerms'
 
 interface Props {
   commits: WeeklyCommit[]
@@ -29,6 +30,7 @@ function formatDate(isoDate: string): string {
 }
 
 function CommitItem({ commit }: { commit: WeeklyCommit }): React.JSX.Element {
+  const t = useTerms()
   const [expanded, setExpanded] = useState(false)
 
   return (
@@ -45,14 +47,14 @@ function CommitItem({ commit }: { commit: WeeklyCommit }): React.JSX.Element {
           {commit.is_initial_import && (
             <span
               className="wr-commit-badge"
-              title="First commit of the repository. Its file counts are excluded from the week's totals."
+              title={t.weeklyInitialImportTitle}
             >
-              Initial import
+              {t.weeklyInitialImportLabel}
             </span>
           )}
         </span>
         <span className="wr-commit-meta">
-          {formatDate(commit.date)} · {commit.files.length} files
+          {formatDate(commit.date)} · {t.weeklyCommitFileCount(commit.files.length)}
         </span>
       </button>
 
@@ -62,7 +64,7 @@ function CommitItem({ commit }: { commit: WeeklyCommit }): React.JSX.Element {
             <li key={`${file.path}-${idx}`} className="wr-commit-file">
               <span className={`wr-dot ${STATUS_DOT_CLASS[file.status]}`} />
               <span className="wr-file-path" title={file.path}>{file.path}</span>
-              <span className="wr-file-status">{STATUS_LABELS[file.status]}</span>
+              <span className="wr-file-status">{t.weeklyFileStatusLabel(STATUS_LABELS[file.status])}</span>
               {(file.insertions > 0 || file.deletions > 0) && (
                 <span className="wr-file-lines">
                   {file.insertions > 0 && <span className="wr-ins">+{file.insertions}</span>}
@@ -78,21 +80,31 @@ function CommitItem({ commit }: { commit: WeeklyCommit }): React.JSX.Element {
 }
 
 export function CommitList({ commits }: Props): React.JSX.Element {
+  const t = useTerms()
+
   if (commits.length === 0) {
     return (
       <div className="wr-empty">
         <span className="wr-empty-icon">📭</span>
-        <p>No commits this week.</p>
+        <p>{t.weeklyNoCommitsThisWeek}</p>
       </div>
     )
   }
 
   return (
     <div className="wr-commit-list">
-      <h3 className="wr-section-title">Commit History</h3>
-      {commits.map((commit) => (
-        <CommitItem key={commit.hash} commit={commit} />
-      ))}
+      <h3 id="weekly-commit-history-title" className="wr-section-title">
+        {t.weeklyCommitHistoryTitle}
+      </h3>
+      <div
+        className="wr-commit-scroll-region"
+        role="list"
+        aria-labelledby="weekly-commit-history-title"
+      >
+        {commits.map((commit) => (
+          <CommitItem key={commit.hash} commit={commit} />
+        ))}
+      </div>
     </div>
   )
 }

@@ -272,8 +272,18 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  max-height: 520px;
+  max-height: min(520px, 52vh);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.wr-commit-scroll-region {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
   overflow-y: auto;
+  padding-right: 4px;
 }
 
 .wr-commit {

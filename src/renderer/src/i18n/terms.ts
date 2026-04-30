@@ -106,6 +106,82 @@ export interface AppTerms {
   restoringBtn: string
   restorePointBtn: string
   alternativeMatchesLabel: string
+  projectSettingsTitle: string
+  projectSettingsDescription: string
+  closeProjectSettingsLabel: string
+  aiSaveMessagesTitle: string
+  useAiAutoSaveMessagesLabel: string
+  aiConnectionLabel: string
+  aiConnectedLabel: string
+  aiConnectProviderFirstLabel: string
+  modelLabel: string
+  noneSelectedLabel: string
+  diffConsentLabel: string
+  diffConsentGrantedLabel: string
+  diffConsentNotGrantedLabel: string
+  openConnectAiBtn: string
+  cloudUploadTitle: string
+  statusLabel: string
+  privateBackupReadyLabel: string
+  teamUploadReadyLabel: string
+  cloudBackupNotSetUpLabel: string
+  defaultBranchLabel: string
+  protectedBranchSuffix: string
+  notDetectedYetLabel: string
+  repositoryLabel: string
+  remoteLabel: string
+  notChosenLabel: string
+  setupCloudUploadBtn: string
+  changeUploadTargetBtn: string
+  connectAiTitle: string
+  connectAiDescription: string
+  disconnectAiBtn: string
+  providerLabel: string
+  apiKeyLabel: string
+  connectingAiBtn: string
+  connectAiBtn: string
+  viewProviderDocsBtn: string
+  connectedToProviderLabel: (provider: string) => string
+  aiConnectionLoadFailedToast: string
+  aiConnectedToast: string
+  aiKeyValidationFailedToast: string
+  aiDisconnectedToast: string
+  manageAiConnectionTitle: string
+  connectAiProviderTitle: string
+  weeklySummaryTitle: string
+  weeklySummaryGenerating: string
+  weeklySummaryConnectAiHint: string
+  weeklySummaryNoCommits: string
+  weeklySummaryBasedOn: (commitCount: number, aiSummaryCount: number, activeDays: number) => string
+  weeklySelectProjectText: string
+  weeklyLoadingText: string
+  weeklyTextFallback: (filesAdded: number, filesModified: number, filesDeleted: number, subjects: string[]) => string
+  weeklyTotalCommitsLabel: string
+  weeklyNewFilesLabel: string
+  weeklyModifiedFilesLabel: string
+  weeklyDeletedFilesLabel: string
+  weeklyLinesAddedLabel: string
+  weeklyLinesDeletedLabel: string
+  weeklyDailyActivityTitle: string
+  weeklyCommitHistoryTitle: string
+  weeklyNoCommitsThisWeek: string
+  weeklyInitialImportLabel: string
+  weeklyInitialImportTitle: string
+  weeklyCommitFileCount: (count: number) => string
+  weeklyFileStatusLabel: (status: string) => string
+  weeklyPrevWeekLabel: string
+  weeklyNextWeekLabel: string
+  weeklyCurrentWeekLabel: string
+  fileInsightTitle: string
+  fileInsightConnectAiHint: string
+  fileInsightSelectFileHint: string
+  fileInsightAnalyzingBtn: string
+  fileInsightRefreshBtn: string
+  fileInsightAnalyzingText: string
+  fileInsightSummaryTitle: string
+  fileInsightFunctionalityTitle: string
+  fileInsightRelatedFilesTitle: string
+  fileInsightNoRelatedFiles: string
 }
 
 const EN_PRO_STATUS: Record<FileStatusTerm, string> = {
@@ -148,7 +224,216 @@ const KO_PRO_STATUS: Record<FileStatusTerm, string> = {
   untracked: '언트래킹'
 }
 
+function formatEnglishWeeklyFallback(
+  filesAdded: number,
+  filesModified: number,
+  filesDeleted: number,
+  subjects: string[]
+): string {
+  const parts: string[] = []
+  if (filesAdded > 0) parts.push(`${filesAdded} file(s) added`)
+  if (filesModified > 0) parts.push(`${filesModified} file(s) modified`)
+  if (filesDeleted > 0) parts.push(`${filesDeleted} file(s) deleted`)
+
+  const statLine =
+    parts.length > 0
+      ? `This week, ${parts.join(', ')}.`
+      : 'No file changes this week.'
+  const workLine = subjects.length > 0 ? `Key work: ${subjects.join(' and ')}.` : ''
+
+  return workLine ? `${statLine} ${workLine}` : statLine
+}
+
+function formatKoreanWeeklyFallback(
+  filesAdded: number,
+  filesModified: number,
+  filesDeleted: number,
+  subjects: string[]
+): string {
+  const parts: string[] = []
+  if (filesAdded > 0) parts.push(`새 파일 ${filesAdded}개`)
+  if (filesModified > 0) parts.push(`수정 파일 ${filesModified}개`)
+  if (filesDeleted > 0) parts.push(`삭제 파일 ${filesDeleted}개`)
+
+  const statLine =
+    parts.length > 0
+      ? `이번 주에는 ${parts.join(', ')}가 있었습니다.`
+      : '이번 주에는 파일 변경이 없습니다.'
+  const workLine = subjects.length > 0 ? `주요 작업: ${subjects.join(', ')}.` : ''
+
+  return workLine ? `${statLine} ${workLine}` : statLine
+}
+
+const EN_COMMON_APP_TERMS = {
+  projectSettingsTitle: 'Project Settings',
+  projectSettingsDescription: 'Review AI save-message options and cloud upload status for this project.',
+  closeProjectSettingsLabel: 'Close project settings',
+  aiSaveMessagesTitle: 'AI Save Messages',
+  useAiAutoSaveMessagesLabel: 'Use AI auto save messages',
+  aiConnectionLabel: 'Connection',
+  aiConnectedLabel: 'Connected',
+  aiConnectProviderFirstLabel: 'Connect a provider first',
+  modelLabel: 'Model',
+  noneSelectedLabel: 'None selected',
+  diffConsentLabel: 'Diff consent',
+  diffConsentGrantedLabel: 'Granted',
+  diffConsentNotGrantedLabel: 'Not granted yet',
+  openConnectAiBtn: 'Open Connect AI',
+  cloudUploadTitle: 'Cloud Upload',
+  statusLabel: 'Status',
+  privateBackupReadyLabel: 'Private backup ready',
+  teamUploadReadyLabel: 'Team upload ready',
+  cloudBackupNotSetUpLabel: 'Cloud backup not set up yet',
+  defaultBranchLabel: 'Default branch',
+  protectedBranchSuffix: 'protected',
+  notDetectedYetLabel: 'Not detected yet',
+  repositoryLabel: 'Repository',
+  remoteLabel: 'Remote',
+  notChosenLabel: 'Not chosen',
+  setupCloudUploadBtn: 'Set up cloud upload',
+  changeUploadTargetBtn: 'Change upload target',
+  connectAiTitle: 'Connect AI save suggestions',
+  connectAiDescription:
+    'Use your own OpenAI or Anthropic API key for optional save drafts, natural language undo, file insight, and untracked review.',
+  disconnectAiBtn: 'Disconnect',
+  providerLabel: 'Provider',
+  apiKeyLabel: 'API key',
+  connectingAiBtn: 'Connecting...',
+  connectAiBtn: 'Connect AI',
+  viewProviderDocsBtn: 'View provider docs',
+  connectedToProviderLabel: (provider: string) => `Connected to ${provider}`,
+  aiConnectionLoadFailedToast: 'Could not load AI connection status.',
+  aiConnectedToast: 'AI connected successfully',
+  aiKeyValidationFailedToast: 'Could not validate that AI key. Please try again.',
+  aiDisconnectedToast: 'AI disconnected',
+  manageAiConnectionTitle: 'Manage AI connection',
+  connectAiProviderTitle: 'Connect an AI provider',
+  weeklySummaryTitle: 'Weekly Summary',
+  weeklySummaryGenerating: 'Generating AI summary...',
+  weeklySummaryConnectAiHint: 'Connect AI to get a friendlier, feature-focused weekly summary.',
+  weeklySummaryNoCommits: 'No commits were recorded this week yet.',
+  weeklySummaryBasedOn: (commitCount: number, aiSummaryCount: number, activeDays: number) => {
+    const pieces = [
+      `Based on ${commitCount} commit${commitCount === 1 ? '' : 's'} this week`
+    ]
+    if (aiSummaryCount > 0) pieces.push(`${aiSummaryCount} with AI summaries`)
+    if (activeDays > 0) pieces.push(`across ${activeDays} active day${activeDays === 1 ? '' : 's'}`)
+    return pieces.join(' ')
+  },
+  weeklySelectProjectText: 'Select a project to view the weekly report.',
+  weeklyLoadingText: 'Loading report...',
+  weeklyTextFallback: formatEnglishWeeklyFallback,
+  weeklyTotalCommitsLabel: 'Total Commits',
+  weeklyNewFilesLabel: 'New Files',
+  weeklyModifiedFilesLabel: 'Modified Files',
+  weeklyDeletedFilesLabel: 'Deleted Files',
+  weeklyLinesAddedLabel: 'Lines Added',
+  weeklyLinesDeletedLabel: 'Lines Deleted',
+  weeklyDailyActivityTitle: 'Daily Activity',
+  weeklyCommitHistoryTitle: 'Commit History',
+  weeklyNoCommitsThisWeek: 'No commits this week.',
+  weeklyInitialImportLabel: 'Initial import',
+  weeklyInitialImportTitle: "First commit of the repository. Its file counts are excluded from the week's totals.",
+  weeklyCommitFileCount: (count: number) => `${count} file${count === 1 ? '' : 's'}`,
+  weeklyFileStatusLabel: (status: string) => status,
+  weeklyPrevWeekLabel: 'Prev Week',
+  weeklyNextWeekLabel: 'Next Week',
+  weeklyCurrentWeekLabel: 'This Week',
+  fileInsightTitle: 'File Insight',
+  fileInsightConnectAiHint: 'Connect AI to use file insight.',
+  fileInsightSelectFileHint: 'Click a file to view what it does and related files.',
+  fileInsightAnalyzingBtn: 'Analyzing...',
+  fileInsightRefreshBtn: 'Refresh',
+  fileInsightAnalyzingText: 'Analyzing file role and related files...',
+  fileInsightSummaryTitle: 'Summary',
+  fileInsightFunctionalityTitle: 'What This File Does',
+  fileInsightRelatedFilesTitle: 'Related Files',
+  fileInsightNoRelatedFiles: 'No related files found.'
+}
+
+const KO_COMMON_APP_TERMS = {
+  projectSettingsTitle: '프로젝트 설정',
+  projectSettingsDescription: '이 프로젝트의 AI 저장 메시지와 클라우드 업로드 상태를 확인합니다.',
+  closeProjectSettingsLabel: '프로젝트 설정 닫기',
+  aiSaveMessagesTitle: 'AI 저장 메시지',
+  useAiAutoSaveMessagesLabel: 'AI 자동 저장 메시지 사용',
+  aiConnectionLabel: 'AI 연결',
+  aiConnectedLabel: '연결됨',
+  aiConnectProviderFirstLabel: 'AI provider를 먼저 연결하세요',
+  modelLabel: '모델',
+  noneSelectedLabel: '선택 안 됨',
+  diffConsentLabel: 'diff 동의',
+  diffConsentGrantedLabel: '허용됨',
+  diffConsentNotGrantedLabel: '아직 허용 안 됨',
+  openConnectAiBtn: 'AI 연결 열기',
+  cloudUploadTitle: '클라우드 업로드',
+  statusLabel: '상태',
+  privateBackupReadyLabel: 'private 백업 준비됨',
+  teamUploadReadyLabel: '팀 업로드 준비됨',
+  cloudBackupNotSetUpLabel: '클라우드 백업 미설정',
+  defaultBranchLabel: '기본 branch',
+  protectedBranchSuffix: '보호됨',
+  notDetectedYetLabel: '아직 감지 안 됨',
+  repositoryLabel: '저장소',
+  remoteLabel: 'remote',
+  notChosenLabel: '선택 안 됨',
+  setupCloudUploadBtn: '클라우드 업로드 설정',
+  changeUploadTargetBtn: '업로드 대상 변경',
+  connectAiTitle: 'AI 연결',
+  connectAiDescription:
+    '사용자 AI provider 키로 저장 초안, 자연어 되돌리기, 파일 설명, 새 파일 검토를 사용할 수 있습니다.',
+  disconnectAiBtn: '연결 해제',
+  providerLabel: 'Provider',
+  apiKeyLabel: 'API key',
+  connectingAiBtn: '연결 중...',
+  connectAiBtn: 'AI 연결',
+  viewProviderDocsBtn: 'provider 문서 보기',
+  connectedToProviderLabel: (provider: string) => `${provider}에 연결됨`,
+  aiConnectionLoadFailedToast: 'AI 연결 상태를 불러오지 못했습니다.',
+  aiConnectedToast: 'AI가 연결되었습니다.',
+  aiKeyValidationFailedToast: 'AI key를 확인하지 못했습니다. 다시 시도하세요.',
+  aiDisconnectedToast: 'AI 연결이 해제되었습니다.',
+  manageAiConnectionTitle: 'AI 연결 관리',
+  connectAiProviderTitle: 'AI provider 연결',
+  weeklySummaryTitle: '주간 요약',
+  weeklySummaryGenerating: 'AI 요약 생성 중...',
+  weeklySummaryConnectAiHint: 'AI를 연결하면 더 친절한 기능 중심 주간 요약을 볼 수 있습니다.',
+  weeklySummaryNoCommits: '이번 주에는 아직 저장 기록이 없습니다.',
+  weeklySummaryBasedOn: (commitCount: number, aiSummaryCount: number, activeDays: number) =>
+    `${commitCount}개 저장 기록 기준${aiSummaryCount > 0 ? `, AI 요약 ${aiSummaryCount}개` : ''}${activeDays > 0 ? `, 활동일 ${activeDays}일` : ''}`,
+  weeklySelectProjectText: '주간 리포트를 보려면 프로젝트를 선택하세요.',
+  weeklyLoadingText: '리포트 불러오는 중...',
+  weeklyTextFallback: formatKoreanWeeklyFallback,
+  weeklyTotalCommitsLabel: '총 저장',
+  weeklyNewFilesLabel: '새 파일',
+  weeklyModifiedFilesLabel: '수정 파일',
+  weeklyDeletedFilesLabel: '삭제 파일',
+  weeklyLinesAddedLabel: '추가된 줄',
+  weeklyLinesDeletedLabel: '삭제된 줄',
+  weeklyDailyActivityTitle: '일별 활동',
+  weeklyCommitHistoryTitle: '저장 기록',
+  weeklyNoCommitsThisWeek: '이번 주 저장 기록 없음',
+  weeklyInitialImportLabel: '초기 가져오기',
+  weeklyInitialImportTitle: '저장소의 첫 저장입니다. 파일 수는 주간 합계에서 제외됩니다.',
+  weeklyCommitFileCount: (count: number) => `${count}개 파일`,
+  weeklyFileStatusLabel: (status: string) => status,
+  weeklyPrevWeekLabel: '이전 주',
+  weeklyNextWeekLabel: '다음 주',
+  weeklyCurrentWeekLabel: '이번 주',
+  fileInsightTitle: '파일 설명',
+  fileInsightConnectAiHint: '파일 설명을 사용하려면 AI를 연결하세요.',
+  fileInsightSelectFileHint: '파일을 클릭하면 역할과 관련 파일을 볼 수 있습니다.',
+  fileInsightAnalyzingBtn: '분석 중...',
+  fileInsightRefreshBtn: '새로고침',
+  fileInsightAnalyzingText: '파일 역할과 관련 파일 분석 중...',
+  fileInsightSummaryTitle: '요약',
+  fileInsightFunctionalityTitle: '이 파일이 하는 일',
+  fileInsightRelatedFilesTitle: '관련 파일',
+  fileInsightNoRelatedFiles: '관련 파일을 찾지 못했습니다.'
+}
+
 const EN_PRO: AppTerms = {
+  ...EN_COMMON_APP_TERMS,
   sidebarTitle: 'Repositories',
   addRepo: '+ Add Repository',
   noReposHint: 'No repositories yet.\nClick "Add Repository" to get started.',
@@ -258,6 +543,7 @@ const EN_PRO: AppTerms = {
 }
 
 const EN_NEWBIE: AppTerms = {
+  ...EN_COMMON_APP_TERMS,
   sidebarTitle: 'My Projects',
   addRepo: '+ Link a Project',
   noReposHint: 'No projects yet.\nClick "Link a Project" to get started.',
@@ -367,6 +653,7 @@ const EN_NEWBIE: AppTerms = {
 }
 
 const KO_NEWBIE: AppTerms = {
+  ...KO_COMMON_APP_TERMS,
   sidebarTitle: '내 프로젝트',
   addRepo: '+ 프로젝트 연결',
   noReposHint: '아직 프로젝트가 없습니다.\n"프로젝트 연결"을 눌러 시작하세요.',
@@ -476,12 +763,13 @@ const KO_NEWBIE: AppTerms = {
 }
 
 const KO_PRO: AppTerms = {
+  ...KO_COMMON_APP_TERMS,
   sidebarTitle: '저장소',
   addRepo: '+ 저장소 추가',
   noReposHint: '아직 저장소가 없습니다.\n"저장소 추가"를 눌러 시작하세요.',
 
-  stageAll: '모두 스테이지',
-  unstageAll: '모두 언스테이지',
+  stageAll: 'stage all',
+  unstageAll: 'unstage all',
   stagedOf: (s, t) => `${s} / ${t} 스테이지됨`,
   loadingStatus: '상태 불러오는 중...',
   cleanTitle: '작업 트리 깨끗함',
@@ -493,7 +781,7 @@ const KO_PRO: AppTerms = {
   selectProjectFilesText: '파일을 보려면 저장소를 선택하세요',
   collapseAllBtn: '모두 접기',
   expandAllBtn: '모두 펼치기',
-  hiddenDepChangesBtn: (count) => `deps 변경 ${count}개`,
+  hiddenDepChangesBtn: (count) => `${count} changes in deps`,
   hideDependencyTitle: 'dependency 폴더 숨기기',
   showDependencyTitle: 'dependency 폴더 보기',
   hideDepsBtn: 'deps 숨김',
@@ -512,22 +800,22 @@ const KO_PRO: AppTerms = {
   deletingBtn: '삭제 중...',
   deleteSelectedBtn: (count) => `선택 항목 삭제 (${count})`,
 
-  commitPlaceholder: (hasStaged) => (hasStaged ? '커밋 메시지...' : '커밋할 변경사항을 스테이지하세요'),
-  commitBtn: (n) => `커밋${n > 0 ? ` (${n})` : ''}`,
-  committingBtn: '커밋 중...',
-  pushBtn: '푸시',
-  pullBtn: '풀',
-  pushTitle: '커밋을 remote에 푸시',
-  pullTitle: 'remote에서 풀',
+  commitPlaceholder: (hasStaged) => (hasStaged ? 'commit message...' : 'stage할 변경사항을 선택하세요'),
+  commitBtn: (n) => `commit${n > 0 ? ` (${n})` : ''}`,
+  committingBtn: 'commit 중...',
+  pushBtn: 'push',
+  pullBtn: 'pull',
+  pushTitle: 'commit을 remote에 push',
+  pullTitle: 'remote에서 pull',
 
   filesStaged: (n) => `${n}개 파일 스테이지됨`,
   toPush: (n) => `${n}개 푸시 필요`,
   toPull: (n) => `${n}개 풀 필요`,
   conflictMsg: '머지 충돌 감지됨',
 
-  branchLabel: '브랜치',
-  newBranchBtn: '+ 새 브랜치',
-  mergeBranchBtn: '머지',
+  branchLabel: 'branch',
+  newBranchBtn: '+ new branch',
+  mergeBranchBtn: 'merge',
   deleteBranchBtn: '삭제',
   mergeBranchConfirm: (source, target) =>
     `"${source}"를 "${target}"에 머지할까요?\n\n"${target}"에 "${source}"의 변경사항이 포함됩니다.`,
@@ -543,7 +831,7 @@ const KO_PRO: AppTerms = {
   mergedBranchToast: (source, target) => `"${source}"를 "${target}"에 머지했습니다`,
   deletedBranchToast: (name) => `"${name}" 브랜치를 삭제했습니다`,
 
-  initRepoBtn: '저장소 초기화',
+  initRepoBtn: 'Git 저장소 초기화',
   notARepoTitle: 'Git 저장소가 아님',
   notARepoDesc: '이 폴더는 아직 Git 저장소로 초기화되지 않았습니다.',
 

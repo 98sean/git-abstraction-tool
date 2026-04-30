@@ -1,4 +1,5 @@
 import { FileInsight } from '../../types'
+import { useTerms } from '../../hooks/useTerms'
 import styles from './FileInsightPanel.module.css'
 
 interface Props {
@@ -20,11 +21,13 @@ export function FileInsightPanel({
   onRetry,
   onSelectRelated
 }: Props): JSX.Element {
+  const t = useTerms()
+
   if (!enabled) {
     return (
       <aside className={styles.panel}>
-        <div className={styles.title}>File Insight</div>
-        <p className={styles.placeholder}>Connect AI to use file insight.</p>
+        <div className={styles.title}>{t.fileInsightTitle}</div>
+        <p className={styles.placeholder}>{t.fileInsightConnectAiHint}</p>
       </aside>
     )
   }
@@ -32,8 +35,8 @@ export function FileInsightPanel({
   if (!selectedPath) {
     return (
       <aside className={styles.panel}>
-        <div className={styles.title}>File Insight</div>
-        <p className={styles.placeholder}>Click a file to view what it does and related files.</p>
+        <div className={styles.title}>{t.fileInsightTitle}</div>
+        <p className={styles.placeholder}>{t.fileInsightSelectFileHint}</p>
       </aside>
     )
   }
@@ -41,9 +44,9 @@ export function FileInsightPanel({
   return (
     <aside className={styles.panel}>
       <div className={styles.header}>
-        <div className={styles.title}>File Insight</div>
+        <div className={styles.title}>{t.fileInsightTitle}</div>
         <button className={styles.retryBtn} onClick={onRetry} disabled={loading}>
-          {loading ? 'Analyzing...' : 'Refresh'}
+          {loading ? t.fileInsightAnalyzingBtn : t.fileInsightRefreshBtn}
         </button>
       </div>
 
@@ -52,25 +55,25 @@ export function FileInsightPanel({
       {error && <div className={styles.error}>{error}</div>}
 
       {!error && loading && (
-        <div className={styles.placeholder}>Analyzing file role and related files...</div>
+        <div className={styles.placeholder}>{t.fileInsightAnalyzingText}</div>
       )}
 
       {!error && !loading && insight && (
         <div className={styles.body}>
           <section className={styles.section}>
-            <h4>Summary</h4>
+            <h4>{t.fileInsightSummaryTitle}</h4>
             <p>{insight.summary}</p>
           </section>
 
           <section className={styles.section}>
-            <h4>What This File Does</h4>
+            <h4>{t.fileInsightFunctionalityTitle}</h4>
             <p>{insight.functionality}</p>
           </section>
 
           <section className={styles.section}>
-            <h4>Related Files</h4>
+            <h4>{t.fileInsightRelatedFilesTitle}</h4>
             {insight.related_files.length === 0 ? (
-              <p>No related files found.</p>
+              <p>{t.fileInsightNoRelatedFiles}</p>
             ) : (
               <div className={styles.relatedList}>
                 {insight.related_files.map((item) => (

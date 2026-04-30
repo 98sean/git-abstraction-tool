@@ -10,6 +10,8 @@ import {
   WeeklyAiSummary,
   WeeklyReport as WeeklyReportData
 } from '../../types'
+import type { AppTerms } from '../../i18n/terms'
+import { useTerms } from '../../hooks/useTerms'
 import './WeeklyReport.css'
 
 interface Props {
@@ -23,18 +25,8 @@ const CONVENTIONAL_RE = /^(?:feat|fix|chore|docs|style|refactor|test|build|ci|pe
  * Rule-based fallback used when there is no AI connection, no AI summaries in
  * the week window, or the AI call failed. Intentionally short and statistical.
  */
-function generateTextSummary(report: WeeklyReportData): string {
+function generateTextSummary(report: WeeklyReportData, t: AppTerms): string {
   const { summary, commits } = report
-
-  const parts: string[] = []
-  if (summary.filesAdded > 0) parts.push(`${summary.filesAdded} file(s) added`)
-  if (summary.filesModified > 0) parts.push(`${summary.filesModified} file(s) modified`)
-  if (summary.filesDeleted > 0) parts.push(`${summary.filesDeleted} file(s) deleted`)
-
-  const statLine =
-    parts.length > 0
-      ? `This week, ${parts.join(', ')}.`
-      : 'No file changes this week.'
 
   const subjects = commits
     .map((c) => c.message.replace(CONVENTIONAL_RE, '').trim())
@@ -42,9 +34,7 @@ function generateTextSummary(report: WeeklyReportData): string {
     .slice(0, 2)
     .map((s) => (s.length > 42 ? s.slice(0, 40) + '…' : s))
 
-  const workLine = subjects.length > 0 ? `Key work: ${subjects.join(' and ')}.` : ''
-
-  return workLine ? `${statLine} ${workLine}` : statLine
+  return t.weeklyTextFallback(summary.filesAdded, summary.filesModified, summary.filesDeleted, subjects)
 }
 
 interface WeeklyTextSummaryProps {
@@ -62,13 +52,14 @@ function WeeklyTextSummary({
   aiError,
   aiConnected
 }: WeeklyTextSummaryProps): React.JSX.Element {
+  const t = useTerms()
   // Prefer the AI-generated, feature-focused summary when it's available and
   // backed by real ai-summaries.json entries. Otherwise gracefully degrade.
   const hasAiSummary = aiSummary?.has_entries && aiSummary.summary.trim().length > 0
 
   return (
     <div className="wr-text-summary">
-      <h3 className="wr-section-title">Weekly Summary</h3>
+      <h3 className="wr-section-title">{t.weeklySummaryTitle}</h3>
 
       {hasAiSummary ? (
         <>
@@ -81,25 +72,24 @@ function WeeklyTextSummary({
             </ul>
           )}
           <div className="wr-summary-meta">
-            {`Based on ${aiSummary!.commit_count} commit${aiSummary!.commit_count === 1 ? '' : 's'} this week`}
-            {aiSummary!.ai_summary_count > 0 &&
-              ` (${aiSummary!.ai_summary_count} with AI summaries)`}
-            {aiSummary!.stats.activeDays > 0 &&
-              ` across ${aiSummary!.stats.activeDays} active day${aiSummary!.stats.activeDays === 1 ? '' : 's'}`}
-            .
+            {t.weeklySummaryBasedOn(
+              aiSummary!.commit_count,
+              aiSummary!.ai_summary_count,
+              aiSummary!.stats.activeDays
+            )}
           </div>
         </>
       ) : (
         <>
-          <p className="wr-summary-text">{generateTextSummary(report)}</p>
-          {aiLoading && <div className="wr-summary-meta">Generating AI summary…</div>}
+          <p className="wr-summary-text">{generateTextSummary(report, t)}</p>
+          {aiLoading && <div className="wr-summary-meta">{t.weeklySummaryGenerating}</div>}
           {!aiLoading && !aiConnected && (
             <div className="wr-summary-meta">
-              Connect AI to get a friendlier, feature-focused weekly summary.
+              {t.weeklySummaryConnectAiHint}
             </div>
           )}
           {!aiLoading && aiConnected && aiSummary && !aiSummary.has_entries && (
-            <div className="wr-summary-meta">No commits were recorded this week yet.</div>
+            <div className="wr-summary-meta">{t.weeklySummaryNoCommits}</div>
           )}
           {aiError && <div className="wr-summary-meta">{aiError}</div>}
         </>
@@ -109,6 +99,7 @@ function WeeklyTextSummary({
 }
 
 export function WeeklyReport({ projectId, aiConnection }: Props): React.JSX.Element {
+  const t = useTerms()
   const { report, loading, error, startDate, endDate, navigatePrev, navigateNext, isCurrentWeek } =
     useWeeklyReport(projectId)
 
@@ -125,7 +116,7 @@ export function WeeklyReport({ projectId, aiConnection }: Props): React.JSX.Elem
     return (
       <div className="wr-empty">
         <span className="wr-empty-icon">📁</span>
-        <p>Select a project to view the weekly report.</p>
+        <p>{t.weeklySelectProjectText}</p>
       </div>
     )
   }
@@ -143,7 +134,7 @@ export function WeeklyReport({ projectId, aiConnection }: Props): React.JSX.Elem
       {loading && (
         <div className="wr-loading">
           <div className="wr-spinner" />
-          <span>Loading report…</span>
+          <span>{t.weeklyLoadingText}</span>
         </div>
       )}
 

@@ -340,7 +340,7 @@ function Shell(): JSX.Element {
       const suggestion = await invokeDb<AiCommitSuggestion>('ai:commit-suggestion', activeProjectId)
       setAiSuggestion(suggestion)
       setCommitMessage(suggestion.message)
-      addToast('AI suggested a save message. Review it, then click Save Progress again.', 'info')
+      addToast(t.aiDraftReady, 'info')
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'AI could not summarize these changes right now.'
@@ -652,7 +652,7 @@ function Shell(): JSX.Element {
                   className={styles.settingsBtn}
                   onClick={() => setShowProjectSettingsPanel((value) => !value)}
                 >
-                  Project Settings
+                  {t.projectSettingsTitle}
                 </button>
                 {status && (status.ahead > 0 || status.behind > 0) && (
                   <span className={styles.aheadBehind}>

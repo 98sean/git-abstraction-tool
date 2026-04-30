@@ -1,16 +1,18 @@
 import React from 'react'
 import { DailyBreakdown } from '../../types'
+import { useTerms } from '../../hooks/useTerms'
 
 interface Props {
   breakdown: DailyBreakdown[]
 }
 
 export function DailyTimeline({ breakdown }: Props): React.JSX.Element {
+  const t = useTerms()
   const maxCount = Math.max(...breakdown.map((d) => d.commitCount), 1)
 
   return (
     <div className="wr-timeline">
-      <h3 className="wr-section-title">Daily Activity</h3>
+      <h3 className="wr-section-title">{t.weeklyDailyActivityTitle}</h3>
       <div className="wr-timeline-bars">
         {breakdown.map((day) => {
           const heightPct = (day.commitCount / maxCount) * 100

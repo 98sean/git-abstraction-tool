@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AiConnectionState, AiProvider } from '../../types'
+import { useTerms } from '../../hooks/useTerms'
 import styles from './ConnectAI.module.css'
 
 interface Props {
@@ -17,6 +18,7 @@ export function ConnectAI({
   onOpenProviderDocs,
   onSelectModel
 }: Props): JSX.Element {
+  const t = useTerms()
   const [provider, setProvider] = useState<AiProvider>(connectionStatus.provider ?? 'openai')
   const [apiKey, setApiKey] = useState('')
   const [saving, setSaving] = useState(false)
@@ -46,15 +48,14 @@ export function ConnectAI({
     <section className={styles.panel}>
       <div className={styles.header}>
         <div>
-          <h2 className={styles.title}>Connect AI save suggestions</h2>
+          <h2 className={styles.title}>{t.connectAiTitle}</h2>
           <p className={styles.description}>
-            Use your own OpenAI or Anthropic API key for optional save drafts, natural language undo,
-            file insight, and untracked review.
+            {t.connectAiDescription}
           </p>
         </div>
         {isConnected && (
           <button className={styles.disconnectBtn} onClick={() => onDisconnect()}>
-            Disconnect
+            {t.disconnectAiBtn}
           </button>
         )}
       </div>
@@ -62,7 +63,7 @@ export function ConnectAI({
       {!isConnected ? (
         <div className={styles.form}>
           <label className={styles.field}>
-            <span>Provider</span>
+            <span>{t.providerLabel}</span>
             <select
               className={styles.select}
               value={provider}
@@ -74,7 +75,7 @@ export function ConnectAI({
           </label>
 
           <label className={styles.field}>
-            <span>API key</span>
+            <span>{t.apiKeyLabel}</span>
             <input
               type="password"
               className={styles.input}
@@ -94,17 +95,17 @@ export function ConnectAI({
               onClick={() => void handleConnect()}
               disabled={!apiKey.trim() || saving}
             >
-              {saving ? 'Connecting…' : 'Connect AI'}
+              {saving ? t.connectingAiBtn : t.connectAiBtn}
             </button>
             <button className={styles.docsBtn} onClick={() => onOpenProviderDocs(provider)}>
-              View provider docs
+              {t.viewProviderDocsBtn}
             </button>
           </div>
         </div>
       ) : (
         <div className={styles.connectedPanel}>
           <label className={styles.field}>
-            <span>Model</span>
+            <span>{t.modelLabel}</span>
             <select
               className={styles.select}
               value={connectionStatus.selected_model ?? ''}
@@ -119,11 +120,11 @@ export function ConnectAI({
           </label>
 
           <div className={styles.summary}>
-            Connected to {connectionStatus.provider === 'openai' ? 'OpenAI' : 'Anthropic'}
+            {t.connectedToProviderLabel(connectionStatus.provider === 'openai' ? 'OpenAI' : 'Anthropic')}
           </div>
 
           <button className={styles.docsBtn} onClick={() => onOpenProviderDocs(provider)}>
-            View provider docs
+            {t.viewProviderDocsBtn}
           </button>
         </div>
       )}
@@ -137,14 +138,16 @@ interface AIStatusProps {
 }
 
 export function AIStatus({ connected, onClick }: AIStatusProps): JSX.Element {
+  const t = useTerms()
+
   return (
     <button
       className={`${styles.sidebarStatus} ${connected ? styles.connected : ''}`}
       onClick={onClick}
-      title={connected ? 'Manage AI connection' : 'Connect an AI provider'}
+      title={connected ? t.manageAiConnectionTitle : t.connectAiProviderTitle}
     >
       <span className={`${styles.dot} ${connected ? styles.connected : ''}`} />
-      {connected ? 'AI connected' : 'Connect AI'}
+      {connected ? t.aiConnectedLabel : t.connectAiBtn}
     </button>
   )
 }
