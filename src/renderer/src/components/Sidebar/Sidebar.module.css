@@ -146,6 +146,21 @@
   color: var(--text);
 }
 
+.languageBtn {
+  width: 100%;
+  padding: 7px 12px;
+  background: none;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+  transition: all var(--transition);
+}
+.languageBtn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
 .weeklyReportBtn {
   width: 100%;
   padding: 7px 12px;

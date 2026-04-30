@@ -325,6 +325,10 @@ function Shell(): JSX.Element {
     setPreference('mode', preferences.mode === 'pro' ? 'newbie' : 'pro')
   }
 
+  const handleToggleLanguage = (): void => {
+    setPreference('language', preferences.language === 'ko' ? 'en' : 'ko')
+  }
+
   const handleSuggestCommitMessage = async (): Promise<void> => {
     if (!activeProjectId || !status) return
     const stagedCount = status.files.filter((file) => file.staged).length
@@ -565,11 +569,13 @@ function Shell(): JSX.Element {
           activeProjectId={activeProjectId}
           theme={preferences.theme}
           mode={preferences.mode}
+          language={preferences.language}
           onSelectProject={setActiveProject}
           onRemoveProject={handleRemoveProject}
           onAddProject={handleAddProject}
           onToggleTheme={handleToggleTheme}
           onToggleMode={handleToggleMode}
+          onToggleLanguage={handleToggleLanguage}
           onWeeklyReport={() => setShowWeeklyReport((v) => !v)}
           weeklyReportActive={showWeeklyReport}
           projectStates={projectStates}

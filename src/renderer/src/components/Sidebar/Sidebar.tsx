@@ -9,11 +9,13 @@ interface Props {
   activeProjectId: string | null
   theme: 'light' | 'dark'
   mode?: 'newbie' | 'pro'
+  language?: 'en' | 'ko'
   onSelectProject: (id: string) => void
   onRemoveProject: (id: string) => void
   onAddProject: () => void
   onToggleTheme: () => void
   onToggleMode?: () => void
+  onToggleLanguage?: () => void
   onOpenSettings?: () => void
   onWeeklyReport?: () => void
   weeklyReportActive?: boolean
@@ -30,11 +32,13 @@ export function Sidebar({
   activeProjectId,
   theme,
   mode,
+  language,
   onSelectProject,
   onRemoveProject,
   onAddProject,
   onToggleTheme,
   onToggleMode,
+  onToggleLanguage,
   onOpenSettings,
   onWeeklyReport,
   weeklyReportActive,
@@ -104,6 +108,11 @@ export function Sidebar({
         {mode && onToggleMode && (
           <button className={styles.modeBtn} onClick={onToggleMode}>
             {mode === 'pro' ? '👤 Switch to Newbie Mode' : '⚡ Switch to Pro Mode'}
+          </button>
+        )}
+        {language && onToggleLanguage && (
+          <button className={styles.languageBtn} onClick={onToggleLanguage}>
+            {language === 'ko' ? 'English' : '한국어'}
           </button>
         )}
         {onOpenSettings && (
