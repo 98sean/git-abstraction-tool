@@ -15,6 +15,7 @@
 - **Dependency 숨김**: `node_modules`, `out` 같은 생성 폴더는 기본적으로 숨기고, 필요할 때 **Show deps**로 볼 수 있습니다.
 - **브랜치 기반 작업 흐름**: 브랜치 생성, 전환, 병합, 삭제를 지원하며 default branch와 current branch에는 안전장치를 둡니다.
 - **선택형 AI 기능**: OpenAI 또는 Anthropic 같은 AI provider 키를 연결하면 저장 메시지 제안과 수동 AI 도구를 사용할 수 있습니다.
+- **언어와 용어 모드 분리**: 앱 언어는 English/한국어로 바꾸고, 별도로 쉬운 용어 또는 Git 친화 용어를 선택할 수 있습니다.
 - **명시적 GitHub 업로드**: private backup repo 또는 팀 협업 remote를 사용자가 직접 선택하기 전에는 업로드하지 않습니다.
 - **업데이트 미리보기**: remote의 새 변경사항을 pull하기 전에 commit과 변경 파일을 먼저 확인할 수 있습니다.
 
@@ -211,6 +212,17 @@ Project Settings에서 확인할 수 있는 것:
 
 Project Settings는 raw GitHub token이나 AI API key를 직접 수집하지 않습니다. credential은 전용 연결 흐름에서 처리됩니다.
 
+### 언어와 용어 모드
+
+sidebar에는 **English**와 **한국어**를 전환하는 language selector가 있습니다.
+
+언어 선택은 terminology mode와 분리되어 있습니다.
+
+- **Newbie mode**는 **Save Progress**, **Version**, **Upload**처럼 쉬운 제품 언어를 사용합니다.
+- **Pro mode**는 **Commit**, **Branch**, **Push**처럼 Git을 아는 사용자에게 익숙한 용어를 사용합니다.
+
+AI가 생성하는 save message, Natural Language Undo 설명, File Insight, Untracked Review reason, Weekly Report summary는 선택된 앱 언어로 출력되도록 요청합니다.
+
 ---
 
 ## AI Provider
@@ -225,6 +237,8 @@ AI key도 Electron `safeStorage`로 저장됩니다.
 staged diff는 프로젝트가 명시적으로 AI diff consent를 허용한 뒤에만 전송됩니다.
 
 `Connect AI`가 유일하게 지원되는 AI credential 입력 경로입니다. Project Settings는 이 흐름을 열고 project-level AI 설정을 관리할 수 있지만, raw API key를 직접 수집하거나 저장하지 않습니다.
+
+앱이 만드는 AI prompt는 선택된 앱 언어를 따릅니다. 단, provider 이름, model 이름, file path, branch name, 기존 Git history는 번역하지 않습니다.
 
 ### AI Suggest
 
