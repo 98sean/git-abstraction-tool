@@ -100,28 +100,28 @@ export function Sidebar({
             className={`${styles.weeklyReportBtn} ${styles.centeredFooterButton} ${weeklyReportActive ? styles.active : ''}`}
             onClick={onWeeklyReport}
           >
-            📊 Weekly Report
+            {t.weeklyReportBtn}
           </button>
         )}
         {githubSlot}
         {aiSlot}
         {mode && onToggleMode && (
           <button className={styles.modeBtn} onClick={onToggleMode}>
-            {mode === 'pro' ? '👤 Switch to Newbie Mode' : '⚡ Switch to Pro Mode'}
+            {t.modeToggleBtn(mode === 'pro' ? 'newbie' : 'pro')}
           </button>
         )}
         {language && onToggleLanguage && (
           <button className={styles.languageBtn} onClick={onToggleLanguage}>
-            {language === 'ko' ? 'English' : '한국어'}
+            {t.languageToggleBtn(language === 'ko' ? 'en' : 'ko')}
           </button>
         )}
         {onOpenSettings && (
           <button className={styles.settingsBtn} onClick={onOpenSettings}>
-            ⚙ Settings
+            {t.settingsBtn}
           </button>
         )}
         <button className={styles.themeBtn} onClick={onToggleTheme}>
-          {theme === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
+          {t.themeToggleBtn(theme === 'light' ? 'dark' : 'light')}
         </button>
       </div>
     </aside>

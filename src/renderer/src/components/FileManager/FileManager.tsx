@@ -8,6 +8,7 @@ import {
   UntrackedReviewResult
 } from '../../types'
 import { useTerms } from '../../hooks/useTerms'
+import { FileStatusTerm } from '../../i18n/terms'
 import { Spinner } from '../shared/Spinner'
 import styles from './FileManager.module.css'
 
@@ -56,16 +57,6 @@ const DEPENDENCY_DIRS = new Set([
 
 function isDependencyDirName(name: string): boolean {
   return DEPENDENCY_DIRS.has(name) || name.endsWith('.git')
-}
-
-const STATUS_LABELS: Record<DisplayStatus, string> = {
-  clean: 'Synced',
-  new: 'New',
-  modified: 'Modified',
-  deleted: 'Deleted',
-  renamed: 'Renamed',
-  conflicted: 'Conflict',
-  untracked: 'Untracked'
 }
 
 // ─── Tree builder ─────────────────────────────────────────────────────────────
@@ -360,9 +351,9 @@ export function FileManager({
 
   if (!status) {
     return (
-      <div className={styles.emptyState}>
-        <div className={styles.emptyIcon}>📂</div>
-        <div className={styles.emptyText}>Select a project to see its files</div>
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>📂</div>
+        <div className={styles.emptyText}>{t.selectProjectFilesText}</div>
       </div>
     )
   }
@@ -390,7 +381,7 @@ export function FileManager({
         <span className={styles.fileCount}>{t.stagedOf(stagedCount, changedCount)}</span>
 
         {status.ahead > 0 && (
-          <span className={styles.aheadBadge}>↑ {status.ahead} to push</span>
+          <span className={styles.aheadBadge}>↑ {t.toPush(status.ahead)}</span>
         )}
 
         <button
@@ -398,21 +389,21 @@ export function FileManager({
           onClick={handleToggleAllFolders}
           disabled={!hasFolders}
         >
-          {allFoldersExpanded ? 'Collapse all' : 'Expand all'}
+          {allFoldersExpanded ? t.collapseAllBtn : t.expandAllBtn}
         </button>
 
         {hiddenDepChanges > 0 && (
           <button className={styles.depWarning} onClick={() => setShowDeps(true)}>
-            ⚠ {hiddenDepChanges} in deps
+            ⚠ {t.hiddenDepChangesBtn(hiddenDepChanges)}
           </button>
         )}
 
         <button
           className={`${styles.depsToggle} ${showDeps ? styles.depsActive : ''}`}
           onClick={() => setShowDeps(v => !v)}
-          title={showDeps ? 'Hide dependency folders' : 'Show dependency folders (node_modules etc.)'}
+          title={showDeps ? t.hideDependencyTitle : t.showDependencyTitle}
         >
-          {showDeps ? 'Hide deps' : 'Show deps'}
+          {showDeps ? t.hideDepsBtn : t.showDepsBtn}
         </button>
 
         {untrackedCount > 0 && aiReviewEnabled && onReviewUntracked && (
@@ -421,7 +412,7 @@ export function FileManager({
             onClick={() => void loadUntrackedReview()}
             disabled={reviewLoading || reviewApplying}
           >
-            {reviewLoading ? 'Reviewing...' : `Review untracked (${untrackedCount})`}
+            {reviewLoading ? t.reviewingUntrackedBtn : t.reviewUntrackedBtn(untrackedCount)}
           </button>
         )}
       </div>
@@ -481,7 +472,7 @@ export function FileManager({
                     checked={file.staged}
                     onChange={() => handleToggleFile(file)}
                     onClick={e => e.stopPropagation()}
-                    aria-label={`${file.staged ? 'Unstage' : 'Stage'} ${file.path}`}
+                    aria-label={file.staged ? t.unstageFileLabel(file.path) : t.stageFileLabel(file.path)}
                   />
                 )}
                 <span className={`${styles.statusDot} ${styles[`dot_${file.status}`]}`} />
@@ -491,7 +482,7 @@ export function FileManager({
                     : name}
                 </span>
                 <span className={`${styles.statusLabel} ${isClean ? styles.cleanLabel : ''}`}>
-                  {STATUS_LABELS[file.status]}
+                  {t.fileStatusLabel(file.status as FileStatusTerm)}
                 </span>
                 {!isClean && file.status !== 'deleted' && file.status !== 'new' && (
                   <button
@@ -515,27 +506,26 @@ export function FileManager({
             if (e.target === e.currentTarget && !reviewApplying) setReviewOpen(false)
           }}
         >
-          <div className={styles.reviewModal} role="dialog" aria-modal="true" aria-label="Untracked review">
+          <div className={styles.reviewModal} role="dialog" aria-modal="true" aria-label={t.untrackedReviewDialogLabel}>
             <div className={styles.reviewHeader}>
-              <h3>Untracked File Review</h3>
+              <h3>{t.untrackedReviewTitle}</h3>
               <button
                 className={styles.reviewClose}
                 onClick={() => setReviewOpen(false)}
                 disabled={reviewApplying}
+                aria-label={t.untrackedReviewCloseLabel}
               >
                 x
               </button>
             </div>
 
             {reviewError && <div className={styles.reviewError}>{reviewError}</div>}
-            {reviewLoading && <div className={styles.reviewLoading}>Analyzing untracked files (can take up to ~45s for large sets)...</div>}
+            {reviewLoading && <div className={styles.reviewLoading}>{t.untrackedReviewLoading}</div>}
 
             {!reviewLoading && review && (
               <>
                 <div className={styles.reviewSummary}>
-                  <span>Total {review.total_untracked}</span>
-                  <span>Commit {review.commit_count}</span>
-                  <span>Delete {review.delete_count}</span>
+                  <span>{t.untrackedReviewSummary(review.total_untracked, review.commit_count, review.delete_count)}</span>
                 </div>
 
                 <div className={styles.reviewList}>
@@ -563,7 +553,7 @@ export function FileManager({
                             onChange={() => toggleDeleteSelection(item.path)}
                             disabled={reviewApplying}
                           />
-                          Delete this file
+                          {t.deleteThisFileLabel}
                         </label>
                       )}
                     </div>
@@ -576,14 +566,14 @@ export function FileManager({
                     onClick={handleStageRecommended}
                     disabled={reviewApplying}
                   >
-                    Stage recommended commit files
+                    {t.stageRecommendedFilesBtn}
                   </button>
                   <button
                     className={styles.reviewDeleteBtn}
                     onClick={() => void handleDeleteSelected()}
                     disabled={reviewApplying || deleteSelected.size === 0}
                   >
-                    {reviewApplying ? 'Deleting...' : `Delete selected (${deleteSelected.size})`}
+                    {reviewApplying ? t.deletingBtn : t.deleteSelectedBtn(deleteSelected.size)}
                   </button>
                 </div>
               </>

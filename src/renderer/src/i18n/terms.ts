@@ -1,5 +1,6 @@
 export type AppLanguage = 'en' | 'ko'
 export type TerminologyMode = 'newbie' | 'pro'
+export type FileStatusTerm = 'clean' | 'new' | 'modified' | 'deleted' | 'renamed' | 'conflicted' | 'untracked'
 
 export interface AppTerms {
   sidebarTitle: string
@@ -15,6 +16,28 @@ export interface AppTerms {
 
   revertBtn: string
   revertTitle: string
+  fileStatusLabel: (status: FileStatusTerm) => string
+  selectProjectFilesText: string
+  collapseAllBtn: string
+  expandAllBtn: string
+  hiddenDepChangesBtn: (count: number) => string
+  hideDependencyTitle: string
+  showDependencyTitle: string
+  hideDepsBtn: string
+  showDepsBtn: string
+  reviewUntrackedBtn: (count: number) => string
+  reviewingUntrackedBtn: string
+  stageFileLabel: (path: string) => string
+  unstageFileLabel: (path: string) => string
+  untrackedReviewDialogLabel: string
+  untrackedReviewTitle: string
+  untrackedReviewCloseLabel: string
+  untrackedReviewLoading: string
+  untrackedReviewSummary: (total: number, commit: number, deleteCount: number) => string
+  deleteThisFileLabel: string
+  stageRecommendedFilesBtn: string
+  deletingBtn: string
+  deleteSelectedBtn: (count: number) => string
 
   commitPlaceholder: (hasStaged: boolean) => string
   commitBtn: (count: number) => string
@@ -55,6 +78,74 @@ export interface AppTerms {
   repoAddFailed: string
   repoRemoved: string
   repoOpenFailed: string
+  weeklyReportBtn: string
+  modeToggleBtn: (nextMode: TerminologyMode) => string
+  languageToggleBtn: (nextLanguage: AppLanguage) => string
+  settingsBtn: string
+  themeToggleBtn: (nextTheme: 'light' | 'dark') => string
+  dismissErrorLabel: string
+  aiSuggestBtn: string
+  aiSuggestTitle: string
+  aiDraftReady: string
+  aiDraftFailed: string
+  draftingBtn: string
+  thinkingBtn: string
+  uploadedBranch: (branchName: string) => string
+  openPullRequest: string
+  naturalUndoTitle: string
+  aiConnectionRequired: string
+  cancelNaturalUndoLabel: string
+  naturalUndoPlaceholder: string
+  naturalUndoAnalyzingBtn: string
+  naturalUndoFindBtn: string
+  confidenceLabel: (percent: string) => string
+  restoreFiles: (count: number) => string
+  removeFiles: (count: number) => string
+  restoreFilePrefix: string
+  removeFilePrefix: string
+  restoringBtn: string
+  restorePointBtn: string
+  alternativeMatchesLabel: string
+}
+
+const EN_PRO_STATUS: Record<FileStatusTerm, string> = {
+  clean: 'Synced',
+  new: 'New',
+  modified: 'Modified',
+  deleted: 'Deleted',
+  renamed: 'Renamed',
+  conflicted: 'Conflict',
+  untracked: 'Untracked'
+}
+
+const EN_NEWBIE_STATUS: Record<FileStatusTerm, string> = {
+  clean: 'Saved',
+  new: 'New',
+  modified: 'Changed',
+  deleted: 'Deleted',
+  renamed: 'Renamed',
+  conflicted: 'Needs review',
+  untracked: 'Not selected yet'
+}
+
+const KO_NEWBIE_STATUS: Record<FileStatusTerm, string> = {
+  clean: '저장됨',
+  new: '새 파일',
+  modified: '변경됨',
+  deleted: '삭제됨',
+  renamed: '이름 변경됨',
+  conflicted: '확인 필요',
+  untracked: '아직 선택 안 됨'
+}
+
+const KO_PRO_STATUS: Record<FileStatusTerm, string> = {
+  clean: '동기화됨',
+  new: '신규',
+  modified: '수정됨',
+  deleted: '삭제됨',
+  renamed: '이름 변경',
+  conflicted: '충돌',
+  untracked: '언트래킹'
 }
 
 const EN_PRO: AppTerms = {
@@ -71,6 +162,28 @@ const EN_PRO: AppTerms = {
 
   revertBtn: 'Revert',
   revertTitle: 'Revert changes to this file',
+  fileStatusLabel: (status) => EN_PRO_STATUS[status],
+  selectProjectFilesText: 'Select a repository to see its files',
+  collapseAllBtn: 'Collapse all',
+  expandAllBtn: 'Expand all',
+  hiddenDepChangesBtn: (count) => `${count} in deps`,
+  hideDependencyTitle: 'Hide dependency folders',
+  showDependencyTitle: 'Show dependency folders (node_modules etc.)',
+  hideDepsBtn: 'Hide deps',
+  showDepsBtn: 'Show deps',
+  reviewUntrackedBtn: (count) => `Review untracked (${count})`,
+  reviewingUntrackedBtn: 'Reviewing...',
+  stageFileLabel: (path) => `Stage ${path}`,
+  unstageFileLabel: (path) => `Unstage ${path}`,
+  untrackedReviewDialogLabel: 'Untracked review',
+  untrackedReviewTitle: 'Untracked File Review',
+  untrackedReviewCloseLabel: 'Close untracked review',
+  untrackedReviewLoading: 'Analyzing untracked files...',
+  untrackedReviewSummary: (total, commit, deleteCount) => `Total ${total} Commit ${commit} Delete ${deleteCount}`,
+  deleteThisFileLabel: 'Delete this file',
+  stageRecommendedFilesBtn: 'Stage recommended commit files',
+  deletingBtn: 'Deleting...',
+  deleteSelectedBtn: (count) => `Delete selected (${count})`,
 
   commitPlaceholder: (hasStaged) => (hasStaged ? 'Commit message...' : 'Stage changes above to commit'),
   commitBtn: (n) => `Commit${n > 0 ? ` (${n})` : ''}`,
@@ -113,7 +226,35 @@ const EN_PRO: AppTerms = {
   repoAdded: (name) => `"${name}" added successfully`,
   repoAddFailed: 'Could not open that repository. Please try again.',
   repoRemoved: 'Repository removed',
-  repoOpenFailed: 'Could not open that repository. Please try again.'
+  repoOpenFailed: 'Could not open that repository. Please try again.',
+  weeklyReportBtn: 'Weekly Report',
+  modeToggleBtn: (nextMode) => (nextMode === 'newbie' ? 'Switch to Newbie Mode' : 'Switch to Pro Mode'),
+  languageToggleBtn: (nextLanguage) => (nextLanguage === 'ko' ? '한국어' : 'English'),
+  settingsBtn: 'Settings',
+  themeToggleBtn: (nextTheme) => (nextTheme === 'dark' ? 'Dark mode' : 'Light mode'),
+  dismissErrorLabel: 'Dismiss error',
+  aiSuggestBtn: 'AI Suggest',
+  aiSuggestTitle: 'Use AI to suggest a save message',
+  aiDraftReady: 'AI drafted a save message. Review it, then click Commit again.',
+  aiDraftFailed: 'AI could not draft a save message. Enter one manually to continue.',
+  draftingBtn: 'Drafting...',
+  thinkingBtn: 'Thinking...',
+  uploadedBranch: (branchName) => `Uploaded branch ${branchName}`,
+  openPullRequest: 'Open pull request',
+  naturalUndoTitle: 'Natural Language Undo',
+  aiConnectionRequired: 'AI connection required',
+  cancelNaturalUndoLabel: 'Cancel Natural Language Undo',
+  naturalUndoPlaceholder: 'Example: "Restore to yesterday afternoon before the red button removal"',
+  naturalUndoAnalyzingBtn: 'Analyzing...',
+  naturalUndoFindBtn: 'Find Point',
+  confidenceLabel: (percent) => `Confidence ${percent}%`,
+  restoreFiles: (count) => `Restore ${count} files`,
+  removeFiles: (count) => `Remove ${count} files`,
+  restoreFilePrefix: 'Restore',
+  removeFilePrefix: 'Remove',
+  restoringBtn: 'Restoring...',
+  restorePointBtn: 'Yes, Restore This Point',
+  alternativeMatchesLabel: 'Not quite right? Other possible matches:'
 }
 
 const EN_NEWBIE: AppTerms = {
@@ -130,6 +271,28 @@ const EN_NEWBIE: AppTerms = {
 
   revertBtn: 'Undo',
   revertTitle: 'Undo changes to this file',
+  fileStatusLabel: (status) => EN_NEWBIE_STATUS[status],
+  selectProjectFilesText: 'Select a project to see its files',
+  collapseAllBtn: 'Collapse all',
+  expandAllBtn: 'Expand all',
+  hiddenDepChangesBtn: (count) => `${count} hidden dependency changes`,
+  hideDependencyTitle: 'Hide generated dependency folders',
+  showDependencyTitle: 'Show generated dependency folders',
+  hideDepsBtn: 'Hide deps',
+  showDepsBtn: 'Show deps',
+  reviewUntrackedBtn: (count) => `Review untracked (${count})`,
+  reviewingUntrackedBtn: 'Reviewing...',
+  stageFileLabel: (path) => `Select ${path}`,
+  unstageFileLabel: (path) => `Deselect ${path}`,
+  untrackedReviewDialogLabel: 'Untracked review',
+  untrackedReviewTitle: 'Untracked File Review',
+  untrackedReviewCloseLabel: 'Close untracked review',
+  untrackedReviewLoading: 'Analyzing untracked files...',
+  untrackedReviewSummary: (total, commit, deleteCount) => `Total ${total} Keep ${commit} Delete ${deleteCount}`,
+  deleteThisFileLabel: 'Delete this file',
+  stageRecommendedFilesBtn: 'Select recommended files',
+  deletingBtn: 'Deleting...',
+  deleteSelectedBtn: (count) => `Delete selected (${count})`,
 
   commitPlaceholder: (hasStaged) => (hasStaged ? 'Describe your changes...' : 'Select changes above to save'),
   commitBtn: (n) => `Save Progress${n > 0 ? ` (${n})` : ''}`,
@@ -172,7 +335,35 @@ const EN_NEWBIE: AppTerms = {
   repoAdded: (name) => `"${name}" linked successfully`,
   repoAddFailed: 'Could not link that folder. Please try again.',
   repoRemoved: 'Project removed',
-  repoOpenFailed: 'Could not link that folder. Please try again.'
+  repoOpenFailed: 'Could not link that folder. Please try again.',
+  weeklyReportBtn: 'Weekly Report',
+  modeToggleBtn: (nextMode) => (nextMode === 'newbie' ? 'Switch to Newbie Mode' : 'Switch to Pro Mode'),
+  languageToggleBtn: (nextLanguage) => (nextLanguage === 'ko' ? '한국어' : 'English'),
+  settingsBtn: 'Settings',
+  themeToggleBtn: (nextTheme) => (nextTheme === 'dark' ? 'Dark mode' : 'Light mode'),
+  dismissErrorLabel: 'Dismiss error',
+  aiSuggestBtn: 'AI Suggest',
+  aiSuggestTitle: 'Use AI to suggest a save message',
+  aiDraftReady: 'AI drafted a save message. Review it, then click Save Progress again.',
+  aiDraftFailed: 'AI could not draft a save message. Enter one manually to continue.',
+  draftingBtn: 'Drafting...',
+  thinkingBtn: 'Thinking...',
+  uploadedBranch: (branchName) => `Uploaded branch ${branchName}`,
+  openPullRequest: 'Open pull request',
+  naturalUndoTitle: 'Natural Language Undo',
+  aiConnectionRequired: 'AI connection required',
+  cancelNaturalUndoLabel: 'Cancel Natural Language Undo',
+  naturalUndoPlaceholder: 'Example: "Restore to yesterday afternoon before the red button removal"',
+  naturalUndoAnalyzingBtn: 'Analyzing...',
+  naturalUndoFindBtn: 'Find Point',
+  confidenceLabel: (percent) => `Confidence ${percent}%`,
+  restoreFiles: (count) => `Restore ${count} files`,
+  removeFiles: (count) => `Remove ${count} files`,
+  restoreFilePrefix: 'Restore',
+  removeFilePrefix: 'Remove',
+  restoringBtn: 'Restoring...',
+  restorePointBtn: 'Yes, Restore This Point',
+  alternativeMatchesLabel: 'Not quite right? Other possible matches:'
 }
 
 const KO_NEWBIE: AppTerms = {
@@ -189,6 +380,28 @@ const KO_NEWBIE: AppTerms = {
 
   revertBtn: '되돌리기',
   revertTitle: '이 파일의 변경사항 되돌리기',
+  fileStatusLabel: (status) => KO_NEWBIE_STATUS[status],
+  selectProjectFilesText: '파일을 보려면 프로젝트를 선택하세요',
+  collapseAllBtn: '모두 접기',
+  expandAllBtn: '모두 펼치기',
+  hiddenDepChangesBtn: (count) => `숨겨진 의존성 변경 ${count}개`,
+  hideDependencyTitle: '생성된 의존성 폴더 숨기기',
+  showDependencyTitle: '생성된 의존성 폴더 보기',
+  hideDepsBtn: '의존성 숨김',
+  showDepsBtn: '의존성 보기',
+  reviewUntrackedBtn: (count) => `새 파일 검토 (${count})`,
+  reviewingUntrackedBtn: '검토 중...',
+  stageFileLabel: (path) => `${path} 선택`,
+  unstageFileLabel: (path) => `${path} 선택 해제`,
+  untrackedReviewDialogLabel: '새 파일 검토',
+  untrackedReviewTitle: '새 파일 검토',
+  untrackedReviewCloseLabel: '새 파일 검토 닫기',
+  untrackedReviewLoading: '새 파일을 분석 중...',
+  untrackedReviewSummary: (total, commit, deleteCount) => `전체 ${total}개 저장 후보 ${commit}개 삭제 후보 ${deleteCount}개`,
+  deleteThisFileLabel: '이 파일 삭제',
+  stageRecommendedFilesBtn: '추천 파일 선택',
+  deletingBtn: '삭제 중...',
+  deleteSelectedBtn: (count) => `선택 항목 삭제 (${count})`,
 
   commitPlaceholder: (hasStaged) => (hasStaged ? '변경 내용을 설명하세요...' : '저장할 변경사항을 먼저 선택하세요'),
   commitBtn: (n) => `진행 상황 저장${n > 0 ? ` (${n})` : ''}`,
@@ -231,7 +444,35 @@ const KO_NEWBIE: AppTerms = {
   repoAdded: (name) => `"${name}" 프로젝트가 연결되었습니다`,
   repoAddFailed: '이 폴더를 연결할 수 없습니다. 다시 시도하세요.',
   repoRemoved: '프로젝트를 제거했습니다',
-  repoOpenFailed: '이 폴더를 연결할 수 없습니다. 다시 시도하세요.'
+  repoOpenFailed: '이 폴더를 연결할 수 없습니다. 다시 시도하세요.',
+  weeklyReportBtn: '주간 리포트',
+  modeToggleBtn: (nextMode) => (nextMode === 'newbie' ? '쉬운 용어로 보기' : '전문 용어로 보기'),
+  languageToggleBtn: (nextLanguage) => (nextLanguage === 'ko' ? '한국어' : 'English'),
+  settingsBtn: '설정',
+  themeToggleBtn: (nextTheme) => (nextTheme === 'dark' ? '다크 모드' : '라이트 모드'),
+  dismissErrorLabel: '오류 닫기',
+  aiSuggestBtn: 'AI 제안',
+  aiSuggestTitle: 'AI로 저장 메시지 제안 받기',
+  aiDraftReady: 'AI가 저장 메시지를 작성했습니다. 검토한 뒤 진행 상황 저장을 다시 누르세요.',
+  aiDraftFailed: 'AI가 저장 메시지를 작성하지 못했습니다. 계속하려면 직접 입력하세요.',
+  draftingBtn: '작성 중...',
+  thinkingBtn: '생각 중...',
+  uploadedBranch: (branchName) => `${branchName} 버전을 올렸습니다`,
+  openPullRequest: '풀 리퀘스트 열기',
+  naturalUndoTitle: '말로 되돌리기',
+  aiConnectionRequired: 'AI 연결 필요',
+  cancelNaturalUndoLabel: '말로 되돌리기 취소',
+  naturalUndoPlaceholder: '예: "어제 오후 빨간 버튼을 지우기 전으로 되돌려줘"',
+  naturalUndoAnalyzingBtn: '분석 중...',
+  naturalUndoFindBtn: '시점 찾기',
+  confidenceLabel: (percent) => `확신도 ${percent}%`,
+  restoreFiles: (count) => `${count}개 파일 되돌림`,
+  removeFiles: (count) => `${count}개 파일 제거`,
+  restoreFilePrefix: '되돌림',
+  removeFilePrefix: '제거',
+  restoringBtn: '되돌리는 중...',
+  restorePointBtn: '이 시점으로 되돌리기',
+  alternativeMatchesLabel: '원하는 시점이 아닌가요? 다른 후보:'
 }
 
 const KO_PRO: AppTerms = {
@@ -248,6 +489,28 @@ const KO_PRO: AppTerms = {
 
   revertBtn: '되돌리기',
   revertTitle: '이 파일 변경사항 되돌리기',
+  fileStatusLabel: (status) => KO_PRO_STATUS[status],
+  selectProjectFilesText: '파일을 보려면 저장소를 선택하세요',
+  collapseAllBtn: '모두 접기',
+  expandAllBtn: '모두 펼치기',
+  hiddenDepChangesBtn: (count) => `deps 변경 ${count}개`,
+  hideDependencyTitle: 'dependency 폴더 숨기기',
+  showDependencyTitle: 'dependency 폴더 보기',
+  hideDepsBtn: 'deps 숨김',
+  showDepsBtn: 'deps 보기',
+  reviewUntrackedBtn: (count) => `untracked 검토 (${count})`,
+  reviewingUntrackedBtn: '검토 중...',
+  stageFileLabel: (path) => `${path} 스테이지`,
+  unstageFileLabel: (path) => `${path} 언스테이지`,
+  untrackedReviewDialogLabel: 'untracked 검토',
+  untrackedReviewTitle: 'Untracked 파일 검토',
+  untrackedReviewCloseLabel: 'untracked 검토 닫기',
+  untrackedReviewLoading: 'untracked 파일 분석 중...',
+  untrackedReviewSummary: (total, commit, deleteCount) => `전체 ${total}개 커밋 후보 ${commit}개 삭제 후보 ${deleteCount}개`,
+  deleteThisFileLabel: '이 파일 삭제',
+  stageRecommendedFilesBtn: '추천 커밋 파일 스테이지',
+  deletingBtn: '삭제 중...',
+  deleteSelectedBtn: (count) => `선택 항목 삭제 (${count})`,
 
   commitPlaceholder: (hasStaged) => (hasStaged ? '커밋 메시지...' : '커밋할 변경사항을 스테이지하세요'),
   commitBtn: (n) => `커밋${n > 0 ? ` (${n})` : ''}`,
@@ -290,7 +553,35 @@ const KO_PRO: AppTerms = {
   repoAdded: (name) => `"${name}" 저장소가 추가되었습니다`,
   repoAddFailed: '이 저장소를 열 수 없습니다. 다시 시도하세요.',
   repoRemoved: '저장소를 제거했습니다',
-  repoOpenFailed: '이 저장소를 열 수 없습니다. 다시 시도하세요.'
+  repoOpenFailed: '이 저장소를 열 수 없습니다. 다시 시도하세요.',
+  weeklyReportBtn: '주간 리포트',
+  modeToggleBtn: (nextMode) => (nextMode === 'newbie' ? '쉬운 용어로 보기' : '전문 용어로 보기'),
+  languageToggleBtn: (nextLanguage) => (nextLanguage === 'ko' ? '한국어' : 'English'),
+  settingsBtn: '설정',
+  themeToggleBtn: (nextTheme) => (nextTheme === 'dark' ? '다크 모드' : '라이트 모드'),
+  dismissErrorLabel: '오류 닫기',
+  aiSuggestBtn: 'AI 제안',
+  aiSuggestTitle: 'AI로 커밋 메시지 제안 받기',
+  aiDraftReady: 'AI가 커밋 메시지를 작성했습니다. 검토한 뒤 커밋을 다시 누르세요.',
+  aiDraftFailed: 'AI가 커밋 메시지를 작성하지 못했습니다. 계속하려면 직접 입력하세요.',
+  draftingBtn: '작성 중...',
+  thinkingBtn: '생각 중...',
+  uploadedBranch: (branchName) => `${branchName} 브랜치를 푸시했습니다`,
+  openPullRequest: '풀 리퀘스트 열기',
+  naturalUndoTitle: '자연어 되돌리기',
+  aiConnectionRequired: 'AI 연결 필요',
+  cancelNaturalUndoLabel: '자연어 되돌리기 취소',
+  naturalUndoPlaceholder: '예: "어제 오후 빨간 버튼을 지우기 전으로 되돌려줘"',
+  naturalUndoAnalyzingBtn: '분석 중...',
+  naturalUndoFindBtn: '시점 찾기',
+  confidenceLabel: (percent) => `확신도 ${percent}%`,
+  restoreFiles: (count) => `${count}개 파일 복원`,
+  removeFiles: (count) => `${count}개 파일 제거`,
+  restoreFilePrefix: '복원',
+  removeFilePrefix: '제거',
+  restoringBtn: '복원 중...',
+  restorePointBtn: '이 시점으로 복원',
+  alternativeMatchesLabel: '원하는 시점이 아닌가요? 다른 후보:'
 }
 
 const TERM_DICTIONARY: Record<AppLanguage, Record<TerminologyMode, AppTerms>> = {

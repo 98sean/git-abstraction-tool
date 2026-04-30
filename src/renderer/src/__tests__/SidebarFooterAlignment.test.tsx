@@ -10,7 +10,9 @@ vi.mock('../hooks/useTerms', () => ({
   useTerms: () => ({
     sidebarTitle: 'My Projects',
     addRepo: '+ Link a Project',
-    noReposHint: 'No projects yet.\nClick "Link a Project" to get started.'
+    noReposHint: 'No projects yet.\nClick "Link a Project" to get started.',
+    weeklyReportBtn: 'Weekly Report',
+    themeToggleBtn: () => 'Dark mode'
   })
 }))
 

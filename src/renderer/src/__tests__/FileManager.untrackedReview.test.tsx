@@ -13,7 +13,30 @@ vi.mock('../hooks/useTerms', () => ({
     cleanTitle: 'Clean',
     cleanSubtext: 'No changes',
     revertTitle: 'Revert file',
-    revertBtn: 'Revert'
+    revertBtn: 'Revert',
+    fileStatusLabel: (status: string) => status,
+    selectProjectFilesText: 'Select a project to see its files',
+    collapseAllBtn: 'Collapse all',
+    expandAllBtn: 'Expand all',
+    hiddenDepChangesBtn: (count: number) => `${count} hidden dependency changes`,
+    hideDependencyTitle: 'Hide dependency folders',
+    showDependencyTitle: 'Show dependency folders',
+    hideDepsBtn: 'Hide deps',
+    showDepsBtn: 'Show deps',
+    reviewUntrackedBtn: (count: number) => `Review untracked (${count})`,
+    reviewingUntrackedBtn: 'Reviewing...',
+    stageFileLabel: (path: string) => `Stage ${path}`,
+    unstageFileLabel: (path: string) => `Unstage ${path}`,
+    untrackedReviewDialogLabel: 'Untracked review',
+    untrackedReviewTitle: 'Untracked File Review',
+    untrackedReviewCloseLabel: 'Close untracked review',
+    untrackedReviewLoading: 'Analyzing untracked files...',
+    untrackedReviewSummary: (total: number, commit: number, deleteCount: number) =>
+      `Total ${total} Commit ${commit} Delete ${deleteCount}`,
+    deleteThisFileLabel: 'Delete this file',
+    stageRecommendedFilesBtn: 'Stage recommended commit files',
+    deletingBtn: 'Deleting...',
+    deleteSelectedBtn: (count: number) => `Delete selected (${count})`
   })
 }))
 
@@ -89,6 +112,40 @@ describe('FileManager untracked review visibility', () => {
     )
 
     expect(screen.queryByRole('button', { name: /review untracked/i })).toBeNull()
+  })
+
+  it('renders dependency and untracked review controls from localized terms', () => {
+    render(
+      <FileManager
+        status={{
+          current_branch: 'main',
+          files: [
+            { path: 'node_modules/pkg/index.js', status: 'modified', staged: false },
+            { path: 'tmp.log', status: 'untracked', staged: false }
+          ],
+          tracked_files: [],
+          ahead: 0,
+          behind: 0,
+          has_conflicts: false,
+          is_clean: false
+        }}
+        trackedPaths={[]}
+        selectedPath={null}
+        loading={false}
+        error={null}
+        aiReviewEnabled={true}
+        onStage={vi.fn()}
+        onUnstage={vi.fn()}
+        onStageAll={vi.fn()}
+        onUnstageAll={vi.fn()}
+        onRevert={vi.fn()}
+        onReviewUntracked={vi.fn()}
+      />
+    )
+
+    expect(screen.getByRole('button', { name: /show deps/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /1 hidden dependency changes/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /review untracked \(1\)/i })).toBeTruthy()
   })
 
   it('deletes only selected delete recommendations without starting another analysis loop', async () => {

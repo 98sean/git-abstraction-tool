@@ -140,11 +140,11 @@ export function ActionPanel({
 
         if (suggestion) {
           onMessageChange(suggestion)
-          setHelperText('AI drafted a save message. Review it, then click Save Progress again.')
+          setHelperText(t.aiDraftReady)
           return
         }
 
-        setHelperText('AI could not draft a save message. Enter one manually to continue.')
+        setHelperText(t.aiDraftFailed)
         return
       } finally {
         setDraftingAiMessage(false)
@@ -190,7 +190,7 @@ export function ActionPanel({
       {error && error.code !== 'AUTH_FAILED' && (
         <div className={styles.errorBanner}>
           <span>{error.message}</span>
-          <button className={styles.dismissBtn} onClick={onClearError} aria-label="Dismiss error">
+          <button className={styles.dismissBtn} onClick={onClearError} aria-label={t.dismissErrorLabel}>
             ×
           </button>
         </div>
@@ -216,9 +216,9 @@ export function ActionPanel({
           className={styles.suggestBtn}
           onClick={onSuggestMessage}
           disabled={!canSuggest}
-          title="Use AI to suggest a save message"
+          title={t.aiSuggestTitle}
         >
-          {aiLoading ? <Spinner size={14} /> : 'AI Suggest'}
+          {aiLoading ? <Spinner size={14} /> : t.aiSuggestBtn}
         </button>
       </div>
 
@@ -226,14 +226,14 @@ export function ActionPanel({
 
       {uploadHandoff?.prUrl && (
         <div className={styles.uploadHandoff}>
-          <span>Uploaded branch {uploadHandoff.branchName}</span>
+          <span>{t.uploadedBranch(uploadHandoff.branchName)}</span>
           <a
             className={styles.uploadHandoffLink}
             href={uploadHandoff.prUrl}
             target="_blank"
             rel="noreferrer"
           >
-            Open pull request
+            {t.openPullRequest}
           </a>
         </div>
       )}
@@ -244,9 +244,9 @@ export function ActionPanel({
           {loading
             ? t.committingBtn
             : draftingAiMessage
-              ? 'Drafting…'
+              ? t.draftingBtn
               : aiLoading
-                ? 'Thinking…'
+                ? t.thinkingBtn
                 : t.commitBtn(stagedCount)}
         </button>
 
@@ -276,17 +276,17 @@ export function ActionPanel({
 
       <div className={styles.undoPanel}>
         <div className={styles.undoHeader}>
-          <span className={styles.undoTitle}>Natural Language Undo</span>
+          <span className={styles.undoTitle}>{t.naturalUndoTitle}</span>
           <div className={styles.undoHeaderActions}>
-            {!naturalUndoEnabled && <span className={styles.undoHint}>AI connection required</span>}
+            {!naturalUndoEnabled && <span className={styles.undoHint}>{t.aiConnectionRequired}</span>}
             {showCancelUndo && (
               <button
                 type="button"
                 className={styles.undoCancelBtn}
                 onClick={handleCancelUndo}
                 disabled={naturalUndoApplying}
-                aria-label="Cancel Natural Language Undo"
-                title="Cancel Natural Language Undo"
+                aria-label={t.cancelNaturalUndoLabel}
+                title={t.cancelNaturalUndoLabel}
               >
                 ×
               </button>
@@ -305,7 +305,7 @@ export function ActionPanel({
                 void handleSuggestUndo()
               }
             }}
-            placeholder='Example: "Restore to yesterday afternoon before the red button removal"'
+            placeholder={t.naturalUndoPlaceholder}
             disabled={!naturalUndoEnabled || naturalUndoApplying}
           />
           <button
@@ -315,7 +315,7 @@ export function ActionPanel({
             }}
             disabled={!canSuggestUndo}
           >
-            {naturalUndoLoading ? 'Analyzing...' : 'Find Point'}
+            {naturalUndoLoading ? t.naturalUndoAnalyzingBtn : t.naturalUndoFindBtn}
           </button>
         </div>
 
@@ -330,19 +330,19 @@ export function ActionPanel({
             </div>
             <div className={styles.undoMeta}>
               <span>{new Date(naturalUndoSuggestion.commit_date).toLocaleString()}</span>
-              <span>Confidence {(naturalUndoSuggestion.confidence * 100).toFixed(0)}%</span>
+              <span>{t.confidenceLabel((naturalUndoSuggestion.confidence * 100).toFixed(0))}</span>
             </div>
             <div className={styles.undoReason}>{naturalUndoSuggestion.reason}</div>
 
             <div className={styles.undoPreview}>
-              <span>Restore {naturalUndoSuggestion.total_restore_files} files</span>
-              <span>Remove {naturalUndoSuggestion.total_remove_files} files</span>
+              <span>{t.restoreFiles(naturalUndoSuggestion.total_restore_files)}</span>
+              <span>{t.removeFiles(naturalUndoSuggestion.total_remove_files)}</span>
             </div>
 
             {naturalUndoSuggestion.restore_files_preview.length > 0 && (
               <div className={styles.undoFileList}>
                 {naturalUndoSuggestion.restore_files_preview.map((filePath) => (
-                  <div key={`restore:${filePath}`}>Restore: {filePath}</div>
+                  <div key={`restore:${filePath}`}>{t.restoreFilePrefix}: {filePath}</div>
                 ))}
               </div>
             )}
@@ -350,7 +350,7 @@ export function ActionPanel({
             {naturalUndoSuggestion.remove_files_preview.length > 0 && (
               <div className={styles.undoFileList}>
                 {naturalUndoSuggestion.remove_files_preview.map((filePath) => (
-                  <div key={`remove:${filePath}`}>Remove: {filePath}</div>
+                  <div key={`remove:${filePath}`}>{t.removeFilePrefix}: {filePath}</div>
                 ))}
               </div>
             )}
@@ -364,13 +364,13 @@ export function ActionPanel({
               }}
               disabled={!canApplyUndo}
             >
-              {naturalUndoApplying ? 'Restoring...' : 'Yes, Restore This Point'}
+              {naturalUndoApplying ? t.restoringBtn : t.restorePointBtn}
             </button>
 
             {naturalUndoSuggestion.alternatives.length > 0 && (
               <div className={styles.undoAlternatives}>
                 <div className={styles.undoAlternativesLabel}>
-                  Not quite right? Other possible matches:
+                  {t.alternativeMatchesLabel}
                 </div>
                 {naturalUndoSuggestion.alternatives.map((alt, index) => (
                   <button

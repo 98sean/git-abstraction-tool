@@ -15,7 +15,30 @@ vi.mock('../hooks/useTerms', () => ({
     filesStaged: (n: number) => `${n} changes selected`,
     toPush: (n: number) => `↑ ${n} to upload`,
     toPull: (n: number) => `↓ ${n} to download`,
-    conflictMsg: 'Conflict detected'
+    conflictMsg: 'Conflict detected',
+    dismissErrorLabel: 'Dismiss error',
+    aiSuggestBtn: 'AI Suggest',
+    aiSuggestTitle: 'Use AI to suggest a save message',
+    aiDraftReady: 'AI drafted a save message. Review it, then click Save Progress again.',
+    aiDraftFailed: 'AI could not draft a save message. Enter one manually to continue.',
+    draftingBtn: 'Drafting...',
+    thinkingBtn: 'Thinking...',
+    uploadedBranch: (branchName: string) => `Uploaded branch ${branchName}`,
+    openPullRequest: 'Open pull request',
+    naturalUndoTitle: 'Natural Language Undo',
+    aiConnectionRequired: 'AI connection required',
+    cancelNaturalUndoLabel: 'Cancel Natural Language Undo',
+    naturalUndoPlaceholder: 'Example: "Restore to yesterday afternoon before the red button removal"',
+    naturalUndoAnalyzingBtn: 'Analyzing...',
+    naturalUndoFindBtn: 'Find Point',
+    confidenceLabel: (percent: string) => `Confidence ${percent}%`,
+    restoreFiles: (count: number) => `Restore ${count} files`,
+    removeFiles: (count: number) => `Remove ${count} files`,
+    restoreFilePrefix: 'Restore',
+    removeFilePrefix: 'Remove',
+    restoringBtn: 'Restoring...',
+    restorePointBtn: 'Yes, Restore This Point',
+    alternativeMatchesLabel: 'Not quite right? Other possible matches:'
   })
 }))
 
