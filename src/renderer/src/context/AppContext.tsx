@@ -19,6 +19,7 @@ type AppAction =
 const defaultPreferences: Preferences = {
   theme: 'light',
   mode: 'pro',
+  language: 'en',
   auto_save_enabled: true,
   default_save_message_template: ''
 }

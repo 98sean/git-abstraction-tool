@@ -260,6 +260,7 @@ export interface ProjectAiSettings {
 export interface Preferences {
   theme: 'light' | 'dark'
   mode: 'newbie' | 'pro'
+  language: 'en' | 'ko'
   auto_save_enabled: boolean
   default_save_message_template: string
 }
