@@ -11,6 +11,7 @@ import {
   UntrackedReviewResult,
   WeeklyFeatureSummaryResult
 } from './manualToolTypes'
+import { AiOutputLanguage } from './types'
 
 interface UndoCandidateModel {
   commit_hash?: string
@@ -51,6 +52,10 @@ interface UntrackedModelResponse {
 }
 
 const CJK_CHAR_REGEX = /[\u3040-\u30ff\u31f0-\u31ff\u3400-\u9fff\uf900-\ufaff]/u
+const OUTPUT_LANGUAGE_LABEL: Record<AiOutputLanguage, string> = {
+  en: 'English',
+  ko: 'Korean'
+}
 
 function normalizeConfidence(value: number | undefined, fallback: number): number {
   if (!Number.isFinite(value)) {
@@ -60,10 +65,22 @@ function normalizeConfidence(value: number | undefined, fallback: number): numbe
   return Math.max(0, Math.min(1, value))
 }
 
-function ensureEnglishText(value: string | undefined, fallback: string): string {
+function getOutputLanguage(input?: { outputLanguage?: AiOutputLanguage }): AiOutputLanguage {
+  return input?.outputLanguage ?? 'en'
+}
+
+function outputLanguageInstruction(language: AiOutputLanguage): string {
+  return `Write all user-visible text in ${OUTPUT_LANGUAGE_LABEL[language]}.`
+}
+
+function ensureLocalizedText(
+  value: string | undefined,
+  fallback: string,
+  outputLanguage: AiOutputLanguage
+): string {
   const text = value?.trim() ?? ''
   if (!text) return fallback
-  if (CJK_CHAR_REGEX.test(text)) return fallback
+  if (outputLanguage === 'en' && CJK_CHAR_REGEX.test(text)) return fallback
   return text
 }
 
@@ -108,6 +125,7 @@ export function createManualToolService(deps: {
     async generateNaturalUndoSuggestion(
       input: GenerateNaturalUndoSuggestionInput
     ): Promise<NaturalUndoSuggestionResult> {
+      const outputLanguage = getOutputLanguage(input)
       const model = await aiService.generateStructured<UndoModelResponse>({
         provider: input.provider,
         model: input.model,
@@ -124,9 +142,11 @@ export function createManualToolService(deps: {
           '(2) If the request is vague, ambiguous, or fits multiple commits, return the best-guess primary plus 1-2 alternatives ' +
           '(different commits, each with its own reason). Never return more than 2 alternatives. ' +
           '(3) If nothing matches at all, set primary.commit_hash to "" and alternatives to []. ' +
-          '(4) All reasons must be in plain English that a non-developer can understand — describe the feature/change, not file paths or function names.',
+          '(4) All reasons must use plain language that a non-developer can understand — describe the feature/change, not file paths or function names. ' +
+          outputLanguageInstruction(outputLanguage),
         userPrompt: JSON.stringify({
           now: new Date().toISOString(),
+          output_language: OUTPUT_LANGUAGE_LABEL[outputLanguage],
           user_query: input.query,
           timeline: toTimelineInput(input.timeline)
         })
@@ -164,9 +184,12 @@ export function createManualToolService(deps: {
     async generateWeeklyFeatureSummary(
       input: GenerateWeeklyFeatureSummaryInput
     ): Promise<WeeklyFeatureSummaryResult> {
+      const outputLanguage = getOutputLanguage(input)
       if (input.entries.length === 0 || input.stats.totalCommits === 0) {
         return {
-          summary: 'No saves were recorded this week.',
+          summary: outputLanguage === 'ko'
+            ? '이번 주에는 저장된 기록이 없습니다.'
+            : 'No saves were recorded this week.',
           highlights: []
         }
       }
@@ -189,17 +212,19 @@ export function createManualToolService(deps: {
           'Rules you MUST follow: ' +
           '1. Treat `stats` as ground truth. Never claim more commits, days, or changes than `stats` says. ' +
           '2. You may reference numeric facts from `stats` (e.g. "across your 5 saves on 3 different days") but must not invent new numbers. ' +
-          '3. Write in the second person ("you added…") in plain English only. ' +
+          '3. Write in the second person ("you added…") using clear, non-technical language. ' +
           '4. Focus on user-facing FEATURES that were added, changed, or removed. Prefer `ai_summary` text; for commits with only a message, infer a feature-level description from the message. ' +
           '5. Never mention file paths, function names, programming languages, or Git jargon (commit, branch, merge, refactor, lint, etc.). Translate technical terms into everyday words. ' +
           '6. Cover the whole week — do not silently drop commits just because they lack an `ai_summary`. ' +
           '7. If a commit has `is_initial_import:true`, describe it as "set up / imported the project" or "added a batch of existing assets" only. Never list its files, and do not treat it as if the user built thousands of new features — it is a bulk import of existing work, not new work done this week. ' +
           '8. If a commit is clearly non-user-facing (user_visible:false or obvious chore), roll it up as "some behind-the-scenes cleanup" rather than listing it. ' +
+          `9. ${outputLanguageInstruction(outputLanguage)} ` +
           'Return strict JSON only: {"summary":"<2-4 sentences, warm, encouraging, grounded in stats>", ' +
           '"highlights":["<feature-level bullet>", "..." (3-6 bullets, each under 14 words, each describing a real commit)]}.',
         userPrompt: JSON.stringify({
           week_start: input.startDate,
           week_end: input.endDate,
+          output_language: OUTPUT_LANGUAGE_LABEL[outputLanguage],
           stats: input.stats,
           commits: input.entries
         })
@@ -213,15 +238,19 @@ export function createManualToolService(deps: {
         .slice(0, 6)
 
       return {
-        summary: ensureEnglishText(
+        summary: ensureLocalizedText(
           summaryText,
-          'This week you made a handful of saves that moved the project forward.'
+          outputLanguage === 'ko'
+            ? '이번 주에는 프로젝트를 앞으로 나아가게 한 저장 기록이 있습니다.'
+            : 'This week you made a handful of saves that moved the project forward.',
+          outputLanguage
         ),
         highlights
       }
     },
 
     async generateFileInsight(input: GenerateFileInsightInput): Promise<FileInsightResult> {
+      const outputLanguage = getOutputLanguage(input)
       const model = await aiService.generateStructured<FileInsightModelResponse>({
         provider: input.provider,
         model: input.model,
@@ -231,13 +260,13 @@ export function createManualToolService(deps: {
           'Return strict JSON only with keys: ' +
           '{"summary":"...","functionality":"...","related_files":[{"path":"...","reason":"..."}]}. ' +
           'Keep summary/functionality concise. related_files max 5 and paths must come from candidates. ' +
-          'All user-visible text must be in English only. Never use Japanese or any other language.',
+          outputLanguageInstruction(outputLanguage),
         userPrompt: JSON.stringify({
           file_path: input.filePath,
           content_snippet: input.contentSnippet,
           recent_commits: input.recentCommits,
           related_candidates: input.relatedCandidates,
-          output_language: 'English'
+          output_language: OUTPUT_LANGUAGE_LABEL[outputLanguage]
         })
       })
 
@@ -245,7 +274,11 @@ export function createManualToolService(deps: {
       const relatedFromModel = (model.related_files ?? [])
         .map((item) => ({
           path: item.path?.replace(/\\/g, '/').trim() ?? '',
-          reason: ensureEnglishText(item.reason, 'Related behavior or dependencies.')
+          reason: ensureLocalizedText(
+            item.reason,
+            outputLanguage === 'ko' ? '관련된 동작이나 의존성이 있습니다.' : 'Related behavior or dependencies.',
+            outputLanguage
+          )
         }))
         .filter((item) => item.path && candidateSet.has(item.path))
         .slice(0, 5)
@@ -255,23 +288,32 @@ export function createManualToolService(deps: {
           ? relatedFromModel
           : input.relatedCandidates.slice(0, 5).map((candidate) => ({
             path: candidate.path,
-            reason: 'Frequently changed together in commit history.'
+            reason: outputLanguage === 'ko'
+              ? '최근 기록에서 자주 함께 변경되었습니다.'
+              : 'Frequently changed together in commit history.'
           }))
 
       return {
-        summary: ensureEnglishText(
+        summary: ensureLocalizedText(
           model.summary,
-          'This file is part of the current project workflow.'
+          outputLanguage === 'ko'
+            ? '이 파일은 현재 프로젝트 흐름의 일부입니다.'
+            : 'This file is part of the current project workflow.',
+          outputLanguage
         ),
-        functionality: ensureEnglishText(
+        functionality: ensureLocalizedText(
           model.functionality,
-          'It defines behavior used by the surrounding feature set.'
+          outputLanguage === 'ko'
+            ? '주변 기능에서 사용하는 동작을 정의합니다.'
+            : 'It defines behavior used by the surrounding feature set.',
+          outputLanguage
         ),
         relatedFiles
       }
     },
 
     async reviewUntrackedFiles(input: ReviewUntrackedFilesInput): Promise<UntrackedReviewResult> {
+      const outputLanguage = getOutputLanguage(input)
       const unresolvedSet = new Set(input.contexts.map((context) => context.path))
       const model = await aiService.generateStructured<UntrackedModelResponse>({
         provider: input.provider,
@@ -282,8 +324,12 @@ export function createManualToolService(deps: {
           'You classify untracked files in a software project. ' +
           'Return strict JSON only: {"decisions":[{"path":"...","recommendation":"commit|delete","reason":"...","confidence":0..1}]}. ' +
           'Prefer delete for generated/build/cache/temp/log/virtualenv/local-secret files. ' +
-          'Prefer commit for source code, config, tests, docs, migration scripts, and lockfiles.',
-        userPrompt: JSON.stringify({ untracked_files: input.contexts })
+          'Prefer commit for source code, config, tests, docs, migration scripts, and lockfiles. ' +
+          outputLanguageInstruction(outputLanguage),
+        userPrompt: JSON.stringify({
+          output_language: OUTPUT_LANGUAGE_LABEL[outputLanguage],
+          untracked_files: input.contexts
+        })
       })
 
       const items: UntrackedReviewItem[] = (model.decisions ?? [])
@@ -297,8 +343,12 @@ export function createManualToolService(deps: {
             reason:
               decision.reason?.trim() ||
               (recommendation === 'delete'
-                ? 'Looks like a generated or local-only file.'
-                : 'Looks like work that should be committed.'),
+                ? outputLanguage === 'ko'
+                  ? '생성된 파일이거나 로컬에서만 필요한 파일로 보입니다.'
+                  : 'Looks like a generated or local-only file.'
+                : outputLanguage === 'ko'
+                  ? '저장해야 할 작업으로 보입니다.'
+                  : 'Looks like work that should be committed.'),
             confidence: normalizeConfidence(decision.confidence, recommendation === 'delete' ? 0.78 : 0.7)
           }
         })

@@ -85,4 +85,48 @@ describe('weekly AI feature summary', () => {
       highlights: ['Improved branch upload', 'Clarified review copy', 'Added safety checks']
     })
   })
+
+  it('requests Korean weekly summaries when the app language is Korean', async () => {
+    const provider = {
+      validateKey: vi.fn(),
+      generateMessage: vi.fn(),
+      generateStructured: vi.fn().mockResolvedValue({
+        summary: '이번 주에는 업로드 흐름을 더 명확하게 다듬었습니다.',
+        highlights: ['브랜치 업로드 안내 개선']
+      })
+    }
+    const aiService = createAiService({ openai: provider as never, anthropic: provider as never })
+    const manualToolService = createManualToolService({ aiService })
+
+    const result = await manualToolService.generateWeeklyFeatureSummary({
+      provider: 'openai',
+      model: 'gpt-test',
+      apiKey: 'test-key',
+      outputLanguage: 'ko',
+      startDate: '2026-04-20',
+      endDate: '2026-04-26',
+      entries: [
+        {
+          hash: 'abc',
+          date: '2026-04-21',
+          message: 'feat: add team upload handoff',
+          user_visible: true
+        }
+      ],
+      stats: {
+        totalCommits: 1,
+        filesAdded: 1,
+        filesModified: 0,
+        filesDeleted: 0,
+        linesAdded: 10,
+        linesRemoved: 0,
+        activeDays: 1
+      }
+    })
+
+    const call = provider.generateStructured.mock.calls[0]?.[0]
+    expect(call.systemPrompt).toContain('Korean')
+    expect(call.userPrompt).toContain('"output_language":"Korean"')
+    expect(result.summary).toContain('이번 주')
+  })
 })

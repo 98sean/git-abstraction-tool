@@ -3,7 +3,7 @@ import {
   NaturalUndoSuggestionResult,
   NaturalUndoTimelineEntry
 } from './manualToolTypes'
-import { AiProviderName } from './types'
+import { AiOutputLanguage, AiProviderName } from './types'
 import { AiCommitSummary } from '../db/aiSummaries'
 import { RestorePreview, TimelineCommitInfo } from '../git/types'
 
@@ -26,6 +26,7 @@ interface GenerateNaturalUndoSuggestionServiceInput {
     model: string
     apiKey: string
   }
+  outputLanguage?: AiOutputLanguage
   gitService: NaturalUndoGitService
   manualToolService: NaturalUndoManualToolService
   getSummariesByHash: (projectId: string, commitHashes: string[]) => Map<string, AiCommitSummary>
@@ -111,6 +112,7 @@ export async function generateNaturalUndoSuggestion({
   projectId,
   query,
   aiConfig,
+  outputLanguage = 'en',
   gitService,
   manualToolService,
   getSummariesByHash
@@ -148,6 +150,7 @@ export async function generateNaturalUndoSuggestion({
     provider: aiConfig.provider,
     model: aiConfig.model,
     apiKey: aiConfig.apiKey,
+    outputLanguage,
     query: query.trim(),
     timeline: enrichedTimeline
   })
@@ -189,7 +192,10 @@ export async function generateNaturalUndoSuggestion({
       total_remove_files: preview.files_to_remove.length,
       restore_files_preview: preview.files_to_restore.slice(0, 6),
       remove_files_preview: preview.files_to_remove.slice(0, 6),
-      proposal_text: `Restore to this point (${formatCommitDate(commit.date)}: ${label})?`
+      proposal_text:
+        outputLanguage === 'ko'
+          ? `이 시점으로 되돌릴까요? (${formatCommitDate(commit.date)}: ${label})`
+          : `Restore to this point (${formatCommitDate(commit.date)}: ${label})?`
     }
   }
 
@@ -204,7 +210,9 @@ export async function generateNaturalUndoSuggestion({
       if (commit.hash === target.hash) continue
       primaryPayload = await buildOption(
         commit,
-        'This is the closest earlier point that would actually change your files.',
+        outputLanguage === 'ko'
+          ? '실제로 파일을 바꿀 수 있는 가장 가까운 이전 시점입니다.'
+          : 'This is the closest earlier point that would actually change your files.',
         Math.min(suggestion.primary.confidence, 0.7)
       )
       if (primaryPayload) break

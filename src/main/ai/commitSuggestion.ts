@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { AiOutputLanguage } from './types'
 
 export type CommitChangeKind =
   | 'feature'
@@ -41,7 +42,12 @@ const VALID_CHANGE_KINDS: CommitChangeKind[] = [
   'mixed'
 ]
 
-export const COMMIT_SUGGESTION_SYSTEM_PROMPT = `You are an assistant embedded inside a desktop app that helps non-technical users (vibe coders, designers, writers, students) save their work to Git without knowing Git. Your job is to read a staged git diff and describe what actually changed, for two audiences:
+const OUTPUT_LANGUAGE_LABEL: Record<AiOutputLanguage, string> = {
+  en: 'English',
+  ko: 'Korean'
+}
+
+const COMMIT_SUGGESTION_SYSTEM_PROMPT = `You are an assistant embedded inside a desktop app that helps non-technical users (vibe coders, designers, writers, students) save their work to Git without knowing Git. Your job is to read a staged git diff and describe what actually changed, for two audiences:
 
 1. The user, who will see ONE short plain-language sentence used as the commit message.
 2. The app itself, which will store a richer paragraph internally and later use it to (a) help the user find a past point in history from a natural-language query like "before I removed the red button", and (b) generate a weekly changelog. The user never sees this paragraph directly, but it must be truthful, specific, and written as prose.
@@ -108,6 +114,14 @@ Field contract:
   - Do not include generic git words or generic tech words ("update", "code", "fix", "change", "file").
 
 If the diff is empty or contains only whitespace/formatting changes, still return valid JSON with message like "Tidied up formatting with no behavior changes", a matching summary, change_kind="chore", user_visible=false, and a minimal areas/keywords list.`
+
+export function buildCommitSuggestionSystemPrompt(outputLanguage: AiOutputLanguage = 'en'): string {
+  return [
+    COMMIT_SUGGESTION_SYSTEM_PROMPT,
+    '',
+    `Output language: Write all user-visible fields (message, summary, areas, and keywords) in ${OUTPUT_LANGUAGE_LABEL[outputLanguage]}.`
+  ].join('\n')
+}
 
 function normalizeText(value: unknown, fallback: string): string {
   if (typeof value !== 'string') return fallback

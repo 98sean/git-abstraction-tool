@@ -4,7 +4,7 @@ import {
   WeeklyFeatureStats,
   WeeklyFeatureSummaryEntry
 } from './manualToolTypes'
-import { AiProviderName } from './types'
+import { AiOutputLanguage, AiProviderName } from './types'
 import { AiCommitSummary } from '../db/aiSummaries'
 import { WeeklySummaryCacheEntry } from '../db/weeklySummaryCache'
 import { WeeklyCommit, WeeklyReport } from '../git/types'
@@ -37,6 +37,7 @@ interface GenerateWeeklySummaryInput {
   startDate: string
   endDate: string
   aiConfig: WeeklySummaryAiConfig
+  outputLanguage?: AiOutputLanguage
   weeklyService: WeeklySummaryService
   manualToolService: WeeklySummaryManualToolService
   getSummariesByHash: (projectId: string, commitHashes: string[]) => Map<string, AiCommitSummary>
@@ -46,6 +47,7 @@ interface GenerateWeeklySummaryInput {
     end_date: string
     commit_signature: string
     model: string
+    output_language: AiOutputLanguage
     ai_summary_count: number
   }) => WeeklySummaryCacheEntry | undefined
   setCachedSummary: (entry: WeeklySummaryCacheEntry) => void
@@ -68,6 +70,7 @@ export async function generateWeeklySummary({
   startDate,
   endDate,
   aiConfig,
+  outputLanguage = 'en',
   weeklyService,
   manualToolService,
   getSummariesByHash,
@@ -133,6 +136,7 @@ export async function generateWeeklySummary({
     end_date: endDate,
     commit_signature: commitSignature,
     model: aiConfig.model,
+    output_language: outputLanguage,
     ai_summary_count: aiSummaryCount
   })
 
@@ -152,6 +156,7 @@ export async function generateWeeklySummary({
     provider: aiConfig.provider,
     model: aiConfig.model,
     apiKey: aiConfig.apiKey,
+    outputLanguage,
     startDate,
     endDate,
     entries,
@@ -164,6 +169,7 @@ export async function generateWeeklySummary({
     end_date: endDate,
     commit_signature: commitSignature,
     model: aiConfig.model,
+    output_language: outputLanguage,
     ai_summary_count: aiSummaryCount,
     summary: result.summary,
     highlights: result.highlights,

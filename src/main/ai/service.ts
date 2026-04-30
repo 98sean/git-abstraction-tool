@@ -2,7 +2,7 @@ import { AiConnectionState } from '../db/aiConnection'
 import { buildAutoSavePrompt } from './buildAutoSavePrompt'
 import {
   buildCommitSuggestionUserPrompt,
-  COMMIT_SUGGESTION_SYSTEM_PROMPT,
+  buildCommitSuggestionSystemPrompt,
   CommitSuggestion,
   finalizeCommitSuggestion
 } from './commitSuggestion'
@@ -79,7 +79,7 @@ export function createAiService(overrides: Partial<ProviderMap> = {}) {
       }
 
       const provider = pickProvider(providers, input.provider)
-      const prompt = buildAutoSavePrompt(input.diffContext)
+      const prompt = buildAutoSavePrompt(input.diffContext, input.outputLanguage ?? 'en')
 
       const message = await Promise.race([
         provider.generateMessage({
@@ -107,7 +107,7 @@ export function createAiService(overrides: Partial<ProviderMap> = {}) {
       const payload = await provider.generateStructured({
         apiKey: input.apiKey,
         model: input.model,
-        systemPrompt: COMMIT_SUGGESTION_SYSTEM_PROMPT,
+        systemPrompt: buildCommitSuggestionSystemPrompt(input.outputLanguage ?? 'en'),
         userPrompt: buildCommitSuggestionUserPrompt(input.diff)
       })
 

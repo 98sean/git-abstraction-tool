@@ -5,7 +5,7 @@ import {
   UntrackedContext,
   UntrackedReviewItem
 } from './manualToolTypes'
-import { AiProviderName } from './types'
+import { AiOutputLanguage, AiProviderName } from './types'
 import { isGitInternalArtifact } from './fileInsightService'
 import { GitStatus } from '../git/types'
 
@@ -24,6 +24,7 @@ interface ReviewUntrackedFilesServiceInput {
     model: string
     apiKey: string
   }
+  outputLanguage?: AiOutputLanguage
   gitService: UntrackedReviewGitService
   manualToolService: UntrackedReviewManualToolService
 }
@@ -287,6 +288,7 @@ function getUntrackedReviewTimeoutMs(itemCount: number): number {
 export async function reviewUntrackedFiles({
   projectRoot,
   aiConfig,
+  outputLanguage = 'en',
   gitService,
   manualToolService
 }: ReviewUntrackedFilesServiceInput): Promise<UntrackedReviewOutput> {
@@ -330,6 +332,7 @@ export async function reviewUntrackedFiles({
             provider: aiConfig.provider,
             model: aiConfig.model,
             apiKey: aiConfig.apiKey,
+            outputLanguage,
             contexts,
             timeoutMs
           })

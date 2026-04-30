@@ -1,4 +1,4 @@
-import { AiProviderName } from './types'
+import { AiOutputLanguage, AiProviderName } from './types'
 import { TimelineCommitInfo } from '../git/types'
 
 export interface RelatedCandidate {
@@ -15,6 +15,7 @@ export interface GenerateFileInsightInput {
   provider: AiProviderName
   model: string
   apiKey: string
+  outputLanguage?: AiOutputLanguage
   filePath: string
   contentSnippet: string
   recentCommits: Array<{ date: string; message: string }>
@@ -51,6 +52,7 @@ export interface GenerateNaturalUndoSuggestionInput {
   provider: AiProviderName
   model: string
   apiKey: string
+  outputLanguage?: AiOutputLanguage
   query: string
   timeline: NaturalUndoTimelineEntry[]
 }
@@ -110,6 +112,7 @@ export interface GenerateWeeklyFeatureSummaryInput {
   provider: AiProviderName
   model: string
   apiKey: string
+  outputLanguage?: AiOutputLanguage
   startDate: string
   endDate: string
   entries: WeeklyFeatureSummaryEntry[]
@@ -142,6 +145,7 @@ export interface ReviewUntrackedFilesInput {
   provider: AiProviderName
   model: string
   apiKey: string
+  outputLanguage?: AiOutputLanguage
   contexts: UntrackedContext[]
   timeoutMs?: number
 }

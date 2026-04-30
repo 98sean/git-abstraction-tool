@@ -3,7 +3,7 @@ import {
 } from '../ai/manualToolService'
 import { generateFileInsight } from '../ai/fileInsightService'
 import { createAiService } from '../ai/service'
-import { AiProviderName } from '../ai/types'
+import { AiOutputLanguage, AiProviderName } from '../ai/types'
 import { generateNaturalUndoSuggestion } from '../ai/naturalUndoService'
 import { reviewUntrackedFiles } from '../ai/untrackedReviewService'
 import { generateWeeklySummary } from '../ai/weeklySummaryService'
@@ -21,6 +21,7 @@ import {
   setCachedWeeklySummary
 } from '../db/weeklySummaryCache'
 import { clearAiApiKey, getAiApiKey, setAiApiKey } from '../db/credentials'
+import { getPreferences } from '../db/preferences'
 import { getProjectAiSettings, ProjectAiSettings, setProjectAiSettings } from '../db/projectAiSettings'
 import { listProjects } from '../db/projects'
 import { getGitService } from '../git'
@@ -32,6 +33,10 @@ import { registerAiWeeklyHandlers } from './aiWeeklyHandlers'
 
 const aiService = createAiService()
 const manualToolService = createManualToolService({ aiService })
+
+function getAiOutputLanguage(): AiOutputLanguage {
+  return getPreferences().language === 'ko' ? 'ko' : 'en'
+}
 
 function getProjectPath(projectId: string): string {
   const project = listProjects().find((p) => p.project_id === projectId)
@@ -155,6 +160,7 @@ export function registerAiHandlers(): void {
       provider: connectionState.provider,
       model: connectionState.selected_model,
       apiKey,
+      outputLanguage: getAiOutputLanguage(),
       diffContext
     })
     },
@@ -172,6 +178,7 @@ export function registerAiHandlers(): void {
       provider: connectionState.provider,
       model: connectionState.selected_model,
       apiKey,
+      outputLanguage: getAiOutputLanguage(),
       diff
     })
     }
@@ -186,6 +193,7 @@ export function registerAiHandlers(): void {
       projectId: project_id,
       query,
       aiConfig,
+      outputLanguage: getAiOutputLanguage(),
       gitService: service,
       manualToolService,
       getSummariesByHash: getAiCommitSummariesByHash
@@ -201,6 +209,7 @@ export function registerAiHandlers(): void {
       projectRoot,
       filePath: file_path ?? '',
       aiConfig,
+      outputLanguage: getAiOutputLanguage(),
       gitService: service,
       manualToolService
     })
@@ -214,6 +223,7 @@ export function registerAiHandlers(): void {
     return reviewUntrackedFiles({
       projectRoot,
       aiConfig,
+      outputLanguage: getAiOutputLanguage(),
       gitService: service,
       manualToolService
     })
@@ -236,6 +246,7 @@ export function registerAiHandlers(): void {
         startDate,
         endDate,
         aiConfig,
+        outputLanguage: getAiOutputLanguage(),
         weeklyService,
         manualToolService,
         getSummariesByHash: getAiCommitSummariesByHash,

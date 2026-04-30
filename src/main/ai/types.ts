@@ -1,6 +1,7 @@
 import { StagedDiffContext } from '../git/types'
 
 export type AiProviderName = 'openai' | 'anthropic'
+export type AiOutputLanguage = 'en' | 'ko'
 
 export interface ConnectProviderInput {
   provider: AiProviderName
@@ -11,6 +12,7 @@ export interface GenerateAutoSaveMessageInput {
   provider: AiProviderName
   model: string
   apiKey: string
+  outputLanguage?: AiOutputLanguage
   diffContext: StagedDiffContext
 }
 
@@ -18,6 +20,7 @@ export interface GenerateCommitSuggestionInput {
   provider: AiProviderName
   model: string
   apiKey: string
+  outputLanguage?: AiOutputLanguage
   diff: string
 }
 

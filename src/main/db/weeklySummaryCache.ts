@@ -13,6 +13,7 @@ export interface WeeklySummaryCacheEntry {
   end_date: string
   commit_signature: string
   model: string
+  output_language?: 'en' | 'ko'
   ai_summary_count: number
   summary: string
   highlights: string[]
@@ -60,6 +61,7 @@ export function getCachedWeeklySummary(params: {
   end_date: string
   commit_signature: string
   model: string
+  output_language?: 'en' | 'ko'
   ai_summary_count: number
 }): WeeklySummaryCacheEntry | undefined {
   const targetKey = keyOf(params)
@@ -69,6 +71,7 @@ export function getCachedWeeklySummary(params: {
   if (
     found.commit_signature !== params.commit_signature ||
     found.model !== params.model ||
+    (found.output_language ?? 'en') !== (params.output_language ?? 'en') ||
     found.ai_summary_count !== params.ai_summary_count
   ) {
     return undefined

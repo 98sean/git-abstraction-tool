@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { buildFileInsightAnalysisInput } from './fileInsightInput'
 import { FileInsightResult, GenerateFileInsightInput } from './manualToolTypes'
-import { AiProviderName } from './types'
+import { AiOutputLanguage, AiProviderName } from './types'
 import { TimelineCommitInfo } from '../git/types'
 
 interface RelatedCandidate {
@@ -33,6 +33,7 @@ interface GenerateFileInsightServiceInput {
     model: string
     apiKey: string
   }
+  outputLanguage?: AiOutputLanguage
   gitService: FileInsightGitService
   manualToolService: FileInsightManualToolService
 }
@@ -97,6 +98,7 @@ export async function generateFileInsight({
   projectRoot,
   filePath,
   aiConfig,
+  outputLanguage = 'en',
   gitService,
   manualToolService
 }: GenerateFileInsightServiceInput): Promise<FileInsightOutput> {
@@ -122,6 +124,7 @@ export async function generateFileInsight({
     provider: aiConfig.provider,
     model: aiConfig.model,
     apiKey: aiConfig.apiKey,
+    outputLanguage,
     filePath: normalizedPath,
     contentSnippet: analysisInput.contentSnippet,
     recentCommits,
