@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { WeeklyReport } from '../components/WeeklyReport'
 import { AiConnectionState, WeeklyAiSummary, WeeklyReport as WeeklyReportData } from '../types'
@@ -224,5 +226,14 @@ describe('WeeklyReport', () => {
 
     const list = screen.getByRole('list', { name: /저장 기록/i })
     expect(list.className).toContain('wr-commit-scroll-region')
+  })
+
+  it('prevents commit rows from shrinking inside the scroll region', () => {
+    const css = readFileSync(
+      join(process.cwd(), 'src/renderer/src/components/WeeklyReport/WeeklyReport.css'),
+      'utf8'
+    )
+
+    expect(css).toMatch(/\.wr-commit\s*{[^}]*flex-shrink:\s*0;/s)
   })
 })

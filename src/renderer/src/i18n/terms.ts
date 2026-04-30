@@ -1,6 +1,7 @@
 export type AppLanguage = 'en' | 'ko'
 export type TerminologyMode = 'newbie' | 'pro'
 export type FileStatusTerm = 'clean' | 'new' | 'modified' | 'deleted' | 'renamed' | 'conflicted' | 'untracked'
+export type ProjectWarningKind = 'large' | 'binary' | 'sensitive' | 'generated'
 
 export interface AppTerms {
   sidebarTitle: string
@@ -136,6 +137,7 @@ export interface AppTerms {
   connectAiTitle: string
   connectAiDescription: string
   disconnectAiBtn: string
+  cancelBtn: string
   providerLabel: string
   apiKeyLabel: string
   connectingAiBtn: string
@@ -172,6 +174,26 @@ export interface AppTerms {
   weeklyPrevWeekLabel: string
   weeklyNextWeekLabel: string
   weeklyCurrentWeekLabel: string
+  linkProjectEyebrow: string
+  linkChooseTitle: string
+  linkPrepareTitle: string
+  linkWarningsTitle: string
+  linkReviewTitle: string
+  linkCloseLabel: string
+  linkSelectedFolderLabel: string
+  linkChooseCopy: string
+  linkCheckingFolderBtn: string
+  linkChooseFolderBtn: string
+  linkPrepareCopy: string
+  linkApproveInitBtn: string
+  linkWarningsCopy: string
+  linkExcludeLabel: string
+  linkRecommendedExcludesLabel: string
+  linkWarningReason: (kind: ProjectWarningKind, reason: string) => string
+  linkFinishBtn: string
+  linkReviewCopy: string
+  linkDetectedRemotesLabel: string
+  linkLinkingBtn: string
   fileInsightTitle: string
   fileInsightConnectAiHint: string
   fileInsightSelectFileHint: string
@@ -264,6 +286,17 @@ function formatKoreanWeeklyFallback(
   return workLine ? `${statLine} ${workLine}` : statLine
 }
 
+function formatKoreanLinkWarning(kind: ProjectWarningKind, reason: string): string {
+  if (kind === 'sensitive') return '민감한 파일에는 비밀값이나 인증 정보가 들어 있을 수 있습니다.'
+  if (kind === 'large') return '큰 파일은 저장 기록과 업로드를 무겁게 만들 수 있습니다.'
+  if (kind === 'binary') return '바이너리 파일은 검토하거나 합치기 어렵습니다.'
+  if (kind === 'generated' && reason.toLowerCase().includes('folder')) {
+    return '생성된 폴더는 보통 저장 기록에 포함하지 않는 편이 좋습니다.'
+  }
+  if (kind === 'generated') return '생성된 파일은 보통 저장 기록에 포함하지 않는 편이 좋습니다.'
+  return reason
+}
+
 const EN_COMMON_APP_TERMS = {
   projectSettingsTitle: 'Project Settings',
   projectSettingsDescription: 'Review AI save-message options and cloud upload status for this project.',
@@ -271,7 +304,7 @@ const EN_COMMON_APP_TERMS = {
   aiSaveMessagesTitle: 'AI Save Messages',
   useAiAutoSaveMessagesLabel: 'Use AI auto save messages',
   aiConnectionLabel: 'Connection',
-  aiConnectedLabel: 'Connected',
+  aiConnectedLabel: 'AI connected',
   aiConnectProviderFirstLabel: 'Connect a provider first',
   modelLabel: 'Model',
   noneSelectedLabel: 'None selected',
@@ -296,6 +329,7 @@ const EN_COMMON_APP_TERMS = {
   connectAiDescription:
     'Use your own OpenAI or Anthropic API key for optional save drafts, natural language undo, file insight, and untracked review.',
   disconnectAiBtn: 'Disconnect',
+  cancelBtn: 'Cancel',
   providerLabel: 'Provider',
   apiKeyLabel: 'API key',
   connectingAiBtn: 'Connecting...',
@@ -339,6 +373,30 @@ const EN_COMMON_APP_TERMS = {
   weeklyPrevWeekLabel: 'Prev Week',
   weeklyNextWeekLabel: 'Next Week',
   weeklyCurrentWeekLabel: 'This Week',
+  linkProjectEyebrow: 'Link A Project',
+  linkChooseTitle: 'Choose a project folder',
+  linkPrepareTitle: 'Turn on change history',
+  linkWarningsTitle: 'Review folder warnings',
+  linkReviewTitle: 'Finish linking',
+  linkCloseLabel: 'Close link wizard',
+  linkSelectedFolderLabel: 'Selected folder',
+  linkChooseCopy:
+    'We will check whether this folder is ready for local save history before we link it.',
+  linkCheckingFolderBtn: 'Checking folder...',
+  linkChooseFolderBtn: 'Choose folder',
+  linkPrepareCopy:
+    'This folder is not using Git yet. Turning on change history keeps saves local and does not upload anything to GitHub.',
+  linkApproveInitBtn: 'Turn it on and continue',
+  linkWarningsCopy:
+    'We found files that may be better excluded before the project starts saving history.',
+  linkExcludeLabel: 'Exclude',
+  linkRecommendedExcludesLabel: 'Recommended excludes',
+  linkWarningReason: (_kind: ProjectWarningKind, reason: string) => reason,
+  linkFinishBtn: 'Finish linking',
+  linkReviewCopy:
+    'This folder is ready. We will register it and start local file watching right away.',
+  linkDetectedRemotesLabel: 'Detected remotes',
+  linkLinkingBtn: 'Linking project...',
   fileInsightTitle: 'File Insight',
   fileInsightConnectAiHint: 'Connect AI to use file insight.',
   fileInsightSelectFileHint: 'Click a file to view what it does and related files.',
@@ -358,7 +416,7 @@ const KO_COMMON_APP_TERMS = {
   aiSaveMessagesTitle: 'AI 저장 메시지',
   useAiAutoSaveMessagesLabel: 'AI 자동 저장 메시지 사용',
   aiConnectionLabel: 'AI 연결',
-  aiConnectedLabel: '연결됨',
+  aiConnectedLabel: 'AI 연결됨',
   aiConnectProviderFirstLabel: 'AI provider를 먼저 연결하세요',
   modelLabel: '모델',
   noneSelectedLabel: '선택 안 됨',
@@ -383,6 +441,7 @@ const KO_COMMON_APP_TERMS = {
   connectAiDescription:
     '사용자 AI provider 키로 저장 초안, 자연어 되돌리기, 파일 설명, 새 파일 검토를 사용할 수 있습니다.',
   disconnectAiBtn: '연결 해제',
+  cancelBtn: '취소',
   providerLabel: 'Provider',
   apiKeyLabel: 'API key',
   connectingAiBtn: '연결 중...',
@@ -420,6 +479,27 @@ const KO_COMMON_APP_TERMS = {
   weeklyPrevWeekLabel: '이전 주',
   weeklyNextWeekLabel: '다음 주',
   weeklyCurrentWeekLabel: '이번 주',
+  linkProjectEyebrow: '프로젝트 연결',
+  linkChooseTitle: '프로젝트 폴더 선택',
+  linkPrepareTitle: '변경 기록 켜기',
+  linkWarningsTitle: '폴더 경고 확인',
+  linkReviewTitle: '연결 마무리',
+  linkCloseLabel: '연결 마법사 닫기',
+  linkSelectedFolderLabel: '선택한 폴더',
+  linkChooseCopy: '연결하기 전에 이 폴더가 로컬 저장 기록을 사용할 준비가 됐는지 확인합니다.',
+  linkCheckingFolderBtn: '폴더 확인 중...',
+  linkChooseFolderBtn: '폴더 선택',
+  linkPrepareCopy:
+    '이 폴더는 아직 Git을 사용하지 않습니다. 변경 기록을 켜도 저장은 로컬에 남고 GitHub에는 업로드되지 않습니다.',
+  linkApproveInitBtn: '켜고 계속하기',
+  linkWarningsCopy: '저장 기록을 시작하기 전에 제외하는 편이 좋은 파일을 찾았습니다.',
+  linkExcludeLabel: '제외',
+  linkRecommendedExcludesLabel: '추천 제외 항목',
+  linkWarningReason: formatKoreanLinkWarning,
+  linkFinishBtn: '연결 완료',
+  linkReviewCopy: '이 폴더는 준비됐습니다. 등록 후 바로 로컬 파일 감시를 시작합니다.',
+  linkDetectedRemotesLabel: '감지된 remote',
+  linkLinkingBtn: '프로젝트 연결 중...',
   fileInsightTitle: '파일 설명',
   fileInsightConnectAiHint: '파일 설명을 사용하려면 AI를 연결하세요.',
   fileInsightSelectFileHint: '파일을 클릭하면 역할과 관련 파일을 볼 수 있습니다.',

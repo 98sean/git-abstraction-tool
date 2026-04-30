@@ -290,6 +290,7 @@
   border: 1px solid var(--wr-border);
   border-radius: 8px;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .wr-commit-header {

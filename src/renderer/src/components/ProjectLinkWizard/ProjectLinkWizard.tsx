@@ -1,4 +1,5 @@
 import { ProjectFolderInspection } from '../../types'
+import { useTerms } from '../../hooks/useTerms'
 import styles from './ProjectLinkWizard.module.css'
 
 interface Props {
@@ -41,6 +42,7 @@ export function ProjectLinkWizard({
   onCancel,
   onFinish
 }: Props): JSX.Element {
+  const t = useTerms()
   const currentStep = deriveStep(step, inspection)
 
   return (
@@ -53,15 +55,15 @@ export function ProjectLinkWizard({
       >
         <div className={styles.header}>
           <div>
-            <p className={styles.eyebrow}>Link A Project</p>
+            <p className={styles.eyebrow}>{t.linkProjectEyebrow}</p>
             <h2 id="project-link-wizard-title" className={styles.title}>
-              {currentStep === 'choose' && 'Choose a project folder'}
-              {currentStep === 'prepare' && 'Turn on change history'}
-              {currentStep === 'warnings' && 'Review folder warnings'}
-              {currentStep === 'review' && 'Finish linking'}
+              {currentStep === 'choose' && t.linkChooseTitle}
+              {currentStep === 'prepare' && t.linkPrepareTitle}
+              {currentStep === 'warnings' && t.linkWarningsTitle}
+              {currentStep === 'review' && t.linkReviewTitle}
             </h2>
           </div>
-          <button className={styles.closeButton} onClick={onCancel} aria-label="Close link wizard">
+          <button className={styles.closeButton} onClick={onCancel} aria-label={t.linkCloseLabel}>
             ×
           </button>
         </div>
@@ -70,7 +72,7 @@ export function ProjectLinkWizard({
 
         {folderPath && (
           <div className={styles.folderCard}>
-            <span className={styles.folderLabel}>{friendlyName || 'Selected folder'}</span>
+            <span className={styles.folderLabel}>{friendlyName || t.linkSelectedFolderLabel}</span>
             <span className={styles.folderPath}>{folderPath}</span>
           </div>
         )}
@@ -78,14 +80,14 @@ export function ProjectLinkWizard({
         {currentStep === 'choose' && (
           <div className={styles.section}>
             <p className={styles.copy}>
-              We will check whether this folder is ready for local save history before we link it.
+              {t.linkChooseCopy}
             </p>
             <button
               className={styles.primaryButton}
               onClick={onChooseFolder}
               disabled={loading || !onChooseFolder}
             >
-              {loading ? 'Checking folder...' : 'Choose folder'}
+              {loading ? t.linkCheckingFolderBtn : t.linkChooseFolderBtn}
             </button>
           </div>
         )}
@@ -93,15 +95,14 @@ export function ProjectLinkWizard({
         {currentStep === 'prepare' && inspection && (
           <div className={styles.section}>
             <p className={styles.copy}>
-              This folder is not using Git yet. Turning on change history keeps saves local and does
-              not upload anything to GitHub.
+              {t.linkPrepareCopy}
             </p>
             <div className={styles.buttonRow}>
               <button className={styles.secondaryButton} onClick={onCancel}>
-                Cancel
+                {t.cancelBtn}
               </button>
               <button className={styles.primaryButton} onClick={onApproveInit} disabled={loading}>
-                Turn it on and continue
+                {t.linkApproveInitBtn}
               </button>
             </div>
           </div>
@@ -110,14 +111,14 @@ export function ProjectLinkWizard({
         {currentStep === 'warnings' && inspection && (
           <div className={styles.section}>
             <p className={styles.copy}>
-              We found files that may be better excluded before the project starts saving history.
+              {t.linkWarningsCopy}
             </p>
             <ul className={styles.warningList}>
               {inspection.warnings.map((warning) => (
                 <li key={`${warning.kind}-${warning.path}`} className={styles.warningItem}>
                   <div>
                     <strong>{warning.path}</strong>
-                    <p>{warning.reason}</p>
+                    <p>{t.linkWarningReason(warning.kind, warning.reason)}</p>
                   </div>
                   {inspection.recommendedIgnoreEntries.includes(warning.path) && onToggleIgnoreEntry && (
                     <label className={styles.ignoreOption}>
@@ -126,7 +127,7 @@ export function ProjectLinkWizard({
                         checked={selectedIgnoreEntries.includes(warning.path)}
                         onChange={() => onToggleIgnoreEntry(warning.path)}
                       />
-                      Exclude
+                      {t.linkExcludeLabel}
                     </label>
                   )}
                 </li>
@@ -134,16 +135,16 @@ export function ProjectLinkWizard({
             </ul>
             {inspection.recommendedIgnoreEntries.length > 0 && (
               <div className={styles.recommendationBox}>
-                <span>Recommended excludes</span>
-                <code>{selectedIgnoreEntries.join(', ') || 'None selected'}</code>
+                <span>{t.linkRecommendedExcludesLabel}</span>
+                <code>{selectedIgnoreEntries.join(', ') || t.noneSelectedLabel}</code>
               </div>
             )}
             <div className={styles.buttonRow}>
               <button className={styles.secondaryButton} onClick={onCancel}>
-                Cancel
+                {t.cancelBtn}
               </button>
               <button className={styles.primaryButton} onClick={onFinish} disabled={loading}>
-                Finish linking
+                {t.linkFinishBtn}
               </button>
             </div>
           </div>
@@ -152,20 +153,20 @@ export function ProjectLinkWizard({
         {currentStep === 'review' && (
           <div className={styles.section}>
             <p className={styles.copy}>
-              This folder is ready. We will register it and start local file watching right away.
+              {t.linkReviewCopy}
             </p>
             {inspection && inspection.remotes.length > 0 && (
               <div className={styles.recommendationBox}>
-                <span>Detected remotes</span>
+                <span>{t.linkDetectedRemotesLabel}</span>
                 <code>{inspection.remotes.map((remote) => remote.name).join(', ')}</code>
               </div>
             )}
             <div className={styles.buttonRow}>
               <button className={styles.secondaryButton} onClick={onCancel}>
-                Cancel
+                {t.cancelBtn}
               </button>
               <button className={styles.primaryButton} onClick={onFinish} disabled={loading}>
-                {loading ? 'Linking project...' : 'Finish linking'}
+                {loading ? t.linkLinkingBtn : t.linkFinishBtn}
               </button>
             </div>
           </div>
