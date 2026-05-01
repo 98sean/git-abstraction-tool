@@ -38,7 +38,7 @@ describe('sidebar footer alignment', () => {
   })
 
   it('centers the Connect GitHub sidebar button content', () => {
-    render(<GitHubStatus connected={false} onConnect={vi.fn()} onDisconnect={vi.fn()} />)
+    render(<GitHubStatus connected={false} onClick={vi.fn()} />)
 
     expect(screen.getByRole('button', { name: /Connect GitHub/i }).className).toContain(
       githubStyles.sidebarStatusCentered
@@ -46,8 +46,10 @@ describe('sidebar footer alignment', () => {
   })
 
   it('centers the connected GitHub status label content', () => {
-    render(<GitHubStatus connected={true} onConnect={vi.fn()} onDisconnect={vi.fn()} />)
+    render(<GitHubStatus connected={true} onClick={vi.fn()} />)
 
-    expect(screen.getByText(/GitHub connected/i).className).toContain(githubStyles.connectedLabelCentered)
+    expect(screen.getByRole('button', { name: /GitHub connected/i }).className).toContain(
+      githubStyles.sidebarStatusCentered
+    )
   })
 })

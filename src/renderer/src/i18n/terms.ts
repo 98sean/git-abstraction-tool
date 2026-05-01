@@ -121,6 +121,14 @@ export interface AppTerms {
   modeLabelPro: string
   themeLabelLight: string
   themeLabelDark: string
+  conflictResolverTitle: string
+  conflictResolverDesc: string
+  keepMineBtn: string
+  keepTheirsBtn: string
+  resolvedLabel: string
+  abortMergeBtn: string
+  completeMergeBtn: string
+  conflictMergeCommitMessage: string
   aiSaveMessagesTitle: string
   useAiAutoSaveMessagesLabel: string
   aiConnectionLabel: string
@@ -323,6 +331,14 @@ const EN_COMMON_APP_TERMS = {
   modeLabelPro: 'Pro',
   themeLabelLight: 'Light',
   themeLabelDark: 'Dark',
+  conflictResolverTitle: 'Merge conflicts',
+  conflictResolverDesc: 'Choose which version to keep for each file, then complete the merge.',
+  keepMineBtn: 'Keep mine',
+  keepTheirsBtn: 'Keep theirs',
+  resolvedLabel: 'Resolved',
+  abortMergeBtn: 'Abort merge',
+  completeMergeBtn: 'Complete merge',
+  conflictMergeCommitMessage: 'Merge branch',
   aiSaveMessagesTitle: 'AI Save Messages',
   useAiAutoSaveMessagesLabel: 'Use AI auto save messages',
   aiConnectionLabel: 'Connection',
@@ -446,6 +462,14 @@ const KO_COMMON_APP_TERMS = {
   modeLabelPro: '전문 용어',
   themeLabelLight: '밝게',
   themeLabelDark: '어둡게',
+  conflictResolverTitle: '충돌 해결',
+  conflictResolverDesc: '각 파일에서 유지할 버전을 선택한 후 머지를 완료하세요.',
+  keepMineBtn: '내 버전 유지',
+  keepTheirsBtn: '상대 버전 유지',
+  resolvedLabel: '해결됨',
+  abortMergeBtn: '머지 취소',
+  completeMergeBtn: '머지 완료',
+  conflictMergeCommitMessage: '브랜치 머지',
   aiSaveMessagesTitle: 'AI 저장 메시지',
   useAiAutoSaveMessagesLabel: 'AI 자동 저장 메시지 사용',
   aiConnectionLabel: 'AI 연결',

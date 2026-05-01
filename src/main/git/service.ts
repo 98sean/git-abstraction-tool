@@ -816,6 +816,23 @@ export class GitService {
     }
   }
 
+  async resolveConflict(filePath: string, strategy: 'ours' | 'theirs'): Promise<void> {
+    try {
+      await this.git.raw(['checkout', `--${strategy}`, '--', filePath])
+      await this.git.add(filePath)
+    } catch (err) {
+      throw mapGitError(err)
+    }
+  }
+
+  async abortMerge(): Promise<void> {
+    try {
+      await this.git.raw(['merge', '--abort'])
+    } catch (err) {
+      throw mapGitError(err)
+    }
+  }
+
   async listTrackedFiles(): Promise<string[]> {
     try {
       const raw = await this.git.raw(['ls-files'])

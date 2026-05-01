@@ -319,6 +319,21 @@ export function registerGitHandlers(): void {
   )
 
   ipcMain.handle(
+    'git:conflict:resolve',
+    (_event, project_id: string, filePath: string, strategy: 'ours' | 'theirs') => {
+      const result = run(() => getGitService(project_id).resolveConflict(filePath, strategy))
+      invalidateCache(project_id)
+      return result
+    }
+  )
+
+  ipcMain.handle('git:conflict:abort', async (_event, project_id: string) => {
+    const result = await run(() => getGitService(project_id).abortMerge())
+    invalidateCache(project_id)
+    return result
+  })
+
+  ipcMain.handle(
     'git:log',
     (_event, project_id: string, limit?: number) =>
       run(() => getGitService(project_id).getLog(limit))

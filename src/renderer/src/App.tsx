@@ -34,6 +34,7 @@ import { PullUpdatesDialog } from './components/PullUpdatesDialog/PullUpdatesDia
 import { Sidebar } from './components/Sidebar/Sidebar'
 import { WeeklyReport } from './components/WeeklyReport'
 import { FloatingPanel } from './components/FloatingPanel/FloatingPanel'
+import { ConflictResolver } from './components/ConflictResolver/ConflictResolver'
 import { ToastContainer } from './components/shared/Toast'
 import {
   BranchCreateResult,
@@ -67,6 +68,7 @@ function Shell(): JSX.Element {
   const [showGitHubPanel, setShowGitHubPanel] = useState(false)
   const [showAiPanel, setShowAiPanel] = useState(false)
   const [showProjectSettingsPanel, setShowProjectSettingsPanel] = useState(false)
+  const [showConflictResolver, setShowConflictResolver] = useState(false)
   const [showWeeklyReport, setShowWeeklyReport] = useState(false)
   const [showAiConsentDialog, setShowAiConsentDialog] = useState(false)
   const [pendingDangerTarget, setPendingDangerTarget] = useState<ProjectCloudTarget | null>(null)
@@ -98,6 +100,7 @@ function Shell(): JSX.Element {
     setShowWeeklyReport(false)
     setProtectedBranch(null)
     setUploadHandoff(null)
+    setShowConflictResolver(false)
   }, [activeProjectId])
 
   const {
@@ -111,6 +114,12 @@ function Shell(): JSX.Element {
     unstageAll,
     revertFile
   } = useFileStatus(activeProjectId)
+
+  useEffect(() => {
+    if (status?.has_conflicts) {
+      setShowConflictResolver(true)
+    }
+  }, [status?.has_conflicts])
 
   const {
     branches,
@@ -370,6 +379,27 @@ function Shell(): JSX.Element {
 
     setCommitMessage('')
     setAiSuggestion(null)
+  }
+
+  const handleResolveConflict = async (filePath: string, strategy: 'ours' | 'theirs'): Promise<void> => {
+    if (!activeProjectId) return
+    await invokeGit('git:conflict:resolve', activeProjectId, filePath, strategy)
+    await fetchStatus()
+  }
+
+  const handleAbortMerge = async (): Promise<void> => {
+    if (!activeProjectId) return
+    await invokeGit('git:conflict:abort', activeProjectId)
+    await fetchStatus()
+    addToast(t.abortMergeBtn, 'info')
+  }
+
+  const handleCompleteMerge = async (message: string): Promise<void> => {
+    if (!activeProjectId || !status) return
+    const saved = await commit(message)
+    if (!saved) return
+    setShowConflictResolver(false)
+    addToast(t.committedToast, 'success')
   }
 
   const handleOpenGitHubDocs = (): void => {
@@ -823,6 +853,16 @@ function Shell(): JSX.Element {
               onCancelDeviceFlow={cancelDeviceFlow}
             />
           </FloatingPanel>
+        )}
+
+        {showConflictResolver && status?.has_conflicts && activeProjectId && (
+          <ConflictResolver
+            conflictedFiles={status.files.filter((f) => f.status === 'conflicted')}
+            onResolve={handleResolveConflict}
+            onAbort={handleAbortMerge}
+            onComplete={handleCompleteMerge}
+            onClose={() => setShowConflictResolver(false)}
+          />
         )}
 
         {showProjectSettingsPanel && activeProject && (
