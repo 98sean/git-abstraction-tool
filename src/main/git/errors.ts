@@ -54,7 +54,8 @@ const USER_MESSAGES: Record<GitErrorCode, string> = {
   BRANCH_DIVERGED:
     'Your branch and the cloud branch both changed. Get updates first, resolve the mismatch, or upload to a new branch; this app will not force push.',
   INVALID_BRANCH_NAME: 'Choose a valid branch name before continuing.',
-  BRANCH_EXISTS: 'A version with that name already exists.',
+  BRANCH_EXISTS:
+    'A branch with that name already exists. Use a different new branch name or choose existing branch mode.',
   BRANCH_NOT_FOUND: 'The requested version could not be found.',
   NOTHING_TO_COMMIT: 'There are no changes to save.',
   RESTORE_NO_CHANGES: 'That restore point already matches your current files.',

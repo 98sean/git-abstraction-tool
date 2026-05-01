@@ -192,14 +192,14 @@ Use **Upload to Cloud** after local changes are saved.
 
 - **Back up to my GitHub** creates an app-managed private backup repository and uses the `gat-backup` remote
 - **Upload work to a team repository** uses an explicitly selected collaboration remote and branch mode
-- **New branch upload** is the recommended team workflow because it lets GitHub review happen through a pull request
+- **New branch upload** is the recommended team workflow because it lets GitHub review happen through a pull request before `main` changes
 - **Default branch upload** is treated as dangerous and requires explicit confirmation
 
 The app does not automatically reuse `origin` for upload. A cloud target must be selected first.
 
 ### Get Updates
 
-Use **Get Updates** to inspect incoming remote commits before pulling.
+Use **Get Updates** to inspect incoming remote commits before pulling from the selected collaboration branch.
 
 The app previews commits and changed files when Git can report them cleanly. If pulling would create a conflict, the app reports the conflict instead of attempting automatic resolution.
 

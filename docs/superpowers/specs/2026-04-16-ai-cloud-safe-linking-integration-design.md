@@ -679,8 +679,14 @@ Before shipping major changes, manually verify:
 - select a file and load file insight
 - create an untracked file and run untracked review
 - configure team upload to a new branch
+- push the configured new branch to GitHub and confirm it appears without changing `main`
+- use the returned GitHub compare / pull request handoff link when available
+- configure team upload to an existing non-default branch and confirm push uses that exact branch
 - confirm default branch upload requires danger confirmation
-- preview incoming updates
+- confirm default branch upload can push only after explicit danger confirmation
+- preview incoming updates from the configured collaboration branch
+- verify that `Get Updates` does not claim to pull from `main` unless `main` is the selected collaboration branch
+- create a pull/merge conflict and confirm Smart Conflict Resolver appears
 - open weekly report with and without AI connected
 
 ## Optimization Targets
@@ -713,7 +719,16 @@ Optimization should preserve current user-visible behavior unless the change is 
 - Branch-name validation should run before saving the cloud target.
 - `non-fast-forward`, `fetch first`, and diverged branch errors should map to clearer user-facing messages.
 - The app should better explain that pushing to a new branch does not update `main` until PR/merge.
+- `Get Updates` should support explicitly choosing an update source, such as the team repository default branch, instead of only pulling from the configured collaboration upload branch.
 - AI-assisted conflict explanation and resolution should be a future feature, not automatic behavior.
+
+### Clone And Open Source Import
+
+- Add a `Clone from GitHub` entry point for both team repositories and open-source repositories.
+- The first version should only clone the URL into a user-chosen local folder and then run the normal safe project linking flow.
+- Cloned remotes should be detected but must not become upload targets automatically.
+- Open-source repositories should keep upstream as a read/update source and require an explicit fork or chosen upload target before pushing.
+- Team repositories and open-source repositories can share the same clone mechanics, but their recommended upload flows should diverge after linking.
 
 ### AI Tools
 

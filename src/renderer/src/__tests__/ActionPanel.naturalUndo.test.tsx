@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/react'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { ActionPanel } from '../components/ActionPanel/ActionPanel'
 
@@ -119,5 +121,15 @@ describe('ActionPanel natural undo flow', () => {
     )
 
     expect(screen.getByText(/AI connection required/i)).toBeTruthy()
+  })
+
+  it('keeps long natural undo results inside a scrollable result card', () => {
+    const css = readFileSync(
+      join(process.cwd(), 'src/renderer/src/components/ActionPanel/ActionPanel.module.css'),
+      'utf8'
+    )
+
+    expect(css).toMatch(/\.undoSuggestion\s*{[^}]*max-height:\s*min\(/s)
+    expect(css).toMatch(/\.undoSuggestion\s*{[^}]*overflow-y:\s*auto;/s)
   })
 })

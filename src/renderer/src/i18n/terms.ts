@@ -62,6 +62,8 @@ export interface AppTerms {
   deleteBranchConfirm: (name: string) => string
   deleteCurrentBranchConfirm: (name: string, fallback: string) => string
   protectedBranchMsg: (name: string) => string
+  branchMenuHelp: (protectedBranch: string) => string
+  branchAlreadyExistsMsg: (name: string) => string
   branchPlaceholder: string
   switchedBranchToast: (name: string) => string
   createdBranchToast: (name: string) => string
@@ -86,6 +88,7 @@ export interface AppTerms {
   themeToggleBtn: (nextTheme: 'light' | 'dark') => string
   dismissErrorLabel: string
   authFailedConnectLabel: string
+  gitErrorMessage: (code: string, fallback: string) => string
   aiSuggestBtn: string
   aiSuggestTitle: string
   aiDraftReady: string
@@ -151,6 +154,9 @@ export interface AppTerms {
   statusLabel: string
   privateBackupReadyLabel: string
   teamUploadReadyLabel: string
+  teamUploadReviewBranchStatus: (remoteName: string, branchName: string) => string
+  teamUploadExistingBranchStatus: (remoteName: string, branchName: string) => string
+  teamUploadDefaultBranchStatus: (remoteName: string, branchName: string) => string
   cloudBackupNotSetUpLabel: string
   defaultBranchLabel: string
   protectedBranchSuffix: string
@@ -160,6 +166,34 @@ export interface AppTerms {
   notChosenLabel: string
   setupCloudUploadBtn: string
   changeUploadTargetBtn: string
+  cloudSetupEyebrow: string
+  cloudSetupTitle: string
+  cloudSetupSafeTitle: string
+  closeCloudSetupLabel: string
+  backupIntentTitle: string
+  backupIntentCopy: string
+  teamIntentTitle: string
+  teamIntentCopy: string
+  backupSetupCopy: string
+  creatingBackupBtn: string
+  createPrivateBackupBtn: string
+  teamSetupCopy: string
+  teamRemoteLabel: string
+  noRemotesFoundLabel: string
+  createWorkBranchTitle: string
+  createWorkBranchCopy: string
+  existingBranchTitle: string
+  existingBranchCopy: string
+  showRiskyOptionBtn: string
+  defaultBranchUploadTitle: string
+  defaultBranchUploadCopy: string
+  workBranchNameLabel: string
+  uploadBranchNameLabel: string
+  workBranchPlaceholder: string
+  uploadBranchPlaceholder: string
+  workBranchHelpText: string
+  savingTargetBtn: string
+  saveTeamTargetBtn: string
   connectAiTitle: string
   connectAiDescription: string
   disconnectAiBtn: string
@@ -323,6 +357,54 @@ function formatKoreanLinkWarning(kind: ProjectWarningKind, reason: string): stri
   return reason
 }
 
+function formatEnglishGitError(code: string, fallback: string): string {
+  const messages: Record<string, string> = {
+    NOT_A_REPO: 'This folder is not a linked project. Please re-link it.',
+    NO_REMOTE: 'No cloud destination is set up for this project.',
+    DEFAULT_BRANCH_PROTECTED: 'Default branch upload requires danger-mode confirmation.',
+    AUTH_FAILED: 'Login failed. Please check your credentials in Settings.',
+    NETWORK_ERROR: 'Could not reach the cloud. Please check your internet connection.',
+    MERGE_CONFLICT: 'There is a version mismatch that needs to be resolved before continuing.',
+    UNCOMMITTED_CHANGES: 'Please save your current changes before switching.',
+    REMOTE_AHEAD:
+      'The cloud branch has newer work. Get updates first or upload to a new branch; this app will not force push.',
+    BRANCH_DIVERGED:
+      'Your branch and the cloud branch both changed. Get updates first, resolve the mismatch, or upload to a new branch; this app will not force push.',
+    INVALID_BRANCH_NAME: 'Choose a valid branch name before continuing.',
+    BRANCH_EXISTS:
+      'A branch with that name already exists. Use a different new branch name or choose existing branch mode.',
+    BRANCH_NOT_FOUND: 'The requested branch could not be found.',
+    NOTHING_TO_COMMIT: 'There are no changes to save.',
+    RESTORE_NO_CHANGES: 'That restore point already matches your current files.'
+  }
+
+  return messages[code] ?? fallback
+}
+
+function formatKoreanGitError(code: string, fallback: string): string {
+  const messages: Record<string, string> = {
+    NOT_A_REPO: '이 폴더는 아직 연결된 프로젝트가 아닙니다. 다시 연결하세요.',
+    NO_REMOTE: '이 프로젝트의 클라우드 업로드 대상이 아직 설정되지 않았습니다.',
+    DEFAULT_BRANCH_PROTECTED: 'default branch에 직접 올리려면 위험 옵션 확인이 필요합니다.',
+    AUTH_FAILED: '로그인에 실패했습니다. GitHub 연결 정보를 확인하세요.',
+    NETWORK_ERROR: '클라우드에 연결할 수 없습니다. 인터넷 연결을 확인하세요.',
+    MERGE_CONFLICT: '계속하기 전에 해결해야 하는 버전 충돌이 있습니다.',
+    UNCOMMITTED_CHANGES: 'branch를 바꾸기 전에 현재 변경사항을 먼저 저장하세요.',
+    REMOTE_AHEAD:
+      '클라우드 branch에 더 새로운 작업이 있습니다. 먼저 업데이트를 받거나 새 branch로 올리세요. 이 앱은 강제 push하지 않습니다.',
+    BRANCH_DIVERGED:
+      '내 branch와 클라우드 branch가 둘 다 변경되었습니다. 먼저 업데이트를 받고 충돌을 해결하거나 새 branch로 올리세요. 이 앱은 강제 push하지 않습니다.',
+    INVALID_BRANCH_NAME: '계속하기 전에 올바른 branch 이름을 입력하세요.',
+    BRANCH_EXISTS:
+      '이미 같은 이름의 branch가 있습니다. 다른 새 branch 이름을 쓰거나 기존 branch 모드를 선택하세요.',
+    BRANCH_NOT_FOUND: '요청한 branch를 찾을 수 없습니다.',
+    NOTHING_TO_COMMIT: '저장할 변경사항이 없습니다.',
+    RESTORE_NO_CHANGES: '현재 파일이 이미 그 복원 지점과 같습니다.'
+  }
+
+  return messages[code] ?? fallback
+}
+
 const EN_COMMON_APP_TERMS = {
   projectSettingsTitle: 'Project Settings',
   projectSettingsDescription: 'Review AI save-message options and cloud upload status for this project.',
@@ -351,6 +433,7 @@ const EN_COMMON_APP_TERMS = {
   conflictAiHinting: 'Analyzing…',
   conflictAiRecommendOurs: '→ keep yours',
   conflictAiRecommendTheirs: '→ keep incoming',
+  gitErrorMessage: formatEnglishGitError,
   aiSaveMessagesTitle: 'AI Save Messages',
   useAiAutoSaveMessagesLabel: 'Use AI auto save messages',
   aiConnectionLabel: 'Connection',
@@ -367,6 +450,12 @@ const EN_COMMON_APP_TERMS = {
   statusLabel: 'Status',
   privateBackupReadyLabel: 'Private backup ready',
   teamUploadReadyLabel: 'Team upload ready',
+  teamUploadReviewBranchStatus: (remoteName: string, branchName: string) =>
+    `Team upload: review branch ${branchName} on ${remoteName}. main is not updated.`,
+  teamUploadExistingBranchStatus: (remoteName: string, branchName: string) =>
+    `Team upload: existing branch ${branchName} on ${remoteName}.`,
+  teamUploadDefaultBranchStatus: (remoteName: string, branchName: string) =>
+    `Team upload: default branch ${branchName} on ${remoteName}.`,
   cloudBackupNotSetUpLabel: 'Cloud backup not set up yet',
   defaultBranchLabel: 'Default branch',
   protectedBranchSuffix: 'protected',
@@ -376,6 +465,36 @@ const EN_COMMON_APP_TERMS = {
   notChosenLabel: 'Not chosen',
   setupCloudUploadBtn: 'Set up cloud upload',
   changeUploadTargetBtn: 'Change upload target',
+  cloudSetupEyebrow: 'Upload To Cloud',
+  cloudSetupTitle: 'How should this project upload?',
+  cloudSetupSafeTitle: 'Choose a safe upload setup',
+  closeCloudSetupLabel: 'Close cloud setup',
+  backupIntentTitle: 'Back up to my GitHub',
+  backupIntentCopy: 'Create a new private backup repository that this app manages for you.',
+  teamIntentTitle: 'Upload work to a team repository',
+  teamIntentCopy: 'Create a review branch first so team work does not update main by accident.',
+  backupSetupCopy:
+    "We will create a new private GitHub repository and use it as this project's backup destination.",
+  creatingBackupBtn: 'Creating backup...',
+  createPrivateBackupBtn: 'Create private backup',
+  teamSetupCopy:
+    'Choose the exact remote and branch flow before sending work to the team repository.',
+  teamRemoteLabel: 'Team remote',
+  noRemotesFoundLabel: 'No remotes found',
+  createWorkBranchTitle: 'Create a review work branch',
+  createWorkBranchCopy: 'Recommended. Push a fresh branch first, then open GitHub for review.',
+  existingBranchTitle: 'Use an existing non-default branch',
+  existingBranchCopy: 'Choose a remote branch that is already safe for team uploads.',
+  showRiskyOptionBtn: 'Show risky option',
+  defaultBranchUploadTitle: 'Upload directly to the default branch',
+  defaultBranchUploadCopy: "This can update the team's main branch without review.",
+  workBranchNameLabel: 'Work branch name',
+  uploadBranchNameLabel: 'Branch name to upload',
+  workBranchPlaceholder: 'gat/my-update',
+  uploadBranchPlaceholder: 'main',
+  workBranchHelpText: 'Example: gat/login-fix. This does not update main until reviewed.',
+  savingTargetBtn: 'Saving target...',
+  saveTeamTargetBtn: 'Save team upload target',
   connectAiTitle: 'Connect AI save suggestions',
   connectAiDescription:
     'Use your own OpenAI or Anthropic API key for optional save drafts, natural language undo, file insight, and untracked review.',
@@ -488,6 +607,7 @@ const KO_COMMON_APP_TERMS = {
   conflictAiHinting: '분석 중…',
   conflictAiRecommendOurs: '→ 내 버전 추천',
   conflictAiRecommendTheirs: '→ 상대 버전 추천',
+  gitErrorMessage: formatKoreanGitError,
   aiSaveMessagesTitle: 'AI 저장 메시지',
   useAiAutoSaveMessagesLabel: 'AI 자동 저장 메시지 사용',
   aiConnectionLabel: 'AI 연결',
@@ -504,6 +624,12 @@ const KO_COMMON_APP_TERMS = {
   statusLabel: '상태',
   privateBackupReadyLabel: 'private 백업 준비됨',
   teamUploadReadyLabel: '팀 업로드 준비됨',
+  teamUploadReviewBranchStatus: (remoteName: string, branchName: string) =>
+    `팀 업로드: ${remoteName}의 리뷰용 branch ${branchName}. main은 아직 바뀌지 않습니다.`,
+  teamUploadExistingBranchStatus: (remoteName: string, branchName: string) =>
+    `팀 업로드: ${remoteName}의 기존 branch ${branchName}.`,
+  teamUploadDefaultBranchStatus: (remoteName: string, branchName: string) =>
+    `팀 업로드: ${remoteName}의 default branch ${branchName}.`,
   cloudBackupNotSetUpLabel: '클라우드 백업 미설정',
   defaultBranchLabel: '기본 branch',
   protectedBranchSuffix: '보호됨',
@@ -513,6 +639,34 @@ const KO_COMMON_APP_TERMS = {
   notChosenLabel: '선택 안 됨',
   setupCloudUploadBtn: '클라우드 업로드 설정',
   changeUploadTargetBtn: '업로드 대상 변경',
+  cloudSetupEyebrow: '클라우드 업로드',
+  cloudSetupTitle: '이 프로젝트를 어떻게 업로드할까요?',
+  cloudSetupSafeTitle: '안전한 업로드 방식 선택',
+  closeCloudSetupLabel: '클라우드 설정 닫기',
+  backupIntentTitle: '내 GitHub에 백업',
+  backupIntentCopy: '앱이 관리하는 private 백업 저장소를 새로 만듭니다.',
+  teamIntentTitle: '팀 repository에 작업 올리기',
+  teamIntentCopy: '팀에 바로 반영하지 않고 리뷰용 작업 branch를 먼저 만듭니다.',
+  backupSetupCopy: '새 private GitHub repository를 만들고 이 프로젝트의 백업 대상으로 사용합니다.',
+  creatingBackupBtn: '백업 생성 중...',
+  createPrivateBackupBtn: 'private 백업 만들기',
+  teamSetupCopy: '업로드 전에 어떤 remote와 branch 흐름을 사용할지 명확히 선택합니다.',
+  teamRemoteLabel: '팀 remote',
+  noRemotesFoundLabel: '감지된 remote 없음',
+  createWorkBranchTitle: '리뷰용 작업 branch 만들기',
+  createWorkBranchCopy: '추천. 새 branch를 push한 뒤 GitHub에서 리뷰를 요청합니다.',
+  existingBranchTitle: '기존 non-default branch 사용',
+  existingBranchCopy: '팀 업로드용으로 이미 준비된 branch를 선택합니다.',
+  showRiskyOptionBtn: '위험 옵션 보기',
+  defaultBranchUploadTitle: 'default branch에 직접 업로드',
+  defaultBranchUploadCopy: '리뷰 없이 팀 main branch가 바뀔 수 있습니다.',
+  workBranchNameLabel: '작업 branch 이름',
+  uploadBranchNameLabel: '업로드할 branch 이름',
+  workBranchPlaceholder: 'gat/my-update',
+  uploadBranchPlaceholder: 'main',
+  workBranchHelpText: '예: gat/login-fix. 리뷰 전까지 main에는 반영되지 않습니다.',
+  savingTargetBtn: '대상 저장 중...',
+  saveTeamTargetBtn: '팀 업로드 대상 저장',
   connectAiTitle: 'AI 연결',
   connectAiDescription:
     '사용자 AI provider 키로 저장 초안, 자연어 되돌리기, 파일 설명, 새 파일 검토를 사용할 수 있습니다.',
@@ -651,6 +805,10 @@ const EN_PRO: AppTerms = {
   deleteCurrentBranchConfirm: (name, fallback) =>
     `Delete current branch "${name}"?\n\nYou are currently on "${name}", so the app will switch to "${fallback}" first and then delete "${name}".\nProceed?`,
   protectedBranchMsg: (name) => `The "${name}" branch is protected and cannot be deleted.`,
+  branchMenuHelp: (protectedBranch) =>
+    `${protectedBranch} is protected and cannot be deleted. Other branches can be merged or deleted when Git allows it.`,
+  branchAlreadyExistsMsg: (name) =>
+    `The "${name}" branch already exists. Use a different name or choose existing branch mode.`,
   branchPlaceholder: 'branch-name',
   switchedBranchToast: (name) => `Switched to branch "${name}"`,
   createdBranchToast: (name) => `Created and switched to "${name}"`,
@@ -762,6 +920,10 @@ const EN_NEWBIE: AppTerms = {
   deleteCurrentBranchConfirm: (name, fallback) =>
     `Delete current version "${name}"?\n\nYou are currently on "${name}", so the app will switch to "${fallback}" first and then delete "${name}".\nProceed?`,
   protectedBranchMsg: (name) => `"${name}" is protected and cannot be deleted.`,
+  branchMenuHelp: (protectedBranch) =>
+    `${protectedBranch} is protected and cannot be deleted. Other versions can be merged or deleted when Git allows it.`,
+  branchAlreadyExistsMsg: (name) =>
+    `The "${name}" version already exists. Use a different name or choose existing version mode.`,
   branchPlaceholder: 'version-name',
   switchedBranchToast: (name) => `Switched to version "${name}"`,
   createdBranchToast: (name) => `Created and switched to "${name}"`,
@@ -873,6 +1035,10 @@ const KO_NEWBIE: AppTerms = {
   deleteCurrentBranchConfirm: (name, fallback) =>
     `현재 버전 "${name}"을 삭제할까요?\n\n지금 "${name}"을 사용 중이므로 앱이 먼저 "${fallback}"으로 이동한 뒤 "${name}"을 삭제합니다.\n진행할까요?`,
   protectedBranchMsg: (name) => `"${name}"은 보호되어 삭제할 수 없습니다.`,
+  branchMenuHelp: (protectedBranch) =>
+    `${protectedBranch}은 보호되어 삭제할 수 없습니다. 다른 버전은 Git이 허용할 때 합치거나 삭제할 수 있습니다.`,
+  branchAlreadyExistsMsg: (name) =>
+    `"${name}" 버전이 이미 있습니다. 다른 이름을 쓰거나 기존 버전 모드를 선택하세요.`,
   branchPlaceholder: 'version-name',
   switchedBranchToast: (name) => `"${name}" 버전으로 이동했습니다`,
   createdBranchToast: (name) => `"${name}" 버전을 만들고 이동했습니다`,
@@ -984,6 +1150,10 @@ const KO_PRO: AppTerms = {
   deleteCurrentBranchConfirm: (name, fallback) =>
     `현재 브랜치 "${name}"을 삭제할까요?\n\n지금 "${name}"에 있으므로 앱이 먼저 "${fallback}"으로 전환한 뒤 "${name}"을 삭제합니다.\n진행할까요?`,
   protectedBranchMsg: (name) => `"${name}" 브랜치는 보호되어 삭제할 수 없습니다.`,
+  branchMenuHelp: (protectedBranch) =>
+    `${protectedBranch}은 보호되어 삭제할 수 없습니다. 다른 branch는 Git이 허용할 때 merge하거나 삭제할 수 있습니다.`,
+  branchAlreadyExistsMsg: (name) =>
+    `"${name}" branch가 이미 있습니다. 다른 이름을 쓰거나 기존 branch 모드를 선택하세요.`,
   branchPlaceholder: 'branch-name',
   switchedBranchToast: (name) => `"${name}" 브랜치로 전환했습니다`,
   createdBranchToast: (name) => `"${name}" 브랜치를 만들고 전환했습니다`,

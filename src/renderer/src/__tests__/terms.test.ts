@@ -21,4 +21,12 @@ describe('getTerms', () => {
     expect(terms.branchLabel).toBe('branch')
     expect(terms.stageAll).toContain('stage')
   })
+
+  it('localizes git error messages in Korean mode', () => {
+    const terms = getTerms('ko', 'pro')
+
+    expect(terms.gitErrorMessage('BRANCH_EXISTS', 'A branch with that name already exists.')).toContain(
+      '이미 같은 이름의 branch'
+    )
+  })
 })

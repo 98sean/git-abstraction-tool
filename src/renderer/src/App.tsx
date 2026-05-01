@@ -801,6 +801,7 @@ function Shell(): JSX.Element {
             branchMode={cloudSetup.branchMode}
             selectedRemoteName={cloudSetup.selectedRemoteName}
             selectedBranch={cloudSetup.selectedBranch}
+            existingBranchNames={branches.map((branch) => branch.name)}
             onChooseIntent={cloudSetup.chooseIntent}
             onClose={cloudSetup.close}
             onCreateBackup={cloudSetup.createBackup}
