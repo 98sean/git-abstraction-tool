@@ -402,6 +402,17 @@ function Shell(): JSX.Element {
     addToast(t.committedToast, 'success')
   }
 
+  const handleSuggestMergeMessage = async (): Promise<{ message: string }> => {
+    const suggestion = await invokeDb<AiCommitSuggestion>('ai:commit-suggestion', activeProjectId)
+    return { message: suggestion.message }
+  }
+
+  const handleAnalyzeConflict = async (
+    filePath: string
+  ): Promise<{ hint: string; recommendation: 'ours' | 'theirs' | 'either' }> => {
+    return await invokeDb('ai:conflict:analyze', activeProjectId, filePath)
+  }
+
   const handleOpenGitHubDocs = (): void => {
     invokeDb('shell:openExternal', 'https://github.com/settings/tokens').catch(console.error)
   }
@@ -858,10 +869,13 @@ function Shell(): JSX.Element {
         {showConflictResolver && status?.has_conflicts && activeProjectId && (
           <ConflictResolver
             conflictedFiles={status.files.filter((f) => f.status === 'conflicted')}
+            aiEnabled={manualAiToolsEnabled}
             onResolve={handleResolveConflict}
             onAbort={handleAbortMerge}
             onComplete={handleCompleteMerge}
             onClose={() => setShowConflictResolver(false)}
+            onSuggestMessage={manualAiToolsEnabled ? handleSuggestMergeMessage : undefined}
+            onAnalyzeFile={manualAiToolsEnabled ? handleAnalyzeConflict : undefined}
           />
         )}
 

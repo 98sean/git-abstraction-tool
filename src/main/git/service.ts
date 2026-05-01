@@ -816,6 +816,18 @@ export class GitService {
     }
   }
 
+  async getConflictVersions(filePath: string): Promise<{ ours: string; theirs: string }> {
+    try {
+      const [ours, theirs] = await Promise.all([
+        this.git.raw(['show', `:2:${filePath}`]).catch(() => ''),
+        this.git.raw(['show', `:3:${filePath}`]).catch(() => '')
+      ])
+      return { ours, theirs }
+    } catch (err) {
+      throw mapGitError(err)
+    }
+  }
+
   async resolveConflict(filePath: string, strategy: 'ours' | 'theirs'): Promise<void> {
     try {
       await this.git.raw(['checkout', `--${strategy}`, '--', filePath])

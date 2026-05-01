@@ -129,6 +129,12 @@ export interface AppTerms {
   abortMergeBtn: string
   completeMergeBtn: string
   conflictMergeCommitMessage: string
+  conflictAiSuggestBtn: string
+  conflictAiSuggesting: string
+  conflictAiHintBtn: string
+  conflictAiHinting: string
+  conflictAiRecommendOurs: string
+  conflictAiRecommendTheirs: string
   aiSaveMessagesTitle: string
   useAiAutoSaveMessagesLabel: string
   aiConnectionLabel: string
@@ -339,6 +345,12 @@ const EN_COMMON_APP_TERMS = {
   abortMergeBtn: 'Abort merge',
   completeMergeBtn: 'Complete merge',
   conflictMergeCommitMessage: 'Merge branch',
+  conflictAiSuggestBtn: 'Suggest message',
+  conflictAiSuggesting: 'Suggesting…',
+  conflictAiHintBtn: 'AI hint',
+  conflictAiHinting: 'Analyzing…',
+  conflictAiRecommendOurs: '→ keep yours',
+  conflictAiRecommendTheirs: '→ keep incoming',
   aiSaveMessagesTitle: 'AI Save Messages',
   useAiAutoSaveMessagesLabel: 'Use AI auto save messages',
   aiConnectionLabel: 'Connection',
@@ -470,6 +482,12 @@ const KO_COMMON_APP_TERMS = {
   abortMergeBtn: '머지 취소',
   completeMergeBtn: '머지 완료',
   conflictMergeCommitMessage: '브랜치 머지',
+  conflictAiSuggestBtn: '메시지 추천',
+  conflictAiSuggesting: '추천 중…',
+  conflictAiHintBtn: 'AI 힌트',
+  conflictAiHinting: '분석 중…',
+  conflictAiRecommendOurs: '→ 내 버전 추천',
+  conflictAiRecommendTheirs: '→ 상대 버전 추천',
   aiSaveMessagesTitle: 'AI 저장 메시지',
   useAiAutoSaveMessagesLabel: 'AI 자동 저장 메시지 사용',
   aiConnectionLabel: 'AI 연결',

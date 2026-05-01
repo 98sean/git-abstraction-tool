@@ -6,6 +6,7 @@ import { createAiService } from '../ai/service'
 import { AiOutputLanguage, AiProviderName } from '../ai/types'
 import { generateNaturalUndoSuggestion } from '../ai/naturalUndoService'
 import { reviewUntrackedFiles } from '../ai/untrackedReviewService'
+import { buildConflictAnalysisPrompts, finalizeConflictHint } from '../ai/conflictAnalysis'
 import { generateWeeklySummary } from '../ai/weeklySummaryService'
 import {
   AiConnectionState,
@@ -27,6 +28,7 @@ import { listProjects } from '../db/projects'
 import { getGitService } from '../git'
 import { GitWeeklyService } from '../git/weekly-service'
 import { registerAiConnectionHandlers } from './aiConnectionHandlers'
+import { registerAiConflictHandlers } from './aiConflictHandlers'
 import { registerAiManualToolHandlers } from './aiManualToolHandlers'
 import { registerAiSaveHandlers } from './aiSaveHandlers'
 import { registerAiWeeklyHandlers } from './aiWeeklyHandlers'
@@ -227,6 +229,40 @@ export function registerAiHandlers(): void {
       gitService: service,
       manualToolService
     })
+    }
+  })
+
+  registerAiConflictHandlers({
+    analyzeConflict: async (project_id: string, filePath: string) => {
+      const connectionState = getAiConnectionState()
+      const apiKey = getAiApiKey()
+
+      if (!connectionState.provider || !connectionState.selected_model || !apiKey) {
+        throw new Error('Connect AI to analyze conflicts.')
+      }
+
+      if (typeof aiService.generateStructured !== 'function') {
+        throw new Error('The current AI connection does not support conflict analysis.')
+      }
+
+      const { ours, theirs } = await getGitService(project_id).getConflictVersions(filePath)
+      const { systemPrompt, userPrompt } = buildConflictAnalysisPrompts(
+        filePath,
+        ours,
+        theirs,
+        getAiOutputLanguage()
+      )
+
+      const payload = await aiService.generateStructured({
+        provider: connectionState.provider,
+        apiKey,
+        model: connectionState.selected_model,
+        systemPrompt,
+        userPrompt,
+        timeoutMs: 15000
+      })
+
+      return finalizeConflictHint(payload)
     }
   })
 

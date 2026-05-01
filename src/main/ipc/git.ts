@@ -318,6 +318,10 @@ export function registerGitHandlers(): void {
     run(() => getGitService(project_id).revertFile(path))
   )
 
+  ipcMain.handle('git:conflict:versions', (_event, project_id: string, filePath: string) =>
+    run(() => getGitService(project_id).getConflictVersions(filePath))
+  )
+
   ipcMain.handle(
     'git:conflict:resolve',
     (_event, project_id: string, filePath: string, strategy: 'ours' | 'theirs') => {
