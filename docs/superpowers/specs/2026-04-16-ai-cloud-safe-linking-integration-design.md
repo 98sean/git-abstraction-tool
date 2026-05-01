@@ -713,6 +713,7 @@ Optimization should preserve current user-visible behavior unless the change is 
 - Branch-name validation should run before saving the cloud target.
 - `non-fast-forward`, `fetch first`, and diverged branch errors should map to clearer user-facing messages.
 - The app should better explain that pushing to a new branch does not update `main` until PR/merge.
+- `Get Updates` should support explicitly choosing an update source, such as the team repository default branch, instead of only pulling from the configured collaboration upload branch.
 - AI-assisted conflict explanation and resolution should be a future feature, not automatic behavior.
 
 ### AI Tools
