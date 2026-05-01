@@ -85,6 +85,7 @@ export interface AppTerms {
   settingsBtn: string
   themeToggleBtn: (nextTheme: 'light' | 'dark') => string
   dismissErrorLabel: string
+  authFailedConnectLabel: string
   aiSuggestBtn: string
   aiSuggestTitle: string
   aiDraftReady: string
@@ -110,10 +111,21 @@ export interface AppTerms {
   projectSettingsTitle: string
   projectSettingsDescription: string
   closeProjectSettingsLabel: string
+  closeAiConnectionLabel: string
+  closeWeeklyReportLabel: string
+  closeGitHubPanelLabel: string
+  gitHubConnectedLabel: string
+  gitHubConnectedDescription: string
+  disconnectGitHubBtn: string
+  modeLabelNewbie: string
+  modeLabelPro: string
+  themeLabelLight: string
+  themeLabelDark: string
   aiSaveMessagesTitle: string
   useAiAutoSaveMessagesLabel: string
   aiConnectionLabel: string
   aiConnectedLabel: string
+  aiConnectedDescription: string
   aiConnectProviderFirstLabel: string
   modelLabel: string
   noneSelectedLabel: string
@@ -301,10 +313,21 @@ const EN_COMMON_APP_TERMS = {
   projectSettingsTitle: 'Project Settings',
   projectSettingsDescription: 'Review AI save-message options and cloud upload status for this project.',
   closeProjectSettingsLabel: 'Close project settings',
+  closeAiConnectionLabel: 'Close AI connection panel',
+  closeWeeklyReportLabel: 'Close weekly report',
+  closeGitHubPanelLabel: 'Close GitHub panel',
+  gitHubConnectedLabel: 'GitHub connected',
+  gitHubConnectedDescription: 'Your account is linked to GitHub.',
+  disconnectGitHubBtn: 'Disconnect GitHub',
+  modeLabelNewbie: 'Newbie',
+  modeLabelPro: 'Pro',
+  themeLabelLight: 'Light',
+  themeLabelDark: 'Dark',
   aiSaveMessagesTitle: 'AI Save Messages',
   useAiAutoSaveMessagesLabel: 'Use AI auto save messages',
   aiConnectionLabel: 'Connection',
   aiConnectedLabel: 'AI connected',
+  aiConnectedDescription: 'Your AI provider is connected and ready.',
   aiConnectProviderFirstLabel: 'Connect a provider first',
   modelLabel: 'Model',
   noneSelectedLabel: 'None selected',
@@ -413,10 +436,21 @@ const KO_COMMON_APP_TERMS = {
   projectSettingsTitle: '프로젝트 설정',
   projectSettingsDescription: '이 프로젝트의 AI 저장 메시지와 클라우드 업로드 상태를 확인합니다.',
   closeProjectSettingsLabel: '프로젝트 설정 닫기',
+  closeAiConnectionLabel: 'AI 연결 패널 닫기',
+  closeWeeklyReportLabel: '주간 리포트 닫기',
+  closeGitHubPanelLabel: 'GitHub 패널 닫기',
+  gitHubConnectedLabel: 'GitHub 연결됨',
+  gitHubConnectedDescription: '계정이 GitHub에 연결되어 있습니다.',
+  disconnectGitHubBtn: 'GitHub 연결 해제',
+  modeLabelNewbie: '쉬운 말',
+  modeLabelPro: '전문 용어',
+  themeLabelLight: '밝게',
+  themeLabelDark: '어둡게',
   aiSaveMessagesTitle: 'AI 저장 메시지',
   useAiAutoSaveMessagesLabel: 'AI 자동 저장 메시지 사용',
   aiConnectionLabel: 'AI 연결',
   aiConnectedLabel: 'AI 연결됨',
+  aiConnectedDescription: 'AI provider가 연결되어 있습니다.',
   aiConnectProviderFirstLabel: 'AI provider를 먼저 연결하세요',
   modelLabel: '모델',
   noneSelectedLabel: '선택 안 됨',
@@ -598,6 +632,7 @@ const EN_PRO: AppTerms = {
   settingsBtn: 'Settings',
   themeToggleBtn: (nextTheme) => (nextTheme === 'dark' ? 'Dark mode' : 'Light mode'),
   dismissErrorLabel: 'Dismiss error',
+  authFailedConnectLabel: 'Connect GitHub →',
   aiSuggestBtn: 'AI Suggest',
   aiSuggestTitle: 'Use AI to suggest a save message',
   aiDraftReady: 'AI drafted a save message. Review it, then click Commit again.',
@@ -708,6 +743,7 @@ const EN_NEWBIE: AppTerms = {
   settingsBtn: 'Settings',
   themeToggleBtn: (nextTheme) => (nextTheme === 'dark' ? 'Dark mode' : 'Light mode'),
   dismissErrorLabel: 'Dismiss error',
+  authFailedConnectLabel: 'Connect GitHub →',
   aiSuggestBtn: 'AI Suggest',
   aiSuggestTitle: 'Use AI to suggest a save message',
   aiDraftReady: 'AI drafted a save message. Review it, then click Save Progress again.',
@@ -818,6 +854,7 @@ const KO_NEWBIE: AppTerms = {
   settingsBtn: '설정',
   themeToggleBtn: (nextTheme) => (nextTheme === 'dark' ? '다크 모드' : '라이트 모드'),
   dismissErrorLabel: '오류 닫기',
+  authFailedConnectLabel: 'GitHub 연결 →',
   aiSuggestBtn: 'AI 제안',
   aiSuggestTitle: 'AI로 저장 메시지 제안 받기',
   aiDraftReady: 'AI가 저장 메시지를 작성했습니다. 검토한 뒤 진행 상황 저장을 다시 누르세요.',
@@ -928,6 +965,7 @@ const KO_PRO: AppTerms = {
   settingsBtn: '설정',
   themeToggleBtn: (nextTheme) => (nextTheme === 'dark' ? '다크 모드' : '라이트 모드'),
   dismissErrorLabel: '오류 닫기',
+  authFailedConnectLabel: 'GitHub 연결 →',
   aiSuggestBtn: 'AI 제안',
   aiSuggestTitle: 'AI로 커밋 메시지 제안 받기',
   aiDraftReady: 'AI가 커밋 메시지를 작성했습니다. 검토한 뒤 커밋을 다시 누르세요.',

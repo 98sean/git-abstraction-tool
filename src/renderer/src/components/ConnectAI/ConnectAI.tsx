@@ -9,6 +9,7 @@ interface Props {
   onDisconnect: () => Promise<void> | void
   onOpenProviderDocs: (provider: AiProvider) => void
   onSelectModel: (model: string) => Promise<void> | void
+  onClose: () => void
 }
 
 export function ConnectAI({
@@ -16,7 +17,8 @@ export function ConnectAI({
   onConnect,
   onDisconnect,
   onOpenProviderDocs,
-  onSelectModel
+  onSelectModel,
+  onClose
 }: Props): JSX.Element {
   const t = useTerms()
   const [provider, setProvider] = useState<AiProvider>(connectionStatus.provider ?? 'openai')
@@ -48,16 +50,10 @@ export function ConnectAI({
     <section className={styles.panel}>
       <div className={styles.header}>
         <div>
-          <h2 className={styles.title}>{t.connectAiTitle}</h2>
-          <p className={styles.description}>
-            {t.connectAiDescription}
-          </p>
+          <div className={styles.title}>{isConnected ? t.aiConnectedLabel : t.connectAiTitle}</div>
+          <div className={styles.description}>{isConnected ? t.aiConnectedDescription : t.connectAiDescription}</div>
         </div>
-        {isConnected && (
-          <button className={styles.disconnectBtn} onClick={() => onDisconnect()}>
-            {t.disconnectAiBtn}
-          </button>
-        )}
+        <button className={styles.closeBtn} onClick={onClose} aria-label={t.closeAiConnectionLabel}>×</button>
       </div>
 
       {!isConnected ? (
@@ -125,6 +121,9 @@ export function ConnectAI({
 
           <button className={styles.docsBtn} onClick={() => onOpenProviderDocs(provider)}>
             {t.viewProviderDocsBtn}
+          </button>
+          <button className={styles.disconnectBtn} onClick={() => onDisconnect()}>
+            {t.disconnectAiBtn}
           </button>
         </div>
       )}

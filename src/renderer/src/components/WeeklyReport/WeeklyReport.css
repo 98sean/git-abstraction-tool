@@ -16,6 +16,32 @@
 }
 /* [data-theme='dark'] 별도 선언 불필요 — 앱의 CSS 변수가 테마에 따라 자동 변경됨 */
 
+/* ─── 헤더 (닫기 버튼) ─────────────────────────────────────────────────────── */
+.wr-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.wr-close-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--wr-border);
+  border-radius: 999px;
+  background: var(--wr-surface);
+  color: var(--wr-text-muted);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 2px;
+  cursor: pointer;
+}
+
+.wr-close-btn:hover {
+  border-color: var(--wr-accent);
+  color: var(--wr-text);
+}
+
 /* ─── 컨테이너 ─────────────────────────────────────────────────────────────── */
 .wr-container {
   display: flex;

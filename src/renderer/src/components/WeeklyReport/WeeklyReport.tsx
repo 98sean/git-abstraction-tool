@@ -17,6 +17,7 @@ import './WeeklyReport.css'
 interface Props {
   projectId: string | null
   aiConnection: AiConnectionState
+  onClose: () => void
 }
 
 const CONVENTIONAL_RE = /^(?:feat|fix|chore|docs|style|refactor|test|build|ci|perf)(?:\([^)]+\))?:\s*/i
@@ -98,7 +99,7 @@ function WeeklyTextSummary({
   )
 }
 
-export function WeeklyReport({ projectId, aiConnection }: Props): React.JSX.Element {
+export function WeeklyReport({ projectId, aiConnection, onClose }: Props): React.JSX.Element {
   const t = useTerms()
   const { report, loading, error, startDate, endDate, navigatePrev, navigateNext, isCurrentWeek } =
     useWeeklyReport(projectId)
@@ -123,6 +124,9 @@ export function WeeklyReport({ projectId, aiConnection }: Props): React.JSX.Elem
 
   return (
     <div className="wr-container">
+      <div className="wr-header">
+        <button className="wr-close-btn" onClick={onClose} aria-label={t.closeWeeklyReportLabel}>×</button>
+      </div>
       <WeekNavigator
         startDate={startDate}
         endDate={endDate}

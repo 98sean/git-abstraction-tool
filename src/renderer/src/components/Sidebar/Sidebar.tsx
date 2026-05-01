@@ -106,23 +106,56 @@ export function Sidebar({
         {githubSlot}
         {aiSlot}
         {mode && onToggleMode && (
-          <button className={styles.modeBtn} onClick={onToggleMode}>
-            {t.modeToggleBtn(mode === 'pro' ? 'newbie' : 'pro')}
-          </button>
+          <div className={styles.segmented}>
+            <button
+              className={`${styles.segOption} ${mode === 'newbie' ? styles.segActive : ''}`}
+              onClick={mode !== 'newbie' ? onToggleMode : undefined}
+            >
+              {t.modeLabelNewbie}
+            </button>
+            <button
+              className={`${styles.segOption} ${mode === 'pro' ? styles.segActive : ''}`}
+              onClick={mode !== 'pro' ? onToggleMode : undefined}
+            >
+              {t.modeLabelPro}
+            </button>
+          </div>
         )}
         {language && onToggleLanguage && (
-          <button className={styles.languageBtn} onClick={onToggleLanguage}>
-            {t.languageToggleBtn(language === 'ko' ? 'en' : 'ko')}
-          </button>
+          <div className={styles.segmented}>
+            <button
+              className={`${styles.segOption} ${language === 'en' ? styles.segActive : ''}`}
+              onClick={language !== 'en' ? onToggleLanguage : undefined}
+            >
+              EN
+            </button>
+            <button
+              className={`${styles.segOption} ${language === 'ko' ? styles.segActive : ''}`}
+              onClick={language !== 'ko' ? onToggleLanguage : undefined}
+            >
+              KO
+            </button>
+          </div>
         )}
         {onOpenSettings && (
           <button className={styles.settingsBtn} onClick={onOpenSettings}>
             {t.settingsBtn}
           </button>
         )}
-        <button className={styles.themeBtn} onClick={onToggleTheme}>
-          {t.themeToggleBtn(theme === 'light' ? 'dark' : 'light')}
-        </button>
+        <div className={styles.segmented}>
+          <button
+            className={`${styles.segOption} ${theme === 'light' ? styles.segActive : ''}`}
+            onClick={theme !== 'light' ? onToggleTheme : undefined}
+          >
+            {t.themeLabelLight}
+          </button>
+          <button
+            className={`${styles.segOption} ${theme === 'dark' ? styles.segActive : ''}`}
+            onClick={theme !== 'dark' ? onToggleTheme : undefined}
+          >
+            {t.themeLabelDark}
+          </button>
+        </div>
       </div>
     </aside>
   )

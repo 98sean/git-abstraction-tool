@@ -1,8 +1,11 @@
 .panel {
-  padding: 14px 16px;
-  border-top: 1px solid var(--border);
-  background: color-mix(in srgb, var(--info) 6%, var(--bg));
-  border-left: 3px solid var(--info);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg);
 }
 
 .title {
@@ -156,6 +159,54 @@
 }
 .cancelBtn:hover { border-color: var(--error, #e53e3e); color: var(--error, #e53e3e); }
 
+/* Panel header (connected state) */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.closeBtn {
+  align-self: flex-start;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 2px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.closeBtn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* Disconnect button inside the connected panel */
+.disconnectBtn {
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all var(--transition);
+  cursor: pointer;
+}
+.disconnectBtn:hover {
+  border-color: var(--error);
+  color: var(--error);
+}
+
 /* Sidebar footer variant */
 .sidebarStatus {
   display: flex;
@@ -169,6 +220,7 @@
   width: 100%;
   color: var(--text-muted);
   transition: all var(--transition);
+  cursor: pointer;
 }
 .sidebarStatus:hover {
   border-color: var(--accent);
@@ -179,41 +231,13 @@
   justify-content: center;
 }
 
-/* Connected state: status row + separate disconnect button */
-.connectedRow {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.connectedRow .sidebarStatus {
-  border-color: var(--success);
+.connectedStatus {
+  border-color: color-mix(in srgb, var(--success) 50%, var(--border) 50%);
   color: var(--success);
-  cursor: default;
-  pointer-events: none;
 }
-
-.connectedLabel {
-  min-width: 0;
-}
-
-.connectedLabelCentered {
-  text-align: center;
-}
-
-.disconnectBtn {
-  width: 100%;
-  padding: 5px 12px;
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  font-size: 11px;
-  color: var(--text-muted);
-  transition: all var(--transition);
-}
-.disconnectBtn:hover {
-  border-color: var(--error);
-  color: var(--error);
+.connectedStatus:hover {
+  border-color: var(--accent);
+  color: var(--text);
 }
 
 .dot {

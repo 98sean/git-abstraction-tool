@@ -33,6 +33,7 @@ import { ProjectSettingsPanel } from './components/ProjectSettingsPanel/ProjectS
 import { PullUpdatesDialog } from './components/PullUpdatesDialog/PullUpdatesDialog'
 import { Sidebar } from './components/Sidebar/Sidebar'
 import { WeeklyReport } from './components/WeeklyReport'
+import { FloatingPanel } from './components/FloatingPanel/FloatingPanel'
 import { ToastContainer } from './components/shared/Toast'
 import {
   BranchCreateResult,
@@ -582,11 +583,10 @@ function Shell(): JSX.Element {
           githubSlot={
             <GitHubStatus
               connected={tokenExists === true}
-              onConnect={() => {
+              onClick={() => {
                 setShowAiPanel(false)
-                setShowGitHubPanel(true)
+                setShowGitHubPanel((v) => !v)
               }}
-              onDisconnect={clearToken}
             />
           }
           aiSlot={
@@ -603,37 +603,6 @@ function Shell(): JSX.Element {
         <div className={styles.main}>
           {activeProject ? (
             <>
-              {(showAiPanel || showProjectSettingsPanel) && (
-                <div className={styles.panelArea}>
-                  {showAiPanel && (
-                    <ConnectAI
-                      connectionStatus={connectionStatus}
-                      onConnect={handleConnectAi}
-                      onDisconnect={disconnect}
-                      onOpenProviderDocs={handleOpenAiDocs}
-                      onSelectModel={setModel}
-                    />
-                  )}
-                  {showProjectSettingsPanel && (
-                    <ProjectSettingsPanel
-                      aiSettings={projectAiSettings}
-                      aiConnectionStatus={connectionStatus.connection_status}
-                      selectedModel={connectionStatus.selected_model}
-                      cloudTarget={cloudSetup.target}
-                      protectedBranch={protectedBranch}
-                      onAiChange={(patch) => {
-                        void handleProjectAiChange(patch)
-                      }}
-                      onOpenAiConnection={() => setShowAiPanel(true)}
-                      onOpenCloudSetup={() => {
-                        void cloudSetup.open(false)
-                      }}
-                      onClose={() => setShowProjectSettingsPanel(false)}
-                    />
-                  )}
-                </div>
-              )}
-
               <header className={styles.header}>
                 <span className={styles.projectTitle}>{activeProject.friendly_name}</span>
                 {status && (
@@ -663,7 +632,7 @@ function Shell(): JSX.Element {
               </header>
 
               {showWeeklyReport ? (
-                <WeeklyReport projectId={activeProjectId} aiConnection={connectionStatus} />
+                <WeeklyReport projectId={activeProjectId} aiConnection={connectionStatus} onClose={() => setShowWeeklyReport(false)} />
               ) : isNotARepo ? (
                 <NotARepo projectPath={activeProject.local_path} onInit={handleInitRepo} />
               ) : (
@@ -719,8 +688,6 @@ function Shell(): JSX.Element {
                   connectionStatus.connection_status === 'connected' &&
                   Boolean(connectionStatus.selected_model)
                 }
-                forceShowConnect={showGitHubPanel}
-                deviceFlow={deviceFlow}
                 naturalUndoEnabled={manualAiToolsEnabled && !isNotARepo}
                 naturalUndoSuggestion={naturalUndoSuggestion}
                 naturalUndoLoading={naturalUndoLoading}
@@ -735,11 +702,7 @@ function Shell(): JSX.Element {
                   void cloudSetup.open(true)
                 }}
                 onClearError={clearError}
-                onConnectGitHub={handleConnectGitHub}
-                onOpenGitHubDocs={handleOpenGitHubDocs}
-                onOpenDevicePage={handleOpenDevicePage}
-                onStartDeviceFlow={startDeviceFlow}
-                onCancelDeviceFlow={cancelDeviceFlow}
+                onOpenGitHubConnect={() => setShowGitHubPanel(true)}
                 onGenerateAutoMessage={generateAutoMessage}
                 onSuggestNaturalUndo={handleSuggestNaturalUndo}
                 onApplyNaturalUndo={handleApplyNaturalUndo}
@@ -747,27 +710,6 @@ function Shell(): JSX.Element {
                 onSelectNaturalUndoAlternative={handleSelectNaturalUndoAlternative}
               />}
             </>
-          ) : showAiPanel ? (
-            <div className={styles.emptyMain}>
-              <ConnectAI
-                connectionStatus={connectionStatus}
-                onConnect={handleConnectAi}
-                onDisconnect={disconnect}
-                onOpenProviderDocs={handleOpenAiDocs}
-                onSelectModel={setModel}
-              />
-            </div>
-          ) : showGitHubPanel && tokenExists !== true ? (
-            <div className={styles.emptyMain}>
-              <ConnectGitHub
-                onConnect={handleConnectGitHub}
-                onOpenGitHubDocs={handleOpenGitHubDocs}
-                onOpenDevicePage={handleOpenDevicePage}
-                deviceFlow={deviceFlow}
-                onStartDeviceFlow={startDeviceFlow}
-                onCancelDeviceFlow={cancelDeviceFlow}
-              />
-            </div>
           ) : (
             <div className={styles.emptyMain}>
               <div className={styles.emptyIcon}>📁</div>
@@ -852,6 +794,58 @@ function Shell(): JSX.Element {
             onClose={closePullUpdatesDialog}
             onConfirmPull={handleConfirmPullFromDialog}
           />
+        )}
+
+        {showAiPanel && (
+          <FloatingPanel onClose={() => setShowAiPanel(false)}>
+            <ConnectAI
+              connectionStatus={connectionStatus}
+              onConnect={handleConnectAi}
+              onDisconnect={disconnect}
+              onOpenProviderDocs={handleOpenAiDocs}
+              onSelectModel={setModel}
+              onClose={() => setShowAiPanel(false)}
+            />
+          </FloatingPanel>
+        )}
+
+        {showGitHubPanel && (
+          <FloatingPanel onClose={() => setShowGitHubPanel(false)}>
+            <ConnectGitHub
+              isConnected={tokenExists === true}
+              onConnect={handleConnectGitHub}
+              onDisconnect={clearToken}
+              onClose={() => setShowGitHubPanel(false)}
+              onOpenGitHubDocs={handleOpenGitHubDocs}
+              onOpenDevicePage={handleOpenDevicePage}
+              deviceFlow={deviceFlow}
+              onStartDeviceFlow={startDeviceFlow}
+              onCancelDeviceFlow={cancelDeviceFlow}
+            />
+          </FloatingPanel>
+        )}
+
+        {showProjectSettingsPanel && activeProject && (
+          <FloatingPanel onClose={() => setShowProjectSettingsPanel(false)}>
+            <ProjectSettingsPanel
+              aiSettings={projectAiSettings}
+              aiConnectionStatus={connectionStatus.connection_status}
+              selectedModel={connectionStatus.selected_model}
+              cloudTarget={cloudSetup.target}
+              protectedBranch={protectedBranch}
+              onAiChange={(patch) => {
+                void handleProjectAiChange(patch)
+              }}
+              onOpenAiConnection={() => {
+                setShowProjectSettingsPanel(false)
+                setShowAiPanel(true)
+              }}
+              onOpenCloudSetup={() => {
+                void cloudSetup.open(false)
+              }}
+              onClose={() => setShowProjectSettingsPanel(false)}
+            />
+          </FloatingPanel>
         )}
       </div>
     </>

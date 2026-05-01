@@ -101,21 +101,6 @@
 }
 .linkBtn:hover { background: var(--accent-hover); }
 
-.modeBtn {
-  width: 100%;
-  padding: 7px 12px;
-  background: none;
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  font-size: 12px;
-  transition: all var(--transition);
-}
-.modeBtn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
 .settingsBtn {
   width: 100%;
   padding: 7px 12px;
@@ -131,34 +116,35 @@
   color: var(--text);
 }
 
-.themeBtn {
-  width: 100%;
-  padding: 7px 12px;
-  background: none;
-  color: var(--text-muted);
+.segmented {
+  display: flex;
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.segOption {
+  flex: 1;
+  padding: 6px 0;
   font-size: 12px;
+  text-align: center;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
   transition: all var(--transition);
 }
-.themeBtn:hover {
-  border-color: var(--accent);
+
+.segOption:hover:not(.segActive) {
+  background: var(--bg-hover);
   color: var(--text);
 }
 
-.languageBtn {
-  width: 100%;
-  padding: 7px 12px;
-  background: none;
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  font-size: 12px;
-  transition: all var(--transition);
-}
-.languageBtn:hover {
-  border-color: var(--accent);
-  color: var(--text);
+.segActive {
+  background: var(--bg-active);
+  color: var(--text-active);
+  cursor: default;
+  font-weight: 600;
 }
 
 .weeklyReportBtn {

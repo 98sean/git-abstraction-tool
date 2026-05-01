@@ -1,8 +1,6 @@
 import { useState } from 'react'
-import { DeviceFlowState } from '../../hooks/useAuth'
 import { useTerms } from '../../hooks/useTerms'
 import { GitError, GitStatus, NaturalUndoSuggestion, PushConfiguredTargetResult } from '../../types'
-import { ConnectGitHub } from '../ConnectGitHub/ConnectGitHub'
 import { Spinner } from '../shared/Spinner'
 import styles from './ActionPanel.module.css'
 
@@ -18,8 +16,6 @@ interface Props {
   uploadHandoff?: PushConfiguredTargetResult | null
   aiAutoSaveEnabled?: boolean
   aiConnectionReady?: boolean
-  forceShowConnect?: boolean
-  deviceFlow: DeviceFlowState | null
   naturalUndoEnabled: boolean
   naturalUndoSuggestion: NaturalUndoSuggestion | null
   naturalUndoLoading: boolean
@@ -32,11 +28,7 @@ interface Props {
   onPull: () => void
   onOpenCloudSetup: () => void
   onClearError: () => void
-  onConnectGitHub: (token: string) => Promise<void>
-  onOpenGitHubDocs: () => void
-  onOpenDevicePage: () => void
-  onStartDeviceFlow: () => Promise<void>
-  onCancelDeviceFlow: () => Promise<void>
+  onOpenGitHubConnect: () => void
   onGenerateAutoMessage?: () => Promise<string | null>
   onSuggestNaturalUndo?: (query: string) => Promise<void>
   onApplyNaturalUndo?: () => Promise<void>
@@ -61,8 +53,6 @@ export function ActionPanel({
   uploadHandoff = null,
   aiAutoSaveEnabled = false,
   aiConnectionReady = false,
-  forceShowConnect = false,
-  deviceFlow,
   naturalUndoEnabled,
   naturalUndoSuggestion,
   naturalUndoLoading,
@@ -75,11 +65,7 @@ export function ActionPanel({
   onPull,
   onOpenCloudSetup,
   onClearError,
-  onConnectGitHub,
-  onOpenGitHubDocs,
-  onOpenDevicePage,
-  onStartDeviceFlow,
-  onCancelDeviceFlow,
+  onOpenGitHubConnect,
   onGenerateAutoMessage,
   onSuggestNaturalUndo,
   onApplyNaturalUndo,
@@ -176,23 +162,18 @@ export function ActionPanel({
 
   return (
     <div className={styles.panel}>
-      {(error?.code === 'AUTH_FAILED' || tokenExists === false || forceShowConnect) && (
-        <ConnectGitHub
-          onConnect={onConnectGitHub}
-          onOpenGitHubDocs={onOpenGitHubDocs}
-          onOpenDevicePage={onOpenDevicePage}
-          deviceFlow={deviceFlow}
-          onStartDeviceFlow={onStartDeviceFlow}
-          onCancelDeviceFlow={onCancelDeviceFlow}
-        />
-      )}
-
-      {error && error.code !== 'AUTH_FAILED' && (
+      {error && (
         <div className={styles.errorBanner}>
           <span>{error.message}</span>
-          <button className={styles.dismissBtn} onClick={onClearError} aria-label={t.dismissErrorLabel}>
-            ×
-          </button>
+          {error.code === 'AUTH_FAILED' ? (
+            <button className={styles.connectCta} onClick={onOpenGitHubConnect}>
+              {t.authFailedConnectLabel}
+            </button>
+          ) : (
+            <button className={styles.dismissBtn} onClick={onClearError} aria-label={t.dismissErrorLabel}>
+              ×
+            </button>
+          )}
         </div>
       )}
 

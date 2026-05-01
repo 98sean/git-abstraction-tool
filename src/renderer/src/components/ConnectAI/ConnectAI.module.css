@@ -5,7 +5,7 @@
   padding: 16px;
   border: 1px solid var(--border);
   border-radius: 16px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-sidebar) 70%, white 30%), var(--bg));
+  background: var(--bg);
 }
 
 .header {
@@ -15,15 +15,39 @@
   gap: 12px;
 }
 
+.closeBtn {
+  align-self: flex-start;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 2px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.closeBtn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
 .title {
   margin: 0;
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
 }
 
 .description {
   margin: 6px 0 0;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.5;
   color: var(--text-muted);
 }
@@ -61,16 +85,11 @@
   align-items: center;
 }
 
-.connectBtn,
-.disconnectBtn,
-.docsBtn {
+.connectBtn {
   padding: 10px 14px;
   border-radius: 12px;
   font-size: 13px;
   font-weight: 600;
-}
-
-.connectBtn {
   background: var(--accent);
   color: #fff;
 }
@@ -82,9 +101,26 @@
 
 .disconnectBtn,
 .docsBtn {
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
   border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all var(--transition);
+  cursor: pointer;
+}
+
+.disconnectBtn:hover {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.docsBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .summary {

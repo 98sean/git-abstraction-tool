@@ -1,0 +1,17 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+}
+
+.panel {
+  position: fixed;
+  top: 16px;
+  left: 276px;
+  width: 340px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  z-index: 101;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--text) 12%, transparent);
+}

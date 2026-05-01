@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { DeviceFlowState } from '../../hooks/useAuth'
+import { useTerms } from '../../hooks/useTerms'
 import styles from './ConnectGitHub.module.css'
 
 interface Props {
+  isConnected?: boolean
   onConnect: (token: string) => Promise<void>
+  onDisconnect?: () => void
+  onClose?: () => void
   onOpenGitHubDocs: () => void
   onOpenDevicePage: () => void
   deviceFlow: DeviceFlowState | null
@@ -13,13 +17,17 @@ interface Props {
 
 /** Inline panel shown inside ActionPanel when auth fails or no token is set. */
 export function ConnectGitHub({
+  isConnected,
   onConnect,
+  onDisconnect,
+  onClose,
   onOpenGitHubDocs,
   onOpenDevicePage,
   deviceFlow,
   onStartDeviceFlow,
   onCancelDeviceFlow
 }: Props): JSX.Element {
+  const t = useTerms()
   const [token, setToken] = useState('')
   const [saving, setSaving] = useState(false)
   const [showPat, setShowPat] = useState(false)
@@ -39,6 +47,23 @@ export function ConnectGitHub({
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     })
+  }
+
+  if (isConnected) {
+    return (
+      <div className={styles.panel}>
+        <div className={styles.header}>
+          <div>
+            <div className={styles.title}>{t.gitHubConnectedLabel}</div>
+            <div className={styles.description}>{t.gitHubConnectedDescription}</div>
+          </div>
+          <button className={styles.closeBtn} onClick={onClose} aria-label={t.closeGitHubPanelLabel}>×</button>
+        </div>
+        <button className={styles.disconnectBtn} onClick={onDisconnect}>
+          {t.disconnectGitHubBtn}
+        </button>
+      </div>
+    )
   }
 
   if (deviceFlow) {
@@ -118,38 +143,19 @@ export function ConnectGitHub({
 
 interface SidebarStatusProps {
   connected: boolean
-  onConnect: () => void
-  onDisconnect: () => void
+  onClick: () => void
 }
 
 /** Compact status button for the Sidebar footer. */
-export function GitHubStatus({ connected, onConnect, onDisconnect }: SidebarStatusProps): JSX.Element {
-  if (connected) {
-    return (
-      <div className={styles.connectedRow}>
-        <div className={`${styles.sidebarStatus} ${styles.sidebarStatusCentered}`}>
-          <span className={`${styles.dot} ${styles.connected}`} />
-          <span className={`${styles.connectedLabel} ${styles.connectedLabelCentered}`}>GitHub connected</span>
-        </div>
-        <button
-          className={styles.disconnectBtn}
-          onClick={onDisconnect}
-          title="Disconnect GitHub"
-        >
-          Disconnect
-        </button>
-      </div>
-    )
-  }
-
+export function GitHubStatus({ connected, onClick }: SidebarStatusProps): JSX.Element {
   return (
     <button
-      className={`${styles.sidebarStatus} ${styles.sidebarStatusCentered}`}
-      onClick={onConnect}
-      title="Connect GitHub"
+      className={`${styles.sidebarStatus} ${styles.sidebarStatusCentered} ${connected ? styles.connectedStatus : ''}`}
+      onClick={onClick}
+      title={connected ? 'Manage GitHub connection' : 'Connect GitHub'}
     >
-      <span className={styles.dot} />
-      Connect GitHub
+      <span className={`${styles.dot} ${connected ? styles.connected : ''}`} />
+      {connected ? 'GitHub connected' : 'Connect GitHub'}
     </button>
   )
 }
