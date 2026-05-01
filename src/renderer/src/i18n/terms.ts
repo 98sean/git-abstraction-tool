@@ -88,6 +88,7 @@ export interface AppTerms {
   themeToggleBtn: (nextTheme: 'light' | 'dark') => string
   dismissErrorLabel: string
   authFailedConnectLabel: string
+  gitErrorMessage: (code: string, fallback: string) => string
   aiSuggestBtn: string
   aiSuggestTitle: string
   aiDraftReady: string
@@ -356,6 +357,54 @@ function formatKoreanLinkWarning(kind: ProjectWarningKind, reason: string): stri
   return reason
 }
 
+function formatEnglishGitError(code: string, fallback: string): string {
+  const messages: Record<string, string> = {
+    NOT_A_REPO: 'This folder is not a linked project. Please re-link it.',
+    NO_REMOTE: 'No cloud destination is set up for this project.',
+    DEFAULT_BRANCH_PROTECTED: 'Default branch upload requires danger-mode confirmation.',
+    AUTH_FAILED: 'Login failed. Please check your credentials in Settings.',
+    NETWORK_ERROR: 'Could not reach the cloud. Please check your internet connection.',
+    MERGE_CONFLICT: 'There is a version mismatch that needs to be resolved before continuing.',
+    UNCOMMITTED_CHANGES: 'Please save your current changes before switching.',
+    REMOTE_AHEAD:
+      'The cloud branch has newer work. Get updates first or upload to a new branch; this app will not force push.',
+    BRANCH_DIVERGED:
+      'Your branch and the cloud branch both changed. Get updates first, resolve the mismatch, or upload to a new branch; this app will not force push.',
+    INVALID_BRANCH_NAME: 'Choose a valid branch name before continuing.',
+    BRANCH_EXISTS:
+      'A branch with that name already exists. Use a different new branch name or choose existing branch mode.',
+    BRANCH_NOT_FOUND: 'The requested branch could not be found.',
+    NOTHING_TO_COMMIT: 'There are no changes to save.',
+    RESTORE_NO_CHANGES: 'That restore point already matches your current files.'
+  }
+
+  return messages[code] ?? fallback
+}
+
+function formatKoreanGitError(code: string, fallback: string): string {
+  const messages: Record<string, string> = {
+    NOT_A_REPO: '이 폴더는 아직 연결된 프로젝트가 아닙니다. 다시 연결하세요.',
+    NO_REMOTE: '이 프로젝트의 클라우드 업로드 대상이 아직 설정되지 않았습니다.',
+    DEFAULT_BRANCH_PROTECTED: 'default branch에 직접 올리려면 위험 옵션 확인이 필요합니다.',
+    AUTH_FAILED: '로그인에 실패했습니다. GitHub 연결 정보를 확인하세요.',
+    NETWORK_ERROR: '클라우드에 연결할 수 없습니다. 인터넷 연결을 확인하세요.',
+    MERGE_CONFLICT: '계속하기 전에 해결해야 하는 버전 충돌이 있습니다.',
+    UNCOMMITTED_CHANGES: 'branch를 바꾸기 전에 현재 변경사항을 먼저 저장하세요.',
+    REMOTE_AHEAD:
+      '클라우드 branch에 더 새로운 작업이 있습니다. 먼저 업데이트를 받거나 새 branch로 올리세요. 이 앱은 강제 push하지 않습니다.',
+    BRANCH_DIVERGED:
+      '내 branch와 클라우드 branch가 둘 다 변경되었습니다. 먼저 업데이트를 받고 충돌을 해결하거나 새 branch로 올리세요. 이 앱은 강제 push하지 않습니다.',
+    INVALID_BRANCH_NAME: '계속하기 전에 올바른 branch 이름을 입력하세요.',
+    BRANCH_EXISTS:
+      '이미 같은 이름의 branch가 있습니다. 다른 새 branch 이름을 쓰거나 기존 branch 모드를 선택하세요.',
+    BRANCH_NOT_FOUND: '요청한 branch를 찾을 수 없습니다.',
+    NOTHING_TO_COMMIT: '저장할 변경사항이 없습니다.',
+    RESTORE_NO_CHANGES: '현재 파일이 이미 그 복원 지점과 같습니다.'
+  }
+
+  return messages[code] ?? fallback
+}
+
 const EN_COMMON_APP_TERMS = {
   projectSettingsTitle: 'Project Settings',
   projectSettingsDescription: 'Review AI save-message options and cloud upload status for this project.',
@@ -384,6 +433,7 @@ const EN_COMMON_APP_TERMS = {
   conflictAiHinting: 'Analyzing…',
   conflictAiRecommendOurs: '→ keep yours',
   conflictAiRecommendTheirs: '→ keep incoming',
+  gitErrorMessage: formatEnglishGitError,
   aiSaveMessagesTitle: 'AI Save Messages',
   useAiAutoSaveMessagesLabel: 'Use AI auto save messages',
   aiConnectionLabel: 'Connection',
@@ -557,6 +607,7 @@ const KO_COMMON_APP_TERMS = {
   conflictAiHinting: '분석 중…',
   conflictAiRecommendOurs: '→ 내 버전 추천',
   conflictAiRecommendTheirs: '→ 상대 버전 추천',
+  gitErrorMessage: formatKoreanGitError,
   aiSaveMessagesTitle: 'AI 저장 메시지',
   useAiAutoSaveMessagesLabel: 'AI 자동 저장 메시지 사용',
   aiConnectionLabel: 'AI 연결',

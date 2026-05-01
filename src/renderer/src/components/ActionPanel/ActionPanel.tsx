@@ -164,7 +164,7 @@ export function ActionPanel({
     <div className={styles.panel}>
       {error && (
         <div className={styles.errorBanner}>
-          <span>{error.message}</span>
+          <span>{t.gitErrorMessage?.(error.code, error.message) ?? error.message}</span>
           {error.code === 'AUTH_FAILED' ? (
             <button className={styles.connectCta} onClick={onOpenGitHubConnect}>
               {t.authFailedConnectLabel}
