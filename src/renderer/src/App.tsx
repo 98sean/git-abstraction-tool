@@ -426,7 +426,7 @@ function Shell(): JSX.Element {
     const url =
       provider === 'openai'
         ? 'https://developers.openai.com/api/'
-        : 'https://platform.claude.com/docs/api-reference'
+        : 'https://docs.anthropic.com/en/api/getting-started'
 
     invokeDb('shell:openExternal', url).catch(console.error)
   }
