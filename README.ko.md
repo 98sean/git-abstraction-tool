@@ -187,14 +187,14 @@ local change를 저장한 뒤 **Upload to Cloud**를 사용합니다.
 
 - **Back up to my GitHub**는 app-managed private backup repository를 만들고 `gat-backup` remote를 사용합니다.
 - **Upload work to a team repository**는 사용자가 명시적으로 선택한 collaboration remote와 branch mode를 사용합니다.
-- **New branch upload**는 GitHub pull request review로 이어지기 때문에 권장되는 팀 작업 흐름입니다.
+- **New branch upload**는 GitHub pull request review로 이어지고, review 전까지 `main`을 바꾸지 않기 때문에 권장되는 팀 작업 흐름입니다.
 - **Default branch upload**는 위험 작업으로 처리되며 명시적 확인을 요구합니다.
 
 앱은 upload 대상으로 `origin`을 자동 재사용하지 않습니다. cloud target을 먼저 선택해야 합니다.
 
 ### Get Updates
 
-**Get Updates**는 pull 전에 incoming remote commit을 확인하는 기능입니다.
+**Get Updates**는 선택된 collaboration branch에서 pull하기 전에 incoming remote commit을 확인하는 기능입니다.
 
 Git이 clean하게 보고할 수 있는 경우 commit과 changed file preview를 보여줍니다. pull이 conflict를 만들 수 있으면 앱은 자동 해결 대신 conflict를 보고합니다.
 

@@ -160,6 +160,34 @@ export interface AppTerms {
   notChosenLabel: string
   setupCloudUploadBtn: string
   changeUploadTargetBtn: string
+  cloudSetupEyebrow: string
+  cloudSetupTitle: string
+  cloudSetupSafeTitle: string
+  closeCloudSetupLabel: string
+  backupIntentTitle: string
+  backupIntentCopy: string
+  teamIntentTitle: string
+  teamIntentCopy: string
+  backupSetupCopy: string
+  creatingBackupBtn: string
+  createPrivateBackupBtn: string
+  teamSetupCopy: string
+  teamRemoteLabel: string
+  noRemotesFoundLabel: string
+  createWorkBranchTitle: string
+  createWorkBranchCopy: string
+  existingBranchTitle: string
+  existingBranchCopy: string
+  showRiskyOptionBtn: string
+  defaultBranchUploadTitle: string
+  defaultBranchUploadCopy: string
+  workBranchNameLabel: string
+  uploadBranchNameLabel: string
+  workBranchPlaceholder: string
+  uploadBranchPlaceholder: string
+  workBranchHelpText: string
+  savingTargetBtn: string
+  saveTeamTargetBtn: string
   connectAiTitle: string
   connectAiDescription: string
   disconnectAiBtn: string
@@ -376,6 +404,36 @@ const EN_COMMON_APP_TERMS = {
   notChosenLabel: 'Not chosen',
   setupCloudUploadBtn: 'Set up cloud upload',
   changeUploadTargetBtn: 'Change upload target',
+  cloudSetupEyebrow: 'Upload To Cloud',
+  cloudSetupTitle: 'How should this project upload?',
+  cloudSetupSafeTitle: 'Choose a safe upload setup',
+  closeCloudSetupLabel: 'Close cloud setup',
+  backupIntentTitle: 'Back up to my GitHub',
+  backupIntentCopy: 'Create a new private backup repository that this app manages for you.',
+  teamIntentTitle: 'Upload work to a team repository',
+  teamIntentCopy: 'Create a review branch first so team work does not update main by accident.',
+  backupSetupCopy:
+    "We will create a new private GitHub repository and use it as this project's backup destination.",
+  creatingBackupBtn: 'Creating backup...',
+  createPrivateBackupBtn: 'Create private backup',
+  teamSetupCopy:
+    'Choose the exact remote and branch flow before sending work to the team repository.',
+  teamRemoteLabel: 'Team remote',
+  noRemotesFoundLabel: 'No remotes found',
+  createWorkBranchTitle: 'Create a review work branch',
+  createWorkBranchCopy: 'Recommended. Push a fresh branch first, then open GitHub for review.',
+  existingBranchTitle: 'Use an existing non-default branch',
+  existingBranchCopy: 'Choose a remote branch that is already safe for team uploads.',
+  showRiskyOptionBtn: 'Show risky option',
+  defaultBranchUploadTitle: 'Upload directly to the default branch',
+  defaultBranchUploadCopy: "This can update the team's main branch without review.",
+  workBranchNameLabel: 'Work branch name',
+  uploadBranchNameLabel: 'Branch name to upload',
+  workBranchPlaceholder: 'gat/my-update',
+  uploadBranchPlaceholder: 'main',
+  workBranchHelpText: 'Example: gat/login-fix. This does not update main until reviewed.',
+  savingTargetBtn: 'Saving target...',
+  saveTeamTargetBtn: 'Save team upload target',
   connectAiTitle: 'Connect AI save suggestions',
   connectAiDescription:
     'Use your own OpenAI or Anthropic API key for optional save drafts, natural language undo, file insight, and untracked review.',
@@ -513,6 +571,34 @@ const KO_COMMON_APP_TERMS = {
   notChosenLabel: '선택 안 됨',
   setupCloudUploadBtn: '클라우드 업로드 설정',
   changeUploadTargetBtn: '업로드 대상 변경',
+  cloudSetupEyebrow: '클라우드 업로드',
+  cloudSetupTitle: '이 프로젝트를 어떻게 업로드할까요?',
+  cloudSetupSafeTitle: '안전한 업로드 방식 선택',
+  closeCloudSetupLabel: '클라우드 설정 닫기',
+  backupIntentTitle: '내 GitHub에 백업',
+  backupIntentCopy: '앱이 관리하는 private 백업 저장소를 새로 만듭니다.',
+  teamIntentTitle: '팀 repository에 작업 올리기',
+  teamIntentCopy: '팀에 바로 반영하지 않고 리뷰용 작업 branch를 먼저 만듭니다.',
+  backupSetupCopy: '새 private GitHub repository를 만들고 이 프로젝트의 백업 대상으로 사용합니다.',
+  creatingBackupBtn: '백업 생성 중...',
+  createPrivateBackupBtn: 'private 백업 만들기',
+  teamSetupCopy: '업로드 전에 어떤 remote와 branch 흐름을 사용할지 명확히 선택합니다.',
+  teamRemoteLabel: '팀 remote',
+  noRemotesFoundLabel: '감지된 remote 없음',
+  createWorkBranchTitle: '리뷰용 작업 branch 만들기',
+  createWorkBranchCopy: '추천. 새 branch를 push한 뒤 GitHub에서 리뷰를 요청합니다.',
+  existingBranchTitle: '기존 non-default branch 사용',
+  existingBranchCopy: '팀 업로드용으로 이미 준비된 branch를 선택합니다.',
+  showRiskyOptionBtn: '위험 옵션 보기',
+  defaultBranchUploadTitle: 'default branch에 직접 업로드',
+  defaultBranchUploadCopy: '리뷰 없이 팀 main branch가 바뀔 수 있습니다.',
+  workBranchNameLabel: '작업 branch 이름',
+  uploadBranchNameLabel: '업로드할 branch 이름',
+  workBranchPlaceholder: 'gat/my-update',
+  uploadBranchPlaceholder: 'main',
+  workBranchHelpText: '예: gat/login-fix. 리뷰 전까지 main에는 반영되지 않습니다.',
+  savingTargetBtn: '대상 저장 중...',
+  saveTeamTargetBtn: '팀 업로드 대상 저장',
   connectAiTitle: 'AI 연결',
   connectAiDescription:
     '사용자 AI provider 키로 저장 초안, 자연어 되돌리기, 파일 설명, 새 파일 검토를 사용할 수 있습니다.',
