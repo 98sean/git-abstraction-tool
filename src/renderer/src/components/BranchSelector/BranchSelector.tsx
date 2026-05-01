@@ -111,6 +111,9 @@ export function BranchSelector({
       {open && (
         <div className={styles.dropdown}>
           <div className={styles.dropdownHeader}>{t.branchLabel}</div>
+          {protectedBranch && (
+            <div className={styles.branchHelp}>{t.branchMenuHelp(protectedBranch)}</div>
+          )}
 
           <div className={styles.list}>
             {branches.length === 0 ? (
@@ -128,6 +131,9 @@ export function BranchSelector({
                   >
                     <span className={styles.check}>{b.current ? '✓' : ''}</span>
                     <span className={styles.branchName}>{b.name}</span>
+                    {protectedBranch === b.name && (
+                      <span className={styles.protectedBadge}>{t.protectedBranchSuffix}</span>
+                    )}
                   </button>
                   <div className={styles.rowActions}>
                     {!b.current && (

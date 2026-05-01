@@ -12,6 +12,7 @@ interface Props {
   branchMode?: CollaborationBranchMode
   selectedRemoteName?: string
   selectedBranch?: string
+  existingBranchNames?: string[]
   onChooseIntent: (intent: CloudSetupIntent) => void
   onClose: () => void
   onCreateBackup?: () => void
@@ -29,6 +30,7 @@ export function CloudSetupWizard({
   branchMode = 'new_branch',
   selectedRemoteName = '',
   selectedBranch = '',
+  existingBranchNames = [],
   onChooseIntent,
   onClose,
   onCreateBackup,
@@ -49,9 +51,18 @@ export function CloudSetupWizard({
   }
 
   function handleContinueCollaboration(): void {
+    const trimmedBranch = selectedBranch.trim()
     const branchValidation = validateBranchName(selectedBranch)
     if (!branchValidation.ok) {
       setBranchError(branchValidation.message)
+      return
+    }
+
+    if (
+      branchMode === 'new_branch' &&
+      existingBranchNames.some((branchName) => branchName === trimmedBranch)
+    ) {
+      setBranchError(t.branchAlreadyExistsMsg(trimmedBranch))
       return
     }
 

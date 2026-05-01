@@ -61,6 +61,13 @@ describe('mapGitError', () => {
     expect(err.code).toBe('NOTHING_TO_COMMIT')
   })
 
+  it('explains that an existing branch name blocks new-branch upload setup', () => {
+    const err = mapGitError({ message: "fatal: a branch named 'gat/demo-update' already exists" })
+    expect(err.code).toBe('BRANCH_EXISTS')
+    expect(err.message).toContain('already exists')
+    expect(err.message).toContain('existing branch')
+  })
+
   it('falls back to UNKNOWN for unrecognised errors', () => {
     const err = mapGitError({ message: 'some completely unrecognised git error message' })
     expect(err.code).toBe('UNKNOWN')

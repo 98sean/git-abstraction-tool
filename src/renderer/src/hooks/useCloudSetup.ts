@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { validateBranchName } from '../branchValidation'
+import { AppTerms } from '../i18n/terms'
 import { invokeDb } from '../ipc'
+import { useTerms } from './useTerms'
 import {
   CloudSetupIntent,
   CollaborationBranchMode,
@@ -37,6 +39,39 @@ function getBackupRepoName(project: Project | null): string {
   return `${slugify(project?.friendly_name ?? 'project')}-backup`
 }
 
+type CloudStatusTerms = Pick<
+  AppTerms,
+  | 'privateBackupReadyLabel'
+  | 'cloudBackupNotSetUpLabel'
+  | 'teamUploadReadyLabel'
+  | 'teamUploadReviewBranchStatus'
+  | 'teamUploadExistingBranchStatus'
+  | 'teamUploadDefaultBranchStatus'
+>
+
+export function getCloudStatusLabel(target: ProjectCloudTarget, terms: CloudStatusTerms): string {
+  if (target.mode === 'backup') {
+    return terms.privateBackupReadyLabel
+  }
+
+  if (target.mode !== 'collaboration' || !target.collaboration) {
+    return terms.cloudBackupNotSetUpLabel
+  }
+
+  const remoteName = target.collaboration.remoteName
+  const branchName = target.collaboration.selectedBranch ?? 'main'
+
+  if (target.collaboration.branchMode === 'new_branch') {
+    return terms.teamUploadReviewBranchStatus(remoteName, branchName)
+  }
+
+  if (target.collaboration.branchMode === 'danger_default_branch') {
+    return terms.teamUploadDefaultBranchStatus(remoteName, branchName)
+  }
+
+  return terms.teamUploadExistingBranchStatus(remoteName, branchName)
+}
+
 function parseGithubRemote(url: string): { owner: string; repo: string } | null {
   const trimmed = url.trim()
   const match = trimmed.match(
@@ -63,6 +98,7 @@ export function useCloudSetup(
   project: Project | null,
   options: UseCloudSetupOptions = {}
 ) {
+  const t = useTerms()
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -233,12 +269,7 @@ export function useCloudSetup(
   ])
 
   const cloudUploadReady = target.mode !== 'none'
-  const cloudStatusLabel =
-    target.mode === 'backup'
-      ? 'Private backup ready'
-      : target.mode === 'collaboration'
-        ? `Team upload ready: ${target.collaboration?.remoteName ?? 'configured'}`
-        : 'Cloud backup not set up yet'
+  const cloudStatusLabel = getCloudStatusLabel(target, t)
 
   return {
     isOpen,

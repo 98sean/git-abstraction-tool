@@ -32,6 +32,7 @@ vi.mock('../hooks/useTerms', () => ({
     workBranchPlaceholder: 'gat/my-update',
     uploadBranchPlaceholder: 'main',
     workBranchHelpText: '예: gat/login-fix. 리뷰 전까지 main에는 반영되지 않습니다.',
+    branchAlreadyExistsMsg: (name: string) => `"${name}" branch가 이미 있습니다. 다른 이름을 쓰거나 기존 branch 모드를 선택하세요.`,
     savingTargetBtn: '대상 저장 중...',
     saveTeamTargetBtn: '팀 업로드 대상 저장'
   })
@@ -87,5 +88,27 @@ describe('CloudSetupWizard', () => {
     expect(screen.getByText(/리뷰용 작업 branch 만들기/i)).toBeTruthy()
     expect(screen.getByText(/GitHub에서 리뷰를 요청/i)).toBeTruthy()
     expect(screen.getByText(/리뷰 전까지 main에는 반영되지 않습니다/i)).toBeTruthy()
+  })
+
+  it('blocks new team branch setup when the branch already exists locally', () => {
+    const onContinue = vi.fn()
+
+    render(
+      <CloudSetupWizard
+        intent="collaboration"
+        remotes={[{ name: 'origin', fetch: 'https://github.com/acme/demo.git', push: 'https://github.com/acme/demo.git' }]}
+        selectedRemoteName="origin"
+        selectedBranch="gat/demo-update"
+        existingBranchNames={['main', 'gat/demo-update']}
+        onChooseIntent={vi.fn()}
+        onClose={vi.fn()}
+        onContinueCollaboration={onContinue}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /팀 업로드 대상 저장/i }))
+
+    expect(screen.getByText(/이미 있습니다/i)).toBeTruthy()
+    expect(onContinue).not.toHaveBeenCalled()
   })
 })

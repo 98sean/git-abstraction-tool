@@ -62,6 +62,8 @@ export interface AppTerms {
   deleteBranchConfirm: (name: string) => string
   deleteCurrentBranchConfirm: (name: string, fallback: string) => string
   protectedBranchMsg: (name: string) => string
+  branchMenuHelp: (protectedBranch: string) => string
+  branchAlreadyExistsMsg: (name: string) => string
   branchPlaceholder: string
   switchedBranchToast: (name: string) => string
   createdBranchToast: (name: string) => string
@@ -151,6 +153,9 @@ export interface AppTerms {
   statusLabel: string
   privateBackupReadyLabel: string
   teamUploadReadyLabel: string
+  teamUploadReviewBranchStatus: (remoteName: string, branchName: string) => string
+  teamUploadExistingBranchStatus: (remoteName: string, branchName: string) => string
+  teamUploadDefaultBranchStatus: (remoteName: string, branchName: string) => string
   cloudBackupNotSetUpLabel: string
   defaultBranchLabel: string
   protectedBranchSuffix: string
@@ -395,6 +400,12 @@ const EN_COMMON_APP_TERMS = {
   statusLabel: 'Status',
   privateBackupReadyLabel: 'Private backup ready',
   teamUploadReadyLabel: 'Team upload ready',
+  teamUploadReviewBranchStatus: (remoteName: string, branchName: string) =>
+    `Team upload: review branch ${branchName} on ${remoteName}. main is not updated.`,
+  teamUploadExistingBranchStatus: (remoteName: string, branchName: string) =>
+    `Team upload: existing branch ${branchName} on ${remoteName}.`,
+  teamUploadDefaultBranchStatus: (remoteName: string, branchName: string) =>
+    `Team upload: default branch ${branchName} on ${remoteName}.`,
   cloudBackupNotSetUpLabel: 'Cloud backup not set up yet',
   defaultBranchLabel: 'Default branch',
   protectedBranchSuffix: 'protected',
@@ -562,6 +573,12 @@ const KO_COMMON_APP_TERMS = {
   statusLabel: '상태',
   privateBackupReadyLabel: 'private 백업 준비됨',
   teamUploadReadyLabel: '팀 업로드 준비됨',
+  teamUploadReviewBranchStatus: (remoteName: string, branchName: string) =>
+    `팀 업로드: ${remoteName}의 리뷰용 branch ${branchName}. main은 아직 바뀌지 않습니다.`,
+  teamUploadExistingBranchStatus: (remoteName: string, branchName: string) =>
+    `팀 업로드: ${remoteName}의 기존 branch ${branchName}.`,
+  teamUploadDefaultBranchStatus: (remoteName: string, branchName: string) =>
+    `팀 업로드: ${remoteName}의 default branch ${branchName}.`,
   cloudBackupNotSetUpLabel: '클라우드 백업 미설정',
   defaultBranchLabel: '기본 branch',
   protectedBranchSuffix: '보호됨',
@@ -737,6 +754,10 @@ const EN_PRO: AppTerms = {
   deleteCurrentBranchConfirm: (name, fallback) =>
     `Delete current branch "${name}"?\n\nYou are currently on "${name}", so the app will switch to "${fallback}" first and then delete "${name}".\nProceed?`,
   protectedBranchMsg: (name) => `The "${name}" branch is protected and cannot be deleted.`,
+  branchMenuHelp: (protectedBranch) =>
+    `${protectedBranch} is protected and cannot be deleted. Other branches can be merged or deleted when Git allows it.`,
+  branchAlreadyExistsMsg: (name) =>
+    `The "${name}" branch already exists. Use a different name or choose existing branch mode.`,
   branchPlaceholder: 'branch-name',
   switchedBranchToast: (name) => `Switched to branch "${name}"`,
   createdBranchToast: (name) => `Created and switched to "${name}"`,
@@ -848,6 +869,10 @@ const EN_NEWBIE: AppTerms = {
   deleteCurrentBranchConfirm: (name, fallback) =>
     `Delete current version "${name}"?\n\nYou are currently on "${name}", so the app will switch to "${fallback}" first and then delete "${name}".\nProceed?`,
   protectedBranchMsg: (name) => `"${name}" is protected and cannot be deleted.`,
+  branchMenuHelp: (protectedBranch) =>
+    `${protectedBranch} is protected and cannot be deleted. Other versions can be merged or deleted when Git allows it.`,
+  branchAlreadyExistsMsg: (name) =>
+    `The "${name}" version already exists. Use a different name or choose existing version mode.`,
   branchPlaceholder: 'version-name',
   switchedBranchToast: (name) => `Switched to version "${name}"`,
   createdBranchToast: (name) => `Created and switched to "${name}"`,
@@ -959,6 +984,10 @@ const KO_NEWBIE: AppTerms = {
   deleteCurrentBranchConfirm: (name, fallback) =>
     `현재 버전 "${name}"을 삭제할까요?\n\n지금 "${name}"을 사용 중이므로 앱이 먼저 "${fallback}"으로 이동한 뒤 "${name}"을 삭제합니다.\n진행할까요?`,
   protectedBranchMsg: (name) => `"${name}"은 보호되어 삭제할 수 없습니다.`,
+  branchMenuHelp: (protectedBranch) =>
+    `${protectedBranch}은 보호되어 삭제할 수 없습니다. 다른 버전은 Git이 허용할 때 합치거나 삭제할 수 있습니다.`,
+  branchAlreadyExistsMsg: (name) =>
+    `"${name}" 버전이 이미 있습니다. 다른 이름을 쓰거나 기존 버전 모드를 선택하세요.`,
   branchPlaceholder: 'version-name',
   switchedBranchToast: (name) => `"${name}" 버전으로 이동했습니다`,
   createdBranchToast: (name) => `"${name}" 버전을 만들고 이동했습니다`,
@@ -1070,6 +1099,10 @@ const KO_PRO: AppTerms = {
   deleteCurrentBranchConfirm: (name, fallback) =>
     `현재 브랜치 "${name}"을 삭제할까요?\n\n지금 "${name}"에 있으므로 앱이 먼저 "${fallback}"으로 전환한 뒤 "${name}"을 삭제합니다.\n진행할까요?`,
   protectedBranchMsg: (name) => `"${name}" 브랜치는 보호되어 삭제할 수 없습니다.`,
+  branchMenuHelp: (protectedBranch) =>
+    `${protectedBranch}은 보호되어 삭제할 수 없습니다. 다른 branch는 Git이 허용할 때 merge하거나 삭제할 수 있습니다.`,
+  branchAlreadyExistsMsg: (name) =>
+    `"${name}" branch가 이미 있습니다. 다른 이름을 쓰거나 기존 branch 모드를 선택하세요.`,
   branchPlaceholder: 'branch-name',
   switchedBranchToast: (name) => `"${name}" 브랜치로 전환했습니다`,
   createdBranchToast: (name) => `"${name}" 브랜치를 만들고 전환했습니다`,
