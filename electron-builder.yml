@@ -28,11 +28,11 @@ nsis:
   createDesktopShortcut: true
   createStartMenuShortcut: true
 
-# macOS — DMG
+# macOS — universal DMG (single binary for Intel + Apple Silicon)
 mac:
   target:
     - target: dmg
-      arch: [x64, arm64]
+      arch: [universal]
   icon: resources/icon.icns
   category: public.app-category.developer-tools
 

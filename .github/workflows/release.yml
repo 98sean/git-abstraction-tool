@@ -32,11 +32,8 @@ jobs:
           node-version: 24
           cache: npm
 
-      - name: Install dependencies
+      - name: Install dependencies (rebuilds native modules via postinstall)
         run: npm ci
-
-      - name: Rebuild native modules for Electron
-        run: npm run rebuild
 
       - name: Build renderer and main process
         run: npm run build

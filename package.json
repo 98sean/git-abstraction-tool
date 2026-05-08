@@ -2,12 +2,14 @@
   "name": "git-abstraction-tool",
   "version": "0.1.0",
   "description": "A user-friendly Git abstraction tool for non-technical users",
+  "author": "Sean Lee",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit",
+    "postinstall": "electron-builder install-app-deps",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
     "test": "vitest run",
     "package": "electron-vite build && electron-builder"
