@@ -1,6 +1,10 @@
 appId: com.gitabstractiontool.app
 productName: Git Abstraction Tool
-copyright: Copyright © 2024
+copyright: Copyright © 2024-2025 Sean Lee
+
+publish:
+  provider: github
+  releaseType: release
 
 directories:
   output: dist

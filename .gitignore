@@ -30,5 +30,6 @@ pnpm-debug.log*
 electron-builder.env
 
 # Local environment secrets
+.env
 .env.local
 .claude/settings.local.json

@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build — ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform_args: --win
+          - os: macos-latest
+            platform_args: --mac
+          - os: ubuntu-latest
+            platform_args: --linux
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rebuild native modules for Electron
+        run: npm run rebuild
+
+      - name: Build renderer and main process
+        run: npm run build
+
+      - name: Package and publish
+        run: npx electron-builder ${{ matrix.platform_args }} --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Uncomment and add repository secrets to enable code signing:
+          # macOS notarization:
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Windows code signing:
+          # CSC_LINK: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+          # CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
