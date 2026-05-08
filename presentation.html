@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Honda Team Project — Git Abstraction Tool</title>
+<style>
+  :root {
+    --red: #CC0000;
+    --dark: #1a1a1a;
+    --mid: #2d2d2d;
+    --light: #f5f5f5;
+    --accent: #ede8e0;
+    --white: #ffffff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #111;
+    color: var(--dark);
+    overflow: hidden;
+    height: 100vh; width: 100vw;
+  }
+
+  /* ── Deck ── */
+  .deck { width: 100%; height: 100%; position: relative; }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 56px 72px;
+    background: var(--white);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .slide.active { display: flex; opacity: 1; }
+
+  /* themes */
+  .cover   { background: var(--dark); color: var(--white); }
+  .section { background: var(--red);  color: var(--white); }
+  .light   { background: var(--light); }
+  .cream   { background: var(--accent); }
+
+  /* ── Type ── */
+  h1 { font-size: 3rem; font-weight: 800; line-height: 1.1; }
+  h2 { font-size: 2rem; font-weight: 700; line-height: 1.2; margin-bottom: 0.25em; }
+  h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.4em; }
+  p  { font-size: 1.05rem; line-height: 1.7; color: #333; }
+
+  .label {
+    font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    opacity: 0.5; margin-bottom: 0.5em;
+  }
+  .cover .label, .section .label { color: #fff; opacity: 0.6; }
+
+  .sub { font-size: 1.2rem; opacity: 0.65; margin-top: 0.5em; }
+  .center { text-align: center; }
+
+  /* ── Layout ── */
+  .cols { display: flex; gap: 40px; width: 100%; align-items: flex-start; }
+  .col  { flex: 1; }
+  hr.rule { border: none; border-top: 2px solid rgba(0,0,0,0.08); margin: 16px 0 24px; }
+  .section hr.rule, .cover hr.rule { border-color: rgba(255,255,255,0.2); }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--white);
+    border-radius: 14px; padding: 22px 26px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    border-left: 5px solid var(--red);
+    margin-bottom: 16px;
+  }
+  .card:last-child { margin-bottom: 0; }
+  .card.gray { border-left-color: #bbb; }
+
+  .card-2col {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 20px; width: 100%;
+  }
+  .ai-card {
+    background: var(--white); border-radius: 14px;
+    padding: 22px 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.09);
+  }
+  .ai-card .num {
+    font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--red);
+    background: rgba(204,0,0,0.08); display: inline-block;
+    padding: 3px 10px; border-radius: 20px; margin-bottom: 10px;
+  }
+  .ai-card h3 { font-size: 1.1rem; color: var(--dark); }
+  .ai-card p  { font-size: 0.93rem; color: #555; margin-top: 6px; }
+
+  /* ── List ── */
+  .flist { list-style: none; width: 100%; }
+  .flist li {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 11px 0; border-bottom: 1px solid #eee;
+    font-size: 1rem; color: #333; line-height: 1.55;
+  }
+  .flist li:last-child { border-bottom: none; }
+  .flist .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--red); margin-top: 6px; flex-shrink: 0;
+  }
+  .flist.gray .dot { background: #aaa; }
+
+  /* ── Shift diagram ── */
+  .shift-wrap {
+    display: grid; grid-template-columns: 1fr 60px 1fr;
+    gap: 0; width: 100%; align-items: center;
+  }
+  .shift-box { border-radius: 14px; padding: 28px 24px; }
+  .shift-before { background: #efefef; border: 2px solid #ddd; }
+  .shift-after  { background: var(--red); color: #fff; border: 2px solid var(--red); }
+  .shift-after p { color: rgba(255,255,255,0.82); }
+  .shift-arrow  { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .shift-arrow span { font-size: 2.4rem; color: var(--red); }
+  .shift-arrow small { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); }
+  .shift-list { list-style: none; margin-top: 10px; }
+  .shift-list li { padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.09); font-size: 0.95rem; }
+  .shift-list li:last-child { border-bottom: none; }
+  .shift-after .shift-list li { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.88); }
+
+  /* ── Flow ── */
+  .flow { display: flex; align-items: center; width: 100%; margin-top: 8px; }
+  .flow-box {
+    flex: 1; background: var(--white); border-radius: 12px;
+    padding: 18px 12px; text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    font-size: 0.92rem; font-weight: 600; color: var(--dark);
+  }
+  .flow-box .ico { font-size: 1.5rem; display: block; margin-bottom: 5px; }
+  .flow-box small { font-weight: 400; color: #777; font-size: 0.8rem; }
+  .flow-arr { font-size: 1.6rem; color: var(--red); padding: 0 6px; flex-shrink: 0; opacity: 0.7; }
+
+  /* ── Stats ── */
+  .stat-row { display: flex; gap: 40px; margin-top: 22px; }
+  .stat { display: flex; flex-direction: column; align-items: center; }
+  .stat .num { font-size: 2.8rem; font-weight: 800; color: var(--red); line-height: 1; }
+  .stat .desc { font-size: 0.82rem; color: #666; margin-top: 4px; text-align: center; }
+
+  /* ── Quote ── */
+  blockquote {
+    font-size: 1.1rem; font-style: italic; color: #444;
+    border-left: 4px solid var(--red); padding: 10px 20px;
+    background: rgba(204,0,0,0.04); border-radius: 0 10px 10px 0;
+    margin: 14px 0;
+  }
+
+  /* ── Pill ── */
+  .pill {
+    display: inline-block; background: var(--red); color: #fff;
+    font-size: 0.72rem; font-weight: 800; letter-spacing: 0.07em;
+    text-transform: uppercase; padding: 4px 12px;
+    border-radius: 20px; margin-bottom: 14px;
+  }
+
+  /* ── Phase boxes ── */
+  .phase-row { display: flex; gap: 16px; width: 100%; margin-top: 6px; }
+  .phase-box {
+    flex: 1; border-radius: 12px; padding: 18px 20px;
+    background: var(--white); box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  }
+  .phase-box .phase-label {
+    font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--red); margin-bottom: 8px;
+  }
+  .phase-box h3 { font-size: 1rem; margin-bottom: 6px; }
+  .phase-box p  { font-size: 0.88rem; color: #555; line-height: 1.6; }
+
+  /* ── Progress ── */
+  .progress { position: fixed; top: 0; left: 0; height: 4px; background: var(--red); transition: width 0.3s; z-index: 1000; }
+
+  /* ── Nav ── */
+  nav {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px;
+    background: rgba(0,0,0,0.78); backdrop-filter: blur(8px);
+    padding: 9px 20px; border-radius: 40px; z-index: 999;
+  }
+  nav button {
+    background: none; border: none; color: #fff; font-size: 1rem;
+    cursor: pointer; padding: 4px 10px; border-radius: 8px; transition: background 0.2s;
+  }
+  nav button:hover { background: rgba(255,255,255,0.15); }
+  nav button:disabled { opacity: 0.25; cursor: default; }
+  #counter { color: rgba(255,255,255,0.55); font-size: 0.82rem; min-width: 56px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="progress" id="prog"></div>
+
+<div class="deck">
+
+<!-- ━━━━━━━━━━━━━━━━━━━ COVER ━━━━━━━━━━━━━━━━━━━ -->
+<div class="slide cover active center">
+  <div class="label">Honda × 99P Labs · Spring 2026</div>
+  <h1>Code Repo Knowledge Layer<br/>→ Git Abstraction Tool</h1>
+  <p class="sub" style="color:rgba(255,255,255,0.55); max-width:620px; margin-top:20px;">
+    A semester-long journey from developer onboarding tooling to a desktop app that makes version control accessible to everyone.
+  </p>
+</div>
+
+<!-- ━━━━━━━━━━━━━━━━━━━ SECTION 1 ━━━━━━━━━━━━━━━━━━━ -->
+<div class="slide section center">
+  <div class="label">Part 1</div>
+  <h2>Code Repo Knowledge Layer</h2>
+  <p class="sub" style="color:rgba(255,255,255,0.72);">Our initial project — Repo Onboarding Buddy</p>
+</div>
+
+<!-- The Problem -->
+<div class="slide light">
+  <div class="label">Code Repo Knowledge Layer — Problem</div>
+  <h2>The Problem We Started With</h2>
+  <hr class="rule"/>
+  <div class="cols">
+    <div class="col">
+      <p style="margin-bottom:16px;">Code repositories contain three kinds of knowledge:</p>
+      <ul class="flist">
+        <li><span class="dot"></span><strong>Explicit knowledge</strong> — code, comments, README. Already in the repo, but hard to navigate.</li>
+        <li><span class="dot"></span><strong>Structural knowledge</strong> — "if you change this, that breaks." Implicit in code but impossible to trace manually at scale.</li>
+        <li><span class="dot"></span><strong>Contextual knowledge</strong> — "why was this written this way?" Lives only in people's heads. Lost completely when communication is absent.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="card">
+        <div class="label">Root Cause</div>
+        <p>Teams don't communicate around code — so new members must read everything manually, and it takes too long to understand what each part does.</p>
+      </div>
+      <div class="card" style="margin-top:0;">
+        <div class="label">Existing tools only cover</div>
+        <p>GitHub Copilot and search tools handle <em>explicit</em> knowledge. Structural and contextual knowledge still require asking people.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Brainstormed Directions -->
+<div class="slide cream">
+  <div class="label">Code Repo Knowledge Layer — Brainstorm</div>
+  <h2>Five Directions We Explored</h2>
+  <hr class="rule"/>
+  <div class="cols" style="gap:20px;">
+    <div class="col">
+      <div class="card" style="margin-bottom:14px;">
+        <h3>1. AI Coaching Agent — "Repo Onboarding Buddy"</h3>
+        <p style="font-size:0.93rem;">Ask "how does the data pipeline work?" and get an answer grounded in code structure, dependencies, and git history — not just docs.</p>
+      </div>
+      <div class="card" style="margin-bottom:14px;">
+        <h3>2. Auto-Documentation</h3>
+        <p style="font-size:0.93rem;">Living docs that auto-update when code changes. Four layers: one-liner, feature description, architecture context, business impact.</p>
+      </div>
+      <div class="card">
+        <h3>3. Usage Tracking Layer</h3>
+        <p style="font-size:0.93rem;">Git history + AST analysis → Core Assets, Stable components, Dead Code candidates. Bus factor alerts. Tableau treemap visualization.</p>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card" style="margin-bottom:14px;">
+        <h3>4. Interactive Code Map</h3>
+        <p style="font-size:0.93rem;">Navigable graph of the entire repo. Click to drill down. Data lineage visualization. Cross-team dependency discovery.</p>
+      </div>
+      <div class="card">
+        <h3>5. Communication Gap Filler</h3>
+        <p style="font-size:0.93rem;">Weekly AI newsletter of what changed. Cross-team impact alerts. "Ask the repo" Slack bot.</p>
+      </div>
+      <div class="card gray" style="margin-top:14px;">
+        <div class="label">One-line product definition</div>
+        <p style="font-size:0.93rem; font-style:italic;">"A VS Code Extension that lets you understand every context of a repo without leaving the editor."</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- What We Built: Phase 1 -->
+<div class="slide light">
+  <div class="label">Code Repo Knowledge Layer — Phase 1 Deliverables</div>
+  <h2>What We Actually Built</h2>
+  <hr class="rule"/>
+  <div class="cols">
+    <div class="col">
+      <p style="margin-bottom:18px; font-weight:600; color:var(--red);">Repo Onboarding Buddy (찬영 · 승연 · 재윤)</p>
+      <ul class="flist">
+        <li><span class="dot"></span>VS Code Extension UI with sidebar chat panel</li>
+        <li><span class="dot"></span>Context-aware Q&amp;A: agent knows the currently open file</li>
+        <li><span class="dot"></span>AST-based code parsing with tree-sitter (no AI needed for structure)</li>
+        <li><span class="dot"></span>Dependency graph via NetworkX; impact analysis on right-click</li>
+        <li><span class="dot"></span>Hover metadata: one-liner, caller count, bus factor warning</li>
+      </ul>
+    </div>
+    <div class="col">
+      <p style="margin-bottom:18px; font-weight:600; color:var(--red);">Usage Tracking Layer (종훈 · 관호 · 윤하)</p>
+      <ul class="flist">
+        <li><span class="dot"></span>CLI tool <code style="background:#eee;padding:2px 6px;border-radius:4px;">repoknow scan</code> + FastAPI backend</li>
+        <li><span class="dot"></span>PyDriller for git history extraction (churn, ownership, bus factor)</li>
+        <li><span class="dot"></span>CodeQL for static import graph → <code style="background:#eee;padding:2px 6px;border-radius:4px;">internal_edges.csv</code></li>
+        <li><span class="dot"></span>Scoring: Core Assets / Stable / Dead Candidates / NonCode</li>
+        <li><span class="dot"></span>REST API: <code style="background:#eee;padding:2px 6px;border-radius:4px;">/impact</code>, <code style="background:#eee;padding:2px 6px;border-radius:4px;">/bus-factor-alerts</code>, <code style="background:#eee;padding:2px 6px;border-radius:4px;">/top-imports</code></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ━━━━━━━━━━━━━━━━━━━ SECTION 2 ━━━━━━━━━━━━━━━━━━━ -->
+<div class="slide section center">
+  <div class="label">Part 2</div>
+  <h2>The Pivot</h2>
+  <p class="sub" style="color:rgba(255,255,255,0.72);">Why we shifted from Repo Buddy to Git Abstraction Tool</p>
+</div>
+
+<!-- Pivot: Blockers -->
+<div class="slide light">
+  <div class="label">The Pivot — What We Hit</div>
+  <h2>Barriers We Encountered</h2>
+  <hr class="rule"/>
+  <div class="cols">
+    <div class="col">
+      <ul class="flist">
+        <li><span class="dot"></span><strong>No shared DB or server</strong> — Ryan's guidance: "don't spend any money." SQLite local-only was the ceiling for Phase 1.</li>
+        <li><span class="dot"></span><strong>Cold start problem</strong> — Q&amp;A bot needs senior engineers to answer first, but they already use Copilot for code explanation.</li>
+        <li><span class="dot"></span><strong>Weak value proposition</strong> — "What does this function do?" is already answered by Claude and Copilot. We weren't differentiated.</li>
+        <li><span class="dot"></span><strong>Tribal knowledge gap</strong> — The real value ("why was this written this way?") requires git history + PR discussion — hard to build reliably.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="card">
+        <div class="label">Ryan's Key Feedback (3/6 Honda Meeting)</div>
+        <p>"Think of this project as a new approach to version control. A new generation of GitHub or Git."</p>
+      </div>
+      <div class="card" style="margin-top:0;">
+        <div class="label">Ryan's Key Feedback (4/3 Honda Meeting)</div>
+        <p>"How do we make vibe coding easier? Ppl do not know what they want — AI can give a high-level plan. Think about the vibe coders using phones or tablets to code."</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Shift Diagram -->
+<div class="slide cream">
+  <div class="label">The Pivot — Before vs. After</div>
+  <h2>What Changed</h2>
+  <hr class="rule" style="margin-bottom:28px;"/>
+  <div class="shift-wrap">
+    <div class="shift-box shift-before">
+      <div class="label" style="opacity:0.5;">Code Repo Knowledge Layer</div>
+      <h3 style="margin-bottom:12px;">Developer Tool</h3>
+      <ul class="shift-list">
+        <li>Target: engineers in a team codebase</li>
+        <li>Goal: faster onboarding &amp; knowledge sharing</li>
+        <li>Interface: VS Code Extension sidebar chat</li>
+        <li>Requires: existing git &amp; codebase context</li>
+        <li>Needs: shared DB + server for team use</li>
+      </ul>
+    </div>
+    <div class="shift-arrow">
+      <span>→</span>
+      <small>Pivot</small>
+    </div>
+    <div class="shift-box shift-after">
+      <div class="label" style="color:rgba(255,255,255,0.55);">Git Abstraction Tool</div>
+      <h3 style="color:#fff; margin-bottom:12px;">Non-Technical User Tool</h3>
+      <ul class="shift-list">
+        <li>Target: vibe coders, designers, writers, students</li>
+        <li>Goal: version control without knowing git</li>
+        <li>Interface: Electron desktop app, plain language</li>
+        <li>Requires: zero git knowledge</li>
+        <li>Needs: local-only, no server, no cost</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ━━━━━━━━━━━━━━━━━━━ SECTION 3 ━━━━━━━━━━━━━━━━━━━ -->
+<div class="slide section center">
+  <div class="label">Part 3</div>
+  <h2>Git Abstraction Tool</h2>
+  <p class="sub" style="color:rgba(255,255,255,0.72);">What we built — and the 6 core AI features</p>
+</div>
+
+<!-- GAT Overview -->
+<div class="slide light">
+  <div class="label">Git Abstraction Tool — Overview</div>
+  <h2>What It Is</h2>
+  <hr class="rule"/>
+  <div class="cols">
+    <div class="col">
+      <p style="margin-bottom:16px;">A cross-platform <strong>Electron desktop app</strong> that wraps git in a plain-language interface. No terminal. No git jargon. No learning curve.</p>
+      <p style="margin-bottom:16px;">Built <strong>local-first</strong>: full version control works completely offline. AI features are optional enhancements layered on top, never requirements.</p>
+      <div class="stat-row">
+        <div class="stat"><span class="num">0</span><span class="desc">git knowledge<br/>required</span></div>
+        <div class="stat"><span class="num">6</span><span class="desc">AI-powered<br/>features</span></div>
+        <div class="stat"><span class="num">2</span><span class="desc">languages<br/>EN / KO</span></div>
+      </div>
+    </div>
+    <div class="col">
+      <ul class="flist">
+        <li><span class="dot"></span><strong>Save Progress</strong> — one-click local snapshot (git commit)</li>
+        <li><span class="dot"></span><strong>Full File Visibility</strong> — tracked, staged, untracked in one panel</li>
+        <li><span class="dot"></span><strong>Safe Operations</strong> — explicit confirmation for every risky action; no auto force-push</li>
+        <li><span class="dot"></span><strong>Pull Preview</strong> — inspect incoming changes before merging</li>
+        <li><span class="dot"></span><strong>Bilingual UI</strong> — English &amp; Korean, beginner-friendly terminology</li>
+        <li><span class="dot"></span><strong>Bring your own AI key</strong> — OpenAI or Anthropic, stored encrypted locally</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- GAT Architecture -->
+<div class="slide cream">
+  <div class="label">Git Abstraction Tool — Architecture</div>
+  <h2>How It's Built</h2>
+  <hr class="rule" style="margin-bottom:28px;"/>
+  <div class="flow">
+    <div class="flow-box"><span class="ico">⚛️</span>React UI<br/><small>Renderer Process</small></div>
+    <div class="flow-arr">→</div>
+    <div class="flow-box"><span class="ico">⚡</span>Electron IPC<br/><small>Secure Bridge</small></div>
+    <div class="flow-arr">→</div>
+    <div class="flow-box"><span class="ico">🔧</span>Git Service<br/><small>simple-git / Main</small></div>
+    <div class="flow-arr">→</div>
+    <div class="flow-box"><span class="ico">🗄️</span>SQLite DB<br/><small>Local · No Server</small></div>
+    <div class="flow-arr">→</div>
+    <div class="flow-box"><span class="ico">🤖</span>AI Layer<br/><small>OpenAI / Anthropic</small></div>
+  </div>
+  <div class="cols" style="margin-top:28px; gap:16px;">
+    <div class="card" style="flex:1; border-left-color:#666; margin-bottom:0;">
+      <div class="label">Frontend</div>
+      <p>React + TypeScript, i18n (EN/KO), Tailwind — renders entirely in the browser process</p>
+    </div>
+    <div class="card" style="flex:1; border-left-color:#666; margin-bottom:0;">
+      <div class="label">Backend</div>
+      <p>Electron main process handles all git ops, DB access, and secret storage — secrets never reach the renderer</p>
+    </div>
+    <div class="card" style="flex:1; border-left-color:#666; margin-bottom:0;">
+      <div class="label">AI</div>
+      <p>Modular provider adapters; OS-encrypted key storage; graceful degradation when AI is off or slow</p>
+    </div>
+  </div>
+</div>
+
+<!-- ━━━━━━━━━━━━━━━━━━━ AI SECTION BREAK ━━━━━━━━━━━━━━━━━━━ -->
+<div class="slide section center">
+  <div class="label">Git Abstraction Tool — AI Features</div>
+  <h2>6 Core AI Components</h2>
+  <p class="sub" style="color:rgba(255,255,255,0.72);">All optional · All privacy-preserving · All with graceful fallback</p>
+</div>
+
+<!-- AI Feature 1: Auto Commit Message -->
+<div class="slide light">
+  <div class="pill">AI Feature 1 of 6</div>
+  <h2>Auto Commit Message</h2>
+  <hr class="rule"/>
+  <div class="cols">
+    <div class="col">
+      <p style="margin-bottom:14px;">When a user clicks <strong>Save Progress</strong>, the app reads the staged git diff and asks the AI to produce one plain-language sentence — no file paths, no git jargon.</p>
+      <blockquote>"Updated the homepage background color and fixed typos in the contact form."</blockquote>
+      <p style="margin-top:14px; font-size:0.95rem; color:#555;">The generated message is pre-filled for review. The user edits if needed, then confirms. The internal summary is also stored for Weekly Report and Natural Language Undo to reference later.</p>
+    </div>
+    <div class="col">
+      <ul class="flist">
+        <li><span class="dot"></span>Reads staged diff, file paths, and change types (new / modified / deleted)</li>
+        <li><span class="dot"></span>3–5 second timeout — saving is <em>never</em> blocked by AI</li>
+        <li><span class="dot"></span>Per-project consent required before any diff is sent to AI</li>
+        <li><span class="dot"></span>Auto-Save mode: draft → confirm → commit in one flow</li>
+        <li><span class="dot"></span>Deterministic fallback message when AI is unavailable</li>
+        <li><span class="dot"></span>Internal AI summary stored to power the other three AI features</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- AI Feature 2: Weekly Report -->
+<div class="slide cream">
+  <div class="pill">AI Feature 2 of 6</div>
+  <h2>Weekly Report</h2>
+  <hr class="rule"/>
+  <div class="cols">
+    <div class="col">
+      <p style="margin-bottom:14px;">At the end of any selected week, the app compiles git stats and the stored AI summaries from each save into a <strong>readable narrative</strong> of what was accomplished.</p>
+      <div class="card" style="margin-top:4px;">
+        <div class="label">Example Output</div>
+        <p style="font-size:0.93rem;">"This week you redesigned the portfolio homepage, fixed spacing issues on mobile, and added a new contact form. 14 saves across 3 active days — 847 lines added, 312 removed."</p>
+      </div>
+      <p style="margin-top:14px; font-size:0.93rem; color:#555;">Useful for status updates, client progress logs, or personal portfolios — no git knowledge needed to generate or read it.</p>
+    </div>
+    <div class="col">
+      <ul class="flist">
+        <li><span class="dot"></span>Combines git stats with stored AI commit summaries from the same week</li>
+        <li><span class="dot"></span>Shows total saves, files changed, lines added/removed, active days</li>
+        <li><span class="dot"></span>Cached by commit signature to avoid re-processing the same week</li>
+        <li><span class="dot"></span>Stats-only fallback (no AI narrative) when AI is not connected</li>
+        <li><span class="dot"></span>Distinguishes commits that have AI summaries vs. message-only entries</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- AI Feature 3: Natural Language Undo -->
+<div class="slide light">
+  <div class="pill">AI Feature 3 of 6</div>
+  <h2>Natural Language Undo</h2>
+  <hr class="rule"/>
+  <div class="cols">
+    <div class="col">
+      <p style="margin-bottom:14px;">Instead of scrolling through commit hashes, users describe in plain language <strong>when they want to return to</strong>.</p>
+      <blockquote>"Go back to before I changed the upload flow."</blockquote>
+      <blockquote style="margin-top:10px;">"Restore to the state two days ago when the button was still red."</blockquote>
+      <p style="margin-top:14px; font-size:0.95rem; color:#555;">The AI searches up to 120 recent commits enriched with stored AI summaries, finds the best matching restore point, then <strong>shows a file-level preview before doing anything</strong>. The user must explicitly confirm.</p>
+    </div>
+    <div class="col">
+      <ul class="flist">
+        <li><span class="dot"></span>Searches up to 120 recent commits, each enriched with their AI summary</li>
+        <li><span class="dot"></span>Returns a primary match + 0–2 alternatives with confidence scores</li>
+        <li><span class="dot"></span>Shows which files would be restored and which would be removed — before applying</li>
+        <li><span class="dot"></span>User must explicitly confirm — nothing is applied automatically</li>
+        <li><span class="dot"></span>Fallback options when the matched commit has no file-level delta</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- AI Feature 4: Smart Conflict Resolver -->
+<div class="slide cream">
+  <div class="pill">AI Feature 4 of 6</div>
+  <h2>Smart Conflict Resolver</h2>
+  <hr class="rule"/>
+  <div class="cols">
+    <div class="col">
+      <p style="margin-bottom:14px;">When a pull or merge creates git conflicts, the app automatically surfaces a <strong>guided dialog</strong> that walks the user through resolution — no raw <code style="background:#ddd;padding:2px 6px;border-radius:4px;">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code> markers exposed.</p>
+      <p style="margin-bottom:14px; font-size:0.95rem; color:#555;">Optional AI enhancement provides a plain-language explanation of which version to keep and why.</p>
+      <div class="card" style="margin-top:4px;">
+        <div class="label">AI Hint Example</div>
+        <p style="font-size:0.92rem;">"Keep your version — it has the new layout changes. The incoming version only adds a minor color fix that's already in yours."</p>
+      </div>
+    </div>
+    <div class="col">
+      <ul class="flist">
+        <li><span class="dot"></span>Dialog auto-opens when <code style="background:#eee;padding:1px 5px;border-radius:3px;">status.has_conflicts</code> becomes true after pull/merge</li>
+        <li><span class="dot"></span>"Keep Mine" / "Keep Theirs" per file — no diff syntax required</li>
+        <li><span class="dot"></span>AI explains the tradeoff for each conflicted file on request</li>
+        <li><span class="dot"></span>Once all files resolved, AI can suggest the merge commit message</li>
+        <li><span class="dot"></span>Visual progress: resolved files show a checkmark badge</li>
+        <li><span class="dot"></span>Abort button always visible to cancel the entire merge safely</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- AI Feature 5: File Insight -->
+<div class="slide light">
+  <div class="pill">AI Feature 5 of 6</div>
+  <h2>File Insight</h2>
+  <hr class="rule"/>
+  <div class="cols">
+    <div class="col">
+      <p style="margin-bottom:14px;">Click any tracked file in the file panel and the app instantly generates a <strong>plain-language explanation</strong> of what that file does, how it works, and which related files connect to it.</p>
+      <div class="card" style="margin-top:4px;">
+        <div class="label">Example Output</div>
+        <p style="font-size:0.92rem;">"This is the main entry point of the React UI. It initializes the app, loads your saved preferences, and wires together the sidebar, file panel, and action panel. It coordinates the commit flow from file selection through to the save confirmation."</p>
+      </div>
+      <p style="margin-top:14px; font-size:0.93rem; color:#555;">Explains any code file in plain language — no terminal or code knowledge required.</p>
+    </div>
+    <div class="col">
+      <ul class="flist">
+        <li><span class="dot"></span>Scores related files via co-commit history, directory proximity, and name similarity — no hallucinated paths</li>
+        <li><span class="dot"></span>64 KB read limit; 12 KB content snippet sent to AI</li>
+        <li><span class="dot"></span>Binary files auto-detected by extension and null-byte scan and skipped</li>
+        <li><span class="dot"></span>Related file chips are clickable — analyze connected files in sequence</li>
+        <li><span class="dot"></span>Requires AI connection; gracefully disabled when offline</li>
+        <li><span class="dot"></span>Request deduplication prevents stale results on rapid file switching</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- AI Feature 6: Untracked File Review -->
+<div class="slide cream">
+  <div class="pill">AI Feature 6 of 6</div>
+  <h2>Untracked File Review</h2>
+  <hr class="rule"/>
+  <div class="cols">
+    <div class="col">
+      <p style="margin-bottom:14px;">When untracked files exist and AI is connected, a <strong>"Review untracked" button</strong> appears. The app classifies every file — should it be committed to the repo, or safely deleted?</p>
+      <div class="card" style="margin-top:4px;">
+        <div class="label">Example Recommendations</div>
+        <p style="font-size:0.92rem;"><strong>Commit:</strong> src/Button.tsx (94%) — "Looks like new source code, likely belongs in version control."<br/><br/><strong>Delete:</strong> node_modules/ (99%) — "Generated dependency folder, should never be committed."</p>
+      </div>
+      <p style="margin-top:14px; font-size:0.93rem; color:#555;">Stage all commit-recommended files in one click, or select delete-recommended files for instant removal.</p>
+    </div>
+    <div class="col">
+      <ul class="flist">
+        <li><span class="dot"></span><strong>Two-tier decision</strong> — instant rule-based pass first, AI only for ambiguous cases; fast and low token cost</li>
+        <li><span class="dot"></span>Rules auto-identify: build artifacts, caches, virtual envs, <code style="background:#eee;padding:1px 5px;border-radius:3px;">.env</code> secrets, lock files, source directories</li>
+        <li><span class="dot"></span>AI context: up to 100 files; up to 16 receive content snippets</li>
+        <li><span class="dot"></span>Adaptive timeout: 12s base + 220ms per file, capped at 45s</li>
+        <li><span class="dot"></span>Conservative fallback on timeout: unresolved files default to "commit"</li>
+        <li><span class="dot"></span>Live UI updates as deletions complete; failed paths reported separately</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- AI Summary Grid -->
+<div class="slide light center">
+  <div class="label">Git Abstraction Tool — AI Summary</div>
+  <h2>6 Core AI Components at a Glance</h2>
+  <hr class="rule" style="margin-bottom:20px;"/>
+  <div class="card-2col">
+    <div class="ai-card">
+      <div class="num">Feature 1</div>
+      <h3>Auto Commit Message</h3>
+      <p>Turns staged diffs into a plain-language save description. Never blocks saving. Stored summaries power the other features.</p>
+    </div>
+    <div class="ai-card">
+      <div class="num">Feature 2</div>
+      <h3>Weekly Report</h3>
+      <p>Generates a narrative of the week's work — what was built, how many saves, across how many days. Stats-only fallback without AI.</p>
+    </div>
+    <div class="ai-card">
+      <div class="num">Feature 3</div>
+      <h3>Natural Language Undo</h3>
+      <p>Describe <em>when</em> to return to in plain English. AI finds the commit, previews the file changes, and waits for your confirmation.</p>
+    </div>
+    <div class="ai-card">
+      <div class="num">Feature 4</div>
+      <h3>Smart Conflict Resolver</h3>
+      <p>Guided dialog for merge conflicts — file by file, plain language. AI explains which version to keep and drafts the merge message.</p>
+    </div>
+    <div class="ai-card">
+      <div class="num">Feature 5</div>
+      <h3>File Insight</h3>
+      <p>Click any file for a plain-language explanation of what it does, how it works, and which related files connect to it.</p>
+    </div>
+    <div class="ai-card">
+      <div class="num">Feature 6</div>
+      <h3>Untracked File Review</h3>
+      <p>Classifies untracked files as commit or delete. Rule-based pass first, AI handles ambiguous cases. Stage or delete in one click.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Closing -->
+<div class="slide cover center">
+  <div class="label">Summary</div>
+  <h2 style="max-width:680px; line-height:1.2;">Bringing version control to everyone — not just developers.</h2>
+  <hr class="rule" style="border-color:rgba(255,255,255,0.18); margin:28px auto; width:180px;"/>
+  <div style="display:flex; gap:48px; margin-top:8px; align-items:center;">
+    <div style="text-align:center;">
+      <div style="font-size:1.5rem; font-weight:700; color:#aaa;">Code Repo<br/>Knowledge Layer</div>
+      <div style="color:rgba(255,255,255,0.4); font-size:0.85rem; margin-top:6px;">Developer onboarding · VS Code ext</div>
+    </div>
+    <div style="color:rgba(255,255,255,0.35); font-size:2.5rem;">→</div>
+    <div style="text-align:center;">
+      <div style="font-size:1.5rem; font-weight:800; color:#fff;">Git Abstraction Tool</div>
+      <div style="color:rgba(255,255,255,0.5); font-size:0.85rem; margin-top:6px;">Version control for everyone · Electron app</div>
+    </div>
+  </div>
+  <p style="color:rgba(255,255,255,0.3); font-size:0.85rem; margin-top:48px;">Honda × 99P Labs · Spring 2026</p>
+</div>
+
+</div><!-- /deck -->
+
+<nav>
+  <button id="prev" onclick="go(-1)" disabled>◀</button>
+  <span id="counter">1 / 19</span>
+  <button id="next" onclick="go(1)">▶</button>
+</nav>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total  = slides.length;
+  let cur = 0;
+
+  function show(n) {
+    slides[cur].classList.remove('active');
+    cur = Math.max(0, Math.min(n, total - 1));
+    slides[cur].classList.add('active');
+    document.getElementById('counter').textContent = (cur + 1) + ' / ' + total;
+    document.getElementById('prev').disabled = cur === 0;
+    document.getElementById('next').disabled = cur === total - 1;
+    document.getElementById('prog').style.width = ((cur + 1) / total * 100) + '%';
+  }
+
+  function go(d) { show(cur + d); }
+
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight','ArrowDown',' '].includes(e.key)) go(1);
+    if (['ArrowLeft','ArrowUp'].includes(e.key)) go(-1);
+  });
+
+  show(0);
+</script>
+</body>
+</html>

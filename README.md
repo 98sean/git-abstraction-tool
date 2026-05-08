@@ -1,25 +1,37 @@
-# Git Abstraction Tool
+# Git Abstraction Tool (VIVA)
 
 [![English](https://img.shields.io/badge/lang-English-blue)](README.md)
 [![한국어](https://img.shields.io/badge/lang-%ED%95%9C%EA%B5%AD%EC%96%B4-green)](README.ko.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)]()
 
-A desktop app for saving project history locally, reviewing project files in one panel, using your own AI provider key for save assistance and project tools, and optionally uploading work to GitHub with explicit safety checks.
+**Git version control for everyone who isn't a terminal power user.**
+
+VIVA (Visual Interface for Version Assistance) is a local-first desktop app that makes saving, reviewing, and sharing code safe and approachable — no shell commands required. It wraps Git in a visual workflow with explicit consent before anything destructive or irreversible happens, and layers in opt-in AI tools at the exact moments they help most.
+
+Built for vibe coders, designers, students, and early-stage developers who generate code with AI tools but need a reliable way to manage it.
 
 ---
 
-## What it does
+## Features
 
-- **Local-first saves**: record project snapshots without requiring GitHub or AI setup first
-- **Safe project linking**: inspect a folder before linking it, warn about generated or sensitive files, and ask before running `git init`
-- **Full file visibility**: show tracked, changed, staged, untracked, and clean files together so the project panel stays understandable
-- **Dependency hiding**: keep generated folders collapsed by default while still allowing explicit review with **Show deps**
-- **Branch-aware workflow**: create, switch, merge, and delete local branches with guardrails around default and current branches
-- **Optional AI tools**: connect one AI provider key globally, then use save assistance and manual AI tools where they are helpful
-- **Language and terminology modes**: switch the app between English and Korean, and separately choose friendlier or Git-aware wording
-- **Explicit cloud upload**: choose a private backup repo or a collaboration target before anything uploads
-- **Pull update preview**: inspect incoming remote changes before pulling them into the local project
+- **Local-first saves** — record project snapshots without requiring GitHub or AI setup
+- **Safe project linking** — inspect a folder before linking, warn about generated or sensitive files, and ask before running `git init`
+- **Full file visibility** — show tracked, changed, staged, untracked, and clean files together in one panel
+- **Dependency hiding** — keep generated folders collapsed by default; reveal with **Show deps** when needed
+- **Branch-aware workflow** — create, switch, merge, and delete local branches with guardrails on default and current branches
+- **Opt-in AI tools** — connect one AI provider key globally, then use save assistance and manual tools where helpful
+- **Language and terminology modes** — switch between English and Korean, and separately between beginner-friendly or Git-aware wording
+- **Explicit cloud upload** — choose a private backup repo or a team collaboration target before anything is pushed
+- **Pull update preview** — inspect incoming remote changes before pulling them into the local project
 
 No shell commands are required in the UI.
+
+---
+
+## Screenshots
+
+> Screenshots coming soon. Drop UI images here before publishing.
 
 ---
 
@@ -71,9 +83,7 @@ If a linked project later enters a **Not a Git repository** state, the app shows
 
 The main panel shows tracked files and current changes together.
 
-Use **Show deps** / **Hide deps** to reveal or collapse dependency and generated folders such as
-`node_modules` or build output. Hiding deps keeps the normal review focused; showing deps is useful
-when you deliberately need to inspect those files.
+Use **Show deps** / **Hide deps** to reveal or collapse dependency and generated folders such as `node_modules` or build output.
 
 Stage the changes you want, write a message, and click **Save Progress**.
 
@@ -87,10 +97,10 @@ If AI save messages are enabled for that project:
 
 Manual AI tools stay separate from this flow:
 
-- **Natural Language Undo** helps find a restore point from plain-language history
-- **File Insight** explains the currently selected file and related files
-- **Untracked Review** reviews untracked files before you stage or delete them
-- **Weekly Report** summarizes recent work, with a deterministic local fallback when AI is unavailable
+- **Natural Language Undo** — find a restore point from plain-language history
+- **File Insight** — explain the currently selected file and related files
+- **Untracked Review** — review untracked files before staging or deleting them
+- **Weekly Report** — summarize recent work, with a deterministic local fallback when AI is unavailable
 
 ### 3. Manage branches
 
@@ -109,15 +119,12 @@ Click **Upload to Cloud**.
 
 On first use, the app opens a setup wizard:
 
-- **Back up to my GitHub**: creates an app-managed private backup repository
-- **Upload work to a team repository**: chooses a specific remote and branch mode for collaboration
+- **Back up to my GitHub** — creates an app-managed private backup repository
+- **Upload work to a team repository** — chooses a specific remote and branch mode for collaboration
 
 Uploads do not happen until one of those targets is explicitly configured.
 
-For team upload, the recommended path is a new work branch such as `gat/my-update`.
-That branch is pushed to GitHub and the app shows an **Open pull request** handoff link when GitHub
-can provide a compare URL. Your changes will not appear on `main` until the team reviews and merges
-that branch.
+For team upload, the recommended path is a new work branch such as `gat/my-update`. That branch is pushed to GitHub and the app shows an **Open pull request** handoff link when GitHub can provide a compare URL. Your changes will not appear on `main` until the team reviews and merges that branch.
 
 ### 5. Get remote updates
 
@@ -159,7 +166,7 @@ If the folder is not a Git repository, the app asks before running `git init`. I
 
 ### File Review
 
-The project file panel is designed to show the whole project state, not only changed files.
+The project file panel shows the whole project state, not only changed files.
 
 - **Tracked clean files** are visible so users know what is already part of history
 - **Modified, staged, and untracked files** are marked by status
@@ -232,19 +239,16 @@ AI-generated save messages, natural undo explanations, file insight, untracked r
 
 ## AI Providers
 
-The app currently supports these AI provider types:
+The app currently supports:
 
 - OpenAI
 - Anthropic
 
-AI keys are also stored with Electron `safeStorage`.
+AI keys are stored with Electron `safeStorage`.
 
 Only staged diffs are sent, and only after that project explicitly grants AI diff consent.
 
-`Connect AI` is the only supported credential-entry path for AI.
-Project Settings can open that flow and configure project AI behavior, but it does not collect or store raw API keys itself.
-
-AI output follows the selected app language where prompts are generated by the app. Provider names, model names, file paths, branch names, and existing Git history are not translated.
+`Connect AI` is the only supported credential-entry path. Project Settings can open that flow and configure project AI behavior, but does not collect or store raw API keys.
 
 ### AI Suggest
 
@@ -256,17 +260,13 @@ What it does:
 - drafts a commit message
 - leaves the message editable before saving
 
-Required state:
+Required:
 
 - an AI provider is connected
 - the project has granted diff consent
 - at least one file is staged
 
-If any requirement is missing, the app shows a clear error instead of using an environment variable or hidden fallback key.
-
 ### Auto Save Message
-
-Auto save message is a project-level assistant for **Save Progress**.
 
 When enabled:
 
@@ -274,11 +274,7 @@ When enabled:
 2. the user reviews or edits the message
 3. the next save action creates the commit
 
-This feature is gated by the project toggle and one-time diff consent. Users can leave it off and write messages manually.
-
 ### Natural Language Undo
-
-Use **Natural Language Undo** when you want to find a restore point using plain language.
 
 Example inputs:
 
@@ -290,38 +286,15 @@ The tool searches project history and proposes likely restore points with a file
 
 ### File Insight
 
-Use **File Insight** from the file review context when a file is selected.
-
-What it does:
-
-- explains what the selected file appears to do
-- summarizes relevant nearby changes or related context
-- helps decide whether the file should be reviewed, staged, or left alone
-
-Common failure cases:
-
-- no AI provider is connected
-- no file is selected
-- the file is too large or cannot be read safely
-- the provider rejects the request or the API key is invalid
+Explains what the selected file does, summarizes relevant nearby changes, and helps decide whether the file should be reviewed, staged, or left alone.
 
 ### Untracked Review
 
-Use **Untracked Review** when new files appear and it is unclear whether they should be staged.
-
-What it does:
-
-- reviews untracked files before they enter history
-- calls out likely generated files, local machine files, or suspicious sensitive files
-- helps separate source files from files that belong in `.gitignore`
-
-It is advisory only. The user still chooses what to stage or exclude.
+Reviews untracked files before they enter history, calls out likely generated, local-machine, or sensitive files, and helps separate source files from files that belong in `.gitignore`. Advisory only — the user still decides what to stage or exclude.
 
 ### Weekly Report
 
-Use **Weekly Report** to summarize recent project work.
-
-When AI is connected, the report can produce a feature-focused summary from recent history. When AI is unavailable, the app can still provide a deterministic local summary from Git data.
+When AI is connected, produces a feature-focused summary from recent history. When AI is unavailable, falls back to a deterministic local summary from Git data.
 
 ---
 
@@ -337,13 +310,20 @@ When AI is connected, the report can produce a feature-focused summary from rece
 - No AI key collection inside Project Settings
 - No automatic conflict resolution during pull or merge
 
-## Current Limitations
+---
 
-- Backup repositories are currently created as app-managed private GitHub repositories
-- Public versus private backup selection is not part of the current release behavior
-- Pull and merge conflicts are reported, not automatically resolved
-- Team collaboration upload is branch-first; pull request creation is handed off to GitHub through the compare URL
-- AI tools require a connected provider and project consent before sending diffs
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Desktop shell | [Electron](https://www.electronjs.org/) |
+| UI | [React](https://react.dev/) + TypeScript |
+| Git operations | [simple-git](https://github.com/steveukx/git-js) |
+| Local storage | SQLite via [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) |
+| AI providers | OpenAI API, Anthropic API |
+| i18n | Custom i18n layer (English + Korean) |
+| Tests | [Vitest](https://vitest.dev/) + Testing Library |
+| Packaging | [electron-builder](https://www.electron.build/) |
 
 ---
 
@@ -351,15 +331,45 @@ When AI is connected, the report can produce a feature-focused summary from rece
 
 ```bash
 npm install
-npm run dev
-npm test
-npm run typecheck
+npm run dev       # start the app in development mode
+npm test          # run tests with Vitest
+npm run typecheck # TypeScript type check
 ```
+
+Main-process code lives in `src/main/`, the React UI in `src/renderer/src/`, and shared types in `src/shared/`.
+
+---
+
+## Contributing
+
+Contributions are welcome. Please open an issue first to discuss what you'd like to change — especially for features that touch the safety rules or the AI provider boundary.
+
+1. Fork the repo and create a branch from `main`
+2. Make your changes with tests where applicable
+3. Run `npm test` and `npm run typecheck` before submitting
+4. Open a pull request with a clear description of the change and why
+
+Please keep PRs focused. One concern per PR makes review faster.
+
+---
+
+## Current Limitations
+
+- Backup repositories are created as app-managed private GitHub repositories; public/private selection is not in the current release
+- Pull and merge conflicts are reported, not automatically resolved
+- Team collaboration upload is branch-first; pull request creation is handed off to GitHub through the compare URL
+- AI tools require a connected provider and project consent before sending diffs
+
+---
+
+## License
+
+[MIT](LICENSE)
 
 ---
 
 ## Korean Git Guide
 
-A Korean guide that maps the app UI to real Git behavior lives here:
+A Korean guide that maps the app UI to real Git behavior:
 
 - [docs/git-feature-guide-ko.md](docs/git-feature-guide-ko.md)
