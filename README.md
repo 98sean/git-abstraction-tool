@@ -1,4 +1,4 @@
-# Git Abstraction Tool (VIVA)
+# VIVA — Visual Interface for Version Assistance
 
 [![English](https://img.shields.io/badge/lang-English-blue)](README.md)
 [![한국어](https://img.shields.io/badge/lang-%ED%95%9C%EA%B5%AD%EC%96%B4-green)](README.ko.md)
@@ -38,19 +38,19 @@ No shell commands are required in the UI.
 ## Installation
 
 ### Windows
-1. Download `Git-Abstraction-Tool-Setup.exe` from the [Releases page](../../releases)
+1. Download `VIVA-Setup.exe` from the [Releases page](../../releases)
 2. Run the installer
-3. Launch **Git Abstraction Tool**
+3. Launch **VIVA**
 
 ### macOS
-1. Download `Git-Abstraction-Tool.dmg` from the [Releases page](../../releases)
+1. Download `VIVA.dmg` from the [Releases page](../../releases)
 2. Drag the app to Applications
 3. Open it from Applications
 
 ### Linux
-1. Download `Git-Abstraction-Tool.AppImage` from the [Releases page](../../releases)
-2. Make it executable: `chmod +x Git-Abstraction-Tool.AppImage`
-3. Run it: `./Git-Abstraction-Tool.AppImage`
+1. Download `VIVA.AppImage` from the [Releases page](../../releases)
+2. Make it executable: `chmod +x VIVA.AppImage`
+3. Run it: `./VIVA.AppImage`
 
 > **Requirement:** Git must be installed on your computer.
 > - Windows: [git-scm.com](https://git-scm.com/download/win)

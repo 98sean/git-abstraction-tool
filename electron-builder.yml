@@ -1,5 +1,5 @@
-appId: com.gitabstractiontool.app
-productName: Git Abstraction Tool
+appId: com.viva.app
+productName: VIVA
 copyright: Copyright © 2024-2025 Sean Lee
 
 publish:
@@ -37,7 +37,7 @@ mac:
   category: public.app-category.developer-tools
 
 dmg:
-  title: Git Abstraction Tool
+  title: VIVA
 
 # Linux — AppImage
 linux:

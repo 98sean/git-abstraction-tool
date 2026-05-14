@@ -134,7 +134,7 @@ lbl(sl, Inches(1), Inches(1.1), Inches(11),
     "Honda x 99P Labs - Spring 2026",
     color=RGBColor(0x77, 0x77, 0x77))
 tb(sl, Inches(1), Inches(1.45), Inches(11.3), Inches(2.5),
-   "Code Repo Knowledge Layer\n-> Git Abstraction Tool",
+   "Code Repo Knowledge Layer\n-> VIVA",
    size=40, bold=True, color=WHITE)
 tb(sl, Inches(1), Inches(4.1), Inches(9.5), Inches(1.2),
    "A semester-long journey from developer onboarding tooling to a desktop app\n"
@@ -280,7 +280,7 @@ lbl(sl, Inches(1), Inches(2.7), Inches(10), "Part 2",
 h1(sl, Inches(1), Inches(3.05), Inches(11.3),
    "The Pivot", size=38, color=WHITE)
 tb(sl, Inches(1), Inches(4.2), Inches(9), Inches(0.6),
-   "Why we shifted from Repo Buddy to Git Abstraction Tool",
+   "Why we shifted from Repo Buddy to VIVA",
    size=17, color=RGBColor(0xFF, 0xDD, 0xDD))
 
 # ============================================================
@@ -376,7 +376,7 @@ bg(sl, RED)
 lbl(sl, Inches(1), Inches(2.7), Inches(10), "Part 3",
     color=RGBColor(0xFF, 0xCC, 0xCC))
 h1(sl, Inches(1), Inches(3.05), Inches(11.3),
-   "Git Abstraction Tool", size=38, color=WHITE)
+   "VIVA", size=38, color=WHITE)
 tb(sl, Inches(1), Inches(4.2), Inches(9), Inches(0.6),
    "What we built -- and the 6 core AI features",
    size=17, color=RGBColor(0xFF, 0xDD, 0xDD))
@@ -387,7 +387,7 @@ tb(sl, Inches(1), Inches(4.2), Inches(9), Inches(0.6),
 sl = new_slide()
 bg(sl, LIGHT)
 lbl(sl, Inches(0.6), Inches(0.38), Inches(10),
-    "Git Abstraction Tool -- Overview")
+    "VIVA -- Overview")
 h1(sl, Inches(0.6), Inches(0.62), Inches(12), "What It Is", size=28)
 rule(sl, Inches(0.6), Inches(1.45), Inches(12.1))
 
@@ -425,7 +425,7 @@ bullets(sl, Inches(7.0), Inches(1.6), Inches(6.1),
 sl = new_slide()
 bg(sl, CREAM)
 lbl(sl, Inches(0.6), Inches(0.38), Inches(10),
-    "Git Abstraction Tool -- Architecture")
+    "VIVA -- Architecture")
 h1(sl, Inches(0.6), Inches(0.62), Inches(12), "How It's Built", size=28)
 rule(sl, Inches(0.6), Inches(1.45), Inches(12.1))
 
@@ -477,7 +477,7 @@ for i, (h, b) in enumerate(tech_items):
 sl = new_slide()
 bg(sl, RED)
 lbl(sl, Inches(1), Inches(2.1), Inches(11),
-    "Git Abstraction Tool -- AI Features",
+    "VIVA -- AI Features",
     color=RGBColor(0xFF, 0xCC, 0xCC))
 h1(sl, Inches(1), Inches(2.5), Inches(11.3),
    "6 Core AI Components", size=38, color=WHITE)
@@ -694,7 +694,7 @@ bullets(sl, Inches(7.0), Inches(1.6), Inches(6.1),
 sl = new_slide()
 bg(sl, CREAM)
 lbl(sl, Inches(0.6), Inches(0.38), Inches(10),
-    "Git Abstraction Tool -- AI Summary")
+    "VIVA -- AI Summary")
 h1(sl, Inches(0.6), Inches(0.62), Inches(12),
    "6 Core AI Components at a Glance", size=28)
 rule(sl, Inches(0.6), Inches(1.45), Inches(12.1))
@@ -764,7 +764,7 @@ tb(sl, Inches(5.55), Inches(3.35), Inches(2.2), Inches(0.65),
    "->", size=36, bold=True, color=RED, align=PP_ALIGN.CENTER)
 
 tb(sl, Inches(7.2), Inches(3.25), Inches(5.3), Inches(0.55),
-   "Git Abstraction Tool",
+   "VIVA",
    size=20, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
 tb(sl, Inches(7.2), Inches(3.8), Inches(5.3), Inches(0.4),
    "Version control for everyone  |  Electron desktop app",

@@ -2,7 +2,7 @@
 
 ## Summary
 
-This spec defines a safer onboarding and upload model for Git Abstraction Tool.
+This spec defines a safer onboarding and upload model for VIVA.
 
 It separates internal concerns without exposing that split as a confusing user-facing mode:
 

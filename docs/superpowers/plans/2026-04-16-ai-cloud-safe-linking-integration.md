@@ -1115,7 +1115,7 @@ git commit -m "feat: integrate ai and cloud project settings"
 - [ ] **Step 1: Write the Korean feature guide**
 
 ```md
-# Git Abstraction Tool 기능과 Git 동작 설명
+# VIVA 기능과 Git 동작 설명
 
 ## Save Progress
 - 쉬운 설명:

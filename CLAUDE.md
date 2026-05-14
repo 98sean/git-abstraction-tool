@@ -1,4 +1,4 @@
-# Git Abstraction Tool — Claude Code Instructions
+# VIVA — Claude Code Instructions
 
 ## Project layout
 - `src/main/` — Electron main process (git service, IPC handlers, DB, AI)

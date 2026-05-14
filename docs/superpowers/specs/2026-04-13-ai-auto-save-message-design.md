@@ -2,7 +2,7 @@
 
 ## Summary
 
-This spec defines the first AI-enabled slice for Git Abstraction Tool:
+This spec defines the first AI-enabled slice for VIVA:
 
 - Add a global AI connection for either `OpenAI` or `Anthropic`
 - Add a per-project AI settings panel

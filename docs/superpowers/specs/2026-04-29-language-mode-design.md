@@ -2,7 +2,7 @@
 
 ## Summary
 
-Git Abstraction Tool should support app-level language selection while preserving the existing `newbie` / `pro` terminology mode.
+VIVA should support app-level language selection while preserving the existing `newbie` / `pro` terminology mode.
 
 The feature introduces a separate `language` preference:
 

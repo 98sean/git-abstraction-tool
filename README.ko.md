@@ -1,4 +1,4 @@
-# Git Abstraction Tool (VIVA)
+# VIVA — Visual Interface for Version Assistance
 
 [![English](https://img.shields.io/badge/lang-English-blue)](README.md)
 [![한국어](https://img.shields.io/badge/lang-%ED%95%9C%EA%B5%AD%EC%96%B4-green)](README.ko.md)
@@ -38,19 +38,19 @@ UI에서 shell 명령어를 직접 입력할 필요는 없습니다.
 ## 설치
 
 ### Windows
-1. [Releases page](../../releases)에서 `Git-Abstraction-Tool-Setup.exe`를 다운로드합니다
+1. [Releases page](../../releases)에서 `VIVA-Setup.exe`를 다운로드합니다
 2. installer를 실행합니다
-3. **Git Abstraction Tool**을 실행합니다
+3. **VIVA**를 실행합니다
 
 ### macOS
-1. [Releases page](../../releases)에서 `Git-Abstraction-Tool.dmg`를 다운로드합니다
+1. [Releases page](../../releases)에서 `VIVA.dmg`를 다운로드합니다
 2. 앱을 Applications 폴더로 드래그합니다
 3. Applications에서 앱을 실행합니다
 
 ### Linux
-1. [Releases page](../../releases)에서 `Git-Abstraction-Tool.AppImage`를 다운로드합니다
-2. 실행 권한을 부여합니다: `chmod +x Git-Abstraction-Tool.AppImage`
-3. 앱을 실행합니다: `./Git-Abstraction-Tool.AppImage`
+1. [Releases page](../../releases)에서 `VIVA.AppImage`를 다운로드합니다
+2. 실행 권한을 부여합니다: `chmod +x VIVA.AppImage`
+3. 앱을 실행합니다: `./VIVA.AppImage`
 
 > **필수 조건:** 컴퓨터에 Git이 설치되어 있어야 합니다.
 > - Windows: [git-scm.com](https://git-scm.com/download/win)

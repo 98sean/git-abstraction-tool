@@ -2,7 +2,7 @@
 
 ## Summary
 
-This spec defines a behavior-preserving architecture cleanup for the current Git Abstraction Tool app. The goal is to make the existing AI, safe upload, branch, file insight, untracked review, pull update, and weekly report features easier to test and maintain without changing the product behavior users already see.
+This spec defines a behavior-preserving architecture cleanup for the current VIVA app. The goal is to make the existing AI, safe upload, branch, file insight, untracked review, pull update, and weekly report features easier to test and maintain without changing the product behavior users already see.
 
 This is not a feature expansion spec. It should not add new AI tools, new GitHub flows, new branch modes, or new UI surfaces. It should only improve boundaries, remove duplication, and make current behavior safer to preserve.
 

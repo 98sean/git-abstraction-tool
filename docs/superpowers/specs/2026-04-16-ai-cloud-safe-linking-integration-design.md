@@ -2,7 +2,7 @@
 
 ## Summary
 
-This spec describes the current product baseline for Git Abstraction Tool after the AI, safe linking, cloud upload, branch management, and weekly report work were merged into `main`.
+This spec describes the current product baseline for VIVA after the AI, safe linking, cloud upload, branch management, and weekly report work were merged into `main`.
 
 The app is now a local-first Git workspace for non-technical users that can optionally use:
 

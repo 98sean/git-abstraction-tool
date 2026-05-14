@@ -1,7 +1,7 @@
 {
-  "name": "git-abstraction-tool",
+  "name": "viva",
   "version": "0.1.0",
-  "description": "A user-friendly Git abstraction tool for non-technical users",
+  "description": "VIVA — Visual Interface for Version Assistance",
   "author": "Sean Lee",
   "main": "./out/main/index.js",
   "scripts": {

@@ -1,4 +1,4 @@
-# Git Abstraction Tool 기능과 Git 동작 설명
+# VIVA 기능과 Git 동작 설명
 
 이 문서는 현재 앱의 주요 기능이 내부적으로 어떤 Git 동작과 연결되는지 한국어로 설명합니다.
 
