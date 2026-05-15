@@ -9,7 +9,7 @@
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
-    background: #EEF2F7;
+    background: #FFFFFF; /* Changed from #EEF2F7 to white */
     padding: 56px 24px;
     color: #0F172A;
     -webkit-font-smoothing: antialiased;
@@ -21,7 +21,7 @@
     text-align: center;
   }
   .page-header h1 {
-    font-size: 14px;
+    font-size: 18px;
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -31,20 +31,10 @@
   /* ── Card shell ── */
   .card {
     background: #fff;
-    border-radius: 24px;
     padding: 52px 56px;
-    max-width: 900px;
+    width: 900px;
     margin: 0 auto 80px;
     box-shadow: 0 2px 12px rgba(15,23,42,0.07), 0 8px 32px rgba(15,23,42,0.04);
-  }
-
-  .card-tag {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #94A3B8;
-    margin-bottom: 6px;
   }
 
   .card-title {
@@ -61,7 +51,7 @@
     padding: 22px 28px;
   }
   .arch-label {
-    font-size: 10px;
+    font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -75,11 +65,12 @@
     background: rgba(255,255,255,0.7);
     border: 1.5px solid rgba(255,255,255,0.9);
     border-radius: 10px;
-    padding: 10px 16px;
-    font-size: 13px;
+    padding: 10px 10px;
+    font-size: 15px;
     font-weight: 600;
     flex: 1;
     text-align: center;
+    white-space: nowrap;
   }
   .arch-connector {
     display: flex;
@@ -101,8 +92,8 @@
     background: #F1F5F9;
     border: 1.5px solid #CBD5E1;
     border-radius: 20px;
-    padding: 5px 16px;
-    font-size: 11px;
+    padding: 6px 18px;
+    font-size: 14px;
     font-weight: 600;
     color: #64748B;
     letter-spacing: 0.05em;
@@ -120,10 +111,10 @@
     text-align: center;
     position: relative;
   }
-  .arch-service-icon { font-size: 26px; margin-bottom: 10px; }
-  .arch-service-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-  .arch-service-sub  { font-size: 11px; font-weight: 500; opacity: 0.7; margin-bottom: 14px; }
-  .arch-service-list { font-size: 11px; line-height: 1.7; }
+  .arch-service-icon { font-size: 32px; margin-bottom: 10px; }
+  .arch-service-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .arch-service-sub  { font-size: 14px; font-weight: 500; opacity: 0.7; margin-bottom: 14px; }
+  .arch-service-list { font-size: 14px; line-height: 1.7; }
 
   /* ── Safety comparison (Diagram 3) ── */
   .compare {
@@ -136,7 +127,7 @@
     padding: 24px 28px;
   }
   .compare-col-header {
-    font-size: 14px;
+    font-size: 18px;
     font-weight: 700;
     margin-bottom: 20px;
     display: flex;
@@ -148,10 +139,10 @@
     align-items: flex-start;
     gap: 10px;
     margin-bottom: 14px;
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.5;
   }
-  .compare-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+  .compare-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; font-weight: bold; }
 
   /* ── 6 AI cards (Diagram 4) ── */
   .ai-grid {
@@ -163,9 +154,9 @@
     border-radius: 14px;
     padding: 24px 20px;
   }
-  .ai-num  { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 12px; }
-  .ai-name { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
-  .ai-desc { font-size: 12px; line-height: 1.55; opacity: 0.8; }
+  .ai-num  { font-size: 14px; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 12px; }
+  .ai-name { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .ai-desc { font-size: 15px; line-height: 1.55; opacity: 0.8; }
 
   /* ── Footer ── */
   .guide {
@@ -173,7 +164,7 @@
     margin: 0 auto;
     text-align: center;
     color: #94A3B8;
-    font-size: 12px;
+    font-size: 16px;
     padding-bottom: 48px;
     line-height: 1.8;
   }
@@ -182,7 +173,7 @@
     background: rgba(0,0,0,0.06);
     padding: 1px 5px;
     border-radius: 4px;
-    font-size: 12px;
+    font-size: 15px;
     font-family: 'SF Mono', 'Fira Code', monospace;
   }
 </style>
@@ -190,15 +181,14 @@
 <body>
 
 <div class="page-header">
-  <h1>VIVA — Medium Blog Post Diagrams &nbsp;·&nbsp; Screenshot each card individually</h1>
+  <h1>VIVA — Diagrams</h1>
 </div>
 
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
-<!-- DIAGRAM 1 · PROJECT PIVOT TIMELINE                            -->
+<!-- DIAGRAM 1 · PROJECT PIVOT TIMELINE                              -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="card">
-  <div class="card-tag">Diagram 1 — Narrative</div>
   <div class="card-title">The Journey: From Knowledge Layer to VIVA</div>
 
   <svg viewBox="0 0 800 230" xmlns="http://www.w3.org/2000/svg"
@@ -211,28 +201,28 @@
     <!-- ── Node 1: Phase 1 ── -->
     <circle cx="80"  cy="115" r="14" fill="#6366F1" opacity="0.12"/>
     <circle cx="80"  cy="115" r="8"  fill="#6366F1"/>
-    <text x="80" y="93"  text-anchor="middle" font-size="11" font-weight="700" fill="#4338CA">Phase 1</text>
-    <text x="80" y="107" text-anchor="middle" font-size="9"  fill="#6366F1" opacity="0.8">Sept</text>
-    <text x="80" y="138" text-anchor="middle" font-size="11" fill="#334155" font-weight="600">Knowledge Layer</text>
-    <text x="80" y="153" text-anchor="middle" font-size="10" fill="#64748B">VS Code sidebar</text>
-    <text x="80" y="166" text-anchor="middle" font-size="10" fill="#64748B">tree-sitter · PyDriller</text>
+    <text x="80" y="86"  text-anchor="middle" font-size="14" font-weight="700" fill="#4338CA">Start</text>
+    <text x="80" y="103" text-anchor="middle" font-size="12"  fill="#6366F1" opacity="0.8">Feb</text>
+    <text x="80" y="140" text-anchor="middle" font-size="14" fill="#334155" font-weight="600">Knowledge Layer</text>
+    <text x="80" y="156" text-anchor="middle" font-size="13" fill="#64748B">VS Code sidebar</text>
+    <text x="80" y="171" text-anchor="middle" font-size="13" fill="#64748B">tree-sitter · PyDriller</text>
 
     <!-- ── Node 2: The Wall ── -->
     <circle cx="240" cy="115" r="14" fill="#EF4444" opacity="0.12"/>
     <circle cx="240" cy="115" r="8"  fill="#EF4444"/>
-    <text x="240" y="93"  text-anchor="middle" font-size="11" font-weight="700" fill="#DC2626">The Wall</text>
-    <text x="240" y="107" text-anchor="middle" font-size="9"  fill="#EF4444" opacity="0.8">Oct</text>
-    <text x="240" y="138" text-anchor="middle" font-size="11" fill="#334155" font-weight="600">Cold Start Problem</text>
-    <text x="240" y="153" text-anchor="middle" font-size="10" fill="#64748B">No corporate data</text>
-    <text x="240" y="166" text-anchor="middle" font-size="10" fill="#64748B">AI underutilised</text>
+    <text x="240" y="86"  text-anchor="middle" font-size="14" font-weight="700" fill="#DC2626">The Wall</text>
+    <text x="240" y="103" text-anchor="middle" font-size="12"  fill="#EF4444" opacity="0.8">Mar</text>
+    <text x="240" y="140" text-anchor="middle" font-size="14" fill="#334155" font-weight="600">Cold Start Problem</text>
+    <text x="240" y="156" text-anchor="middle" font-size="13" fill="#64748B">No corporate data</text>
+    <text x="240" y="171" text-anchor="middle" font-size="13" fill="#64748B">AI underutilised</text>
 
     <!-- ── Node 3: The Catalyst (large) ── -->
     <!-- Speech bubble -->
-    <rect x="310" y="18" width="220" height="48" rx="10" fill="#FEF3C7" stroke="#FDE68A" stroke-width="1.5"/>
+    <rect x="290" y="14" width="260" height="54" rx="10" fill="#FEF3C7" stroke="#FDE68A" stroke-width="1.5"/>
     <polygon points="415,66 408,78 425,66" fill="#FEF3C7" stroke="#FDE68A" stroke-width="1.5" stroke-linejoin="round"/>
     <polygon points="415,66 408,78 425,66" fill="#FEF3C7"/>
-    <text x="420" y="37" text-anchor="middle" font-size="10" fill="#92400E" font-weight="600" font-style="italic">"How do we make vibe coding</text>
-    <text x="420" y="52" text-anchor="middle" font-size="10" fill="#92400E" font-weight="600" font-style="italic">easier?" — Ryan, 99P Labs</text>
+    <text x="420" y="35" text-anchor="middle" font-size="13" fill="#92400E" font-weight="600" font-style="italic">"How do we make vibe coding</text>
+    <text x="420" y="54" text-anchor="middle" font-size="13" fill="#92400E" font-weight="600" font-style="italic">easier?" — Ryan, 99P Labs</text>
 
     <circle cx="420" cy="115" r="18" fill="#F59E0B" opacity="0.18"/>
     <circle cx="420" cy="115" r="10" fill="#F59E0B"/>
@@ -242,27 +232,27 @@
     <line x1="401" y1="115" x2="408" y2="115" stroke="#F59E0B" stroke-width="1.5" opacity="0.5"/>
     <line x1="432" y1="115" x2="439" y2="115" stroke="#F59E0B" stroke-width="1.5" opacity="0.5"/>
 
-    <text x="420" y="148" text-anchor="middle" font-size="11" fill="#334155" font-weight="700">The Catalyst</text>
-    <text x="420" y="163" text-anchor="middle" font-size="10" fill="#64748B">Mentor reframes the goal</text>
-    <text x="420" y="176" text-anchor="middle" font-size="10" fill="#64748B">→ focus on vibe coders</text>
+    <text x="420" y="150" text-anchor="middle" font-size="14" fill="#334155" font-weight="700">The Catalyst</text>
+    <text x="420" y="166" text-anchor="middle" font-size="13" fill="#64748B">Mentor reframes the goal</text>
+    <text x="420" y="181" text-anchor="middle" font-size="13" fill="#64748B">→ focus on vibe coders</text>
 
     <!-- ── Node 4: Pivot ── -->
     <circle cx="590" cy="115" r="14" fill="#10B981" opacity="0.12"/>
     <circle cx="590" cy="115" r="8"  fill="#10B981"/>
-    <text x="590" y="93"  text-anchor="middle" font-size="11" font-weight="700" fill="#059669">Pivot</text>
-    <text x="590" y="107" text-anchor="middle" font-size="9"  fill="#10B981" opacity="0.8">Nov</text>
-    <text x="590" y="138" text-anchor="middle" font-size="11" fill="#334155" font-weight="600">VIVA Born</text>
-    <text x="590" y="153" text-anchor="middle" font-size="10" fill="#64748B">Local-first Electron</text>
-    <text x="590" y="166" text-anchor="middle" font-size="10" fill="#64748B">Safety-first design</text>
+    <text x="590" y="86"  text-anchor="middle" font-size="14" font-weight="700" fill="#059669">Pivot</text>
+    <text x="590" y="103" text-anchor="middle" font-size="12"  fill="#10B981" opacity="0.8">Apr</text>
+    <text x="590" y="140" text-anchor="middle" font-size="14" fill="#334155" font-weight="600">VIVA Born</text>
+    <text x="590" y="156" text-anchor="middle" font-size="13" fill="#64748B">Local-first Electron</text>
+    <text x="590" y="171" text-anchor="middle" font-size="13" fill="#64748B">Safety-first design</text>
 
     <!-- ── Node 5: Today ── -->
     <circle cx="740" cy="115" r="14" fill="#0EA5E9" opacity="0.12"/>
     <circle cx="740" cy="115" r="8"  fill="#0EA5E9"/>
-    <text x="740" y="93"  text-anchor="middle" font-size="11" font-weight="700" fill="#0284C7">Today</text>
-    <text x="740" y="107" text-anchor="middle" font-size="9"  fill="#0EA5E9" opacity="0.8">Dec</text>
-    <text x="740" y="138" text-anchor="middle" font-size="11" fill="#334155" font-weight="600">VIVA v1</text>
-    <text x="740" y="153" text-anchor="middle" font-size="10" fill="#64748B">6 AI components</text>
-    <text x="740" y="166" text-anchor="middle" font-size="10" fill="#64748B">shipped</text>
+    <text x="740" y="86"  text-anchor="middle" font-size="14" font-weight="700" fill="#0284C7">Result</text>
+    <text x="740" y="103" text-anchor="middle" font-size="12"  fill="#0EA5E9" opacity="0.8">May</text>
+    <text x="740" y="140" text-anchor="middle" font-size="14" fill="#334155" font-weight="600">VIVA v1</text>
+    <text x="740" y="156" text-anchor="middle" font-size="13" fill="#64748B">6 AI components</text>
+    <text x="740" y="171" text-anchor="middle" font-size="13" fill="#64748B">shipped</text>
   </svg>
 </div>
 
@@ -271,7 +261,6 @@
 <!-- DIAGRAM 2 · VIVA SYSTEM ARCHITECTURE                         -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="card">
-  <div class="card-tag">Diagram 2 — Product</div>
   <div class="card-title">VIVA System Architecture</div>
 
   <!-- Renderer layer -->
@@ -320,7 +309,7 @@
     </div>
 
     <div class="arch-service" style="background:#F5F3FF;border:1.5px dashed #C4B5FD;">
-      <div style="position:absolute;top:10px;right:12px;background:#F5F3FF;border:1px solid #C4B5FD;border-radius:20px;padding:2px 9px;font-size:9px;font-weight:700;color:#7C3AED;letter-spacing:0.08em;">OPT-IN</div>
+      <div style="position:absolute;top:10px;right:12px;background:#F5F3FF;border:1px solid #C4B5FD;border-radius:20px;padding:2px 9px;font-size:11px;font-weight:700;color:#7C3AED;letter-spacing:0.08em;">OPT-IN</div>
       <div class="arch-service-icon">✨</div>
       <div class="arch-service-name" style="color:#4C1D95;">AI Layer</div>
       <div class="arch-service-sub"  style="color:#6D28D9;">OpenAI / Anthropic</div>
@@ -336,8 +325,7 @@
 
   <!-- Local-only note -->
   <div style="margin-top:16px;border-radius:10px;background:#F8FAFC;border:1.5px solid #E2E8F0;padding:12px 20px;display:flex;align-items:center;gap:12px;">
-    <span style="font-size:18px;">💻</span>
-    <span style="font-size:13px;color:#475569;font-weight:500;">All data stays local — no server, no auth, no external database. AI is a modular enhancement, not a core dependency.</span>
+    <span style="font-size:16px;color:#475569;font-weight:500;">All data stays local. No server, auth, external db. AI is a modular enhancement, not a core dependency.</span>
   </div>
 </div>
 
@@ -346,14 +334,13 @@
 <!-- DIAGRAM 3 · SAFETY-FIRST COMPARISON                          -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="card">
-  <div class="card-tag">Diagram 3 — Product</div>
   <div class="card-title">Safety-First: Raw Git Terminal vs. VIVA</div>
 
   <div class="compare">
 
     <div class="compare-col" style="background:#FFF1F2;border:1.5px solid #FECDD3;">
       <div class="compare-col-header" style="color:#9F1239;">
-        <span style="font-size:20px;">⚠️</span> Raw Git Terminal
+        <span style="font-size:24px;">⚠️</span> Raw Git Terminal
       </div>
       <div class="compare-row" style="color:#7F1D1D;">
         <span class="compare-icon">✗</span>
@@ -383,7 +370,7 @@
 
     <div class="compare-col" style="background:#F0FDF4;border:1.5px solid #BBF7D0;">
       <div class="compare-col-header" style="color:#14532D;">
-        <span style="font-size:20px;">🛡️</span> With VIVA
+        <span style="font-size:24px;">🛡️</span> With VIVA
       </div>
       <div class="compare-row" style="color:#14532D;">
         <span class="compare-icon">✓</span>
@@ -414,8 +401,8 @@
   </div>
 
   <div style="margin-top:24px;text-align:center;padding:16px 20px;background:#F8FAFC;border-radius:12px;border:1.5px solid #E2E8F0;">
-    <span style="font-size:13px;font-weight:700;color:#0F172A;">Core principle: </span>
-    <span style="font-size:13px;color:#475569;">Every destructive or irreversible action requires explicit, conscious user consent.</span>
+    <span style="font-size:16px;font-weight:700;color:#0F172A;">Core principle: </span>
+    <span style="font-size:16px;color:#475569;">Every destructive or irreversible action requires explicit, conscious user consent.</span>
   </div>
 </div>
 
@@ -424,7 +411,6 @@
 <!-- DIAGRAM 4 · 6 AI COMPONENTS GRID                             -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="card">
-  <div class="card-tag">Diagram 4 — Product</div>
   <div class="card-title">The 6 Core AI Components</div>
 
   <div class="ai-grid">
@@ -467,8 +453,8 @@
 
   </div>
 
-  <div style="margin-top:20px;padding:14px 20px;background:#F8FAFC;border-radius:10px;border:1.5px solid #E2E8F0;font-size:12px;color:#64748B;text-align:center;">
-    All 6 components gracefully degrade when the AI API is unavailable — VIVA's core safety features never depend on AI.
+  <div style="margin-top:20px;padding:14px 20px;background:#F8FAFC;border-radius:10px;border:1.5px solid #E2E8F0;font-size:15px;color:#64748B;text-align:center;">
+    AI components gracefully degrade when the AI API is unavailable. Our core safety features never depend on AI.
   </div>
 </div>
 
@@ -477,12 +463,11 @@
 <!-- DIAGRAM 5 · ENGINEERING — SAVE PROGRESS SEQUENCE DIAGRAM     -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <div class="card">
-  <div class="card-tag">Diagram 5 — Engineering</div>
   <div class="card-title">Sequence Diagram: "Save Progress" Data Flow</div>
 
   <!-- Rule: every label rect sits ABOVE its arrow with a 9 px gap.
-       rect bottom = arrow_y − 9  →  rect top = arrow_y − 24  (height 15)
-       text y      = arrow_y − 13  (centred in rect)
+       rect bottom = arrow_y − 9  →  rect top = arrow_y − 27  (height 18)
+       text y      = arrow_y − 14  (centred in rect)
        Columns: User=70  ReactUI=220  IPC=375  GitSvc=535  AI=685  SQLite=840 -->
   <svg viewBox="0 0 900 710" xmlns="http://www.w3.org/2000/svg"
        style="width:100%;overflow:visible;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
@@ -497,28 +482,28 @@
 
     <!-- ── Actor header boxes ── -->
     <rect x="25"  y="16" width="90" height="46" rx="8" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
-    <text x="70"  y="36" text-anchor="middle" font-size="11" font-weight="700" fill="#334155">User</text>
-    <text x="70"  y="51" text-anchor="middle" font-size="9"  fill="#64748B">vibe coder</text>
+    <text x="70"  y="36" text-anchor="middle" font-size="14" font-weight="700" fill="#334155">User</text>
+    <text x="70"  y="51" text-anchor="middle" font-size="12"  fill="#64748B">vibe coder</text>
 
     <rect x="175" y="16" width="90" height="46" rx="8" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1.5"/>
-    <text x="220" y="36" text-anchor="middle" font-size="11" font-weight="700" fill="#4338CA">React UI</text>
-    <text x="220" y="51" text-anchor="middle" font-size="9"  fill="#6366F1">Renderer</text>
+    <text x="220" y="36" text-anchor="middle" font-size="14" font-weight="700" fill="#4338CA">React UI</text>
+    <text x="220" y="51" text-anchor="middle" font-size="12"  fill="#6366F1">Renderer</text>
 
     <rect x="330" y="16" width="90" height="46" rx="8" fill="#F0FDF4" stroke="#BBF7D0" stroke-width="1.5"/>
-    <text x="375" y="36" text-anchor="middle" font-size="11" font-weight="700" fill="#166534">IPC Bridge</text>
-    <text x="375" y="51" text-anchor="middle" font-size="9"  fill="#16A34A">Electron</text>
+    <text x="375" y="36" text-anchor="middle" font-size="14" font-weight="700" fill="#166534">IPC Bridge</text>
+    <text x="375" y="51" text-anchor="middle" font-size="12"  fill="#16A34A">Electron</text>
 
     <rect x="490" y="16" width="90" height="46" rx="8" fill="#FFF7ED" stroke="#FED7AA" stroke-width="1.5"/>
-    <text x="535" y="36" text-anchor="middle" font-size="11" font-weight="700" fill="#9A3412">Git Service</text>
-    <text x="535" y="51" text-anchor="middle" font-size="9"  fill="#C2410C">simple-git</text>
+    <text x="535" y="36" text-anchor="middle" font-size="14" font-weight="700" fill="#9A3412">Git Service</text>
+    <text x="535" y="51" text-anchor="middle" font-size="12"  fill="#C2410C">simple-git</text>
 
     <rect x="638" y="16" width="94" height="46" rx="8" fill="#F5F3FF" stroke="#DDD6FE" stroke-width="1.5" stroke-dasharray="5,3"/>
-    <text x="685" y="36" text-anchor="middle" font-size="11" font-weight="700" fill="#6D28D9">AI Service</text>
-    <text x="685" y="51" text-anchor="middle" font-size="9"  fill="#7C3AED">opt-in</text>
+    <text x="685" y="36" text-anchor="middle" font-size="14" font-weight="700" fill="#6D28D9">AI Service</text>
+    <text x="685" y="51" text-anchor="middle" font-size="12"  fill="#7C3AED">opt-in</text>
 
     <rect x="795" y="16" width="90" height="46" rx="8" fill="#FFF1F2" stroke="#FECDD3" stroke-width="1.5"/>
-    <text x="840" y="36" text-anchor="middle" font-size="11" font-weight="700" fill="#9F1239">SQLite</text>
-    <text x="840" y="51" text-anchor="middle" font-size="9"  fill="#BE123C">local DB</text>
+    <text x="840" y="36" text-anchor="middle" font-size="14" font-weight="700" fill="#9F1239">SQLite</text>
+    <text x="840" y="51" text-anchor="middle" font-size="12"  fill="#BE123C">local DB</text>
 
     <!-- ── Lifelines ── -->
     <line x1="70"  y1="62" x2="70"  y2="640" stroke="#CBD5E1" stroke-width="1.5" stroke-dasharray="5,4"/>
@@ -533,103 +518,96 @@
          ════════════════════════════════════════════ -->
 
     <!-- ① User(70) → ReactUI(220)  arrow y=118 -->
-    <text x="14" y="109" font-size="9" fill="#94A3B8" font-weight="700">①</text>
+    <text x="14" y="109" font-size="12" fill="#94A3B8" font-weight="700">①</text>
     <line x1="70" y1="118" x2="213" y2="118" stroke="#6366F1" stroke-width="1.5" marker-end="url(#b-indigo)"/>
-    <rect x="85"  y="94"  width="110" height="15" rx="3" fill="#EEF2FF"/>
-    <text x="140" y="105" text-anchor="middle" font-size="9.5" font-weight="600" fill="#4338CA">Click "Save Progress"</text>
+    <rect x="75"  y="93"  width="130" height="18" rx="3" fill="#EEF2FF"/>
+    <text x="140" y="106" text-anchor="middle" font-size="12" font-weight="600" fill="#4338CA">Click "Save Progress"</text>
 
     <!-- ② ReactUI(220) → IPC(375)  arrow y=165 -->
-    <text x="14" y="156" font-size="9" fill="#94A3B8" font-weight="700">②</text>
+    <text x="14" y="156" font-size="12" fill="#94A3B8" font-weight="700">②</text>
     <line x1="220" y1="165" x2="368" y2="165" stroke="#16A34A" stroke-width="1.5" marker-end="url(#b-green)"/>
-    <rect x="237" y="141" width="116" height="15" rx="3" fill="#F0FDF4"/>
-    <text x="295" y="152" text-anchor="middle" font-size="9.5" font-weight="600" fill="#15803D">invoke('save-progress')</text>
+    <rect x="225" y="140" width="140" height="18" rx="3" fill="#F0FDF4"/>
+    <text x="295" y="153" text-anchor="middle" font-size="12" font-weight="600" fill="#15803D">invoke('save-progress')</text>
 
     <!-- ③ IPC(375) → GitSvc(535)  arrow y=212 -->
-    <text x="14" y="203" font-size="9" fill="#94A3B8" font-weight="700">③</text>
+    <text x="14" y="203" font-size="12" fill="#94A3B8" font-weight="700">③</text>
     <line x1="375" y1="212" x2="528" y2="212" stroke="#EA580C" stroke-width="1.5" marker-end="url(#b-orange)"/>
-    <rect x="395" y="188" width="120" height="15" rx="3" fill="#FFF7ED"/>
-    <text x="455" y="199" text-anchor="middle" font-size="9.5" font-weight="600" fill="#C2410C">stageFiles() + commit()</text>
+    <rect x="380" y="187" width="150" height="18" rx="3" fill="#FFF7ED"/>
+    <text x="455" y="200" text-anchor="middle" font-size="12" font-weight="600" fill="#C2410C">stageFiles() + commit()</text>
 
     <!-- ④ GitSvc self-loop  y=248→268 -->
-    <text x="14" y="256" font-size="9" fill="#94A3B8" font-weight="700">④</text>
+    <text x="14" y="256" font-size="12" fill="#94A3B8" font-weight="700">④</text>
     <path d="M535,248 Q592,248 592,258 Q592,268 535,268" stroke="#EA580C" stroke-width="1.5" fill="none" marker-end="url(#b-orange)"/>
-    <text x="598" y="262" font-size="9.5" font-weight="600" fill="#C2410C">generate diff</text>
+    <text x="598" y="262" font-size="12" font-weight="600" fill="#C2410C">generate diff</text>
 
     <!-- alt block -->
     <rect x="539" y="285" width="355" height="112" rx="8" fill="#FAFAFA" stroke="#E2E8F0" stroke-width="1.2" stroke-dasharray="4,3"/>
-    <text x="547" y="298" font-size="9" font-weight="700" fill="#94A3B8" letter-spacing="0.04em">alt  [AI API available]</text>
+    <text x="547" y="298" font-size="11" font-weight="700" fill="#94A3B8" letter-spacing="0.04em">alt  [AI API available]</text>
 
     <!-- ⑤ GitSvc(535) → AI(685)  arrow y=323 -->
-    <text x="14" y="314" font-size="9" fill="#94A3B8" font-weight="700">⑤</text>
+    <text x="14" y="314" font-size="12" fill="#94A3B8" font-weight="700">⑤</text>
     <line x1="535" y1="323" x2="678" y2="323" stroke="#7C3AED" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#b-purple)"/>
-    <rect x="549" y="299" width="122" height="15" rx="3" fill="#F5F3FF"/>
-    <text x="610" y="310" text-anchor="middle" font-size="9.5" font-weight="600" fill="#6D28D9">generateMsg(diff)</text>
-    <rect x="742" y="315" width="56" height="14" rx="7" fill="#FFF7ED" stroke="#FED7AA" stroke-width="1"/>
-    <text x="770" y="325" text-anchor="middle" font-size="8.5" font-weight="600" fill="#C2410C">⏱ 3–5 s</text>
+    <rect x="540" y="298" width="140" height="18" rx="3" fill="#F5F3FF"/>
+    <text x="610" y="311" text-anchor="middle" font-size="12" font-weight="600" fill="#6D28D9">generateMsg(diff)</text>
+    <rect x="735" y="314" width="70" height="16" rx="7" fill="#FFF7ED" stroke="#FED7AA" stroke-width="1"/>
+    <text x="770" y="326" text-anchor="middle" font-size="11" font-weight="600" fill="#C2410C">⏱ 3–5 s</text>
 
     <!-- ⑥ AI(685) → GitSvc(535)  arrow y=362 -->
-    <text x="14" y="353" font-size="9" fill="#94A3B8" font-weight="700">⑥</text>
+    <text x="14" y="353" font-size="12" fill="#94A3B8" font-weight="700">⑥</text>
     <line x1="678" y1="362" x2="542" y2="362" stroke="#7C3AED" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#b-purple)"/>
-    <rect x="549" y="338" width="122" height="15" rx="3" fill="#F5F3FF"/>
-    <text x="610" y="349" text-anchor="middle" font-size="9.5" font-weight="600" fill="#6D28D9">"Updated homepage..."</text>
+    <rect x="540" y="337" width="140" height="18" rx="3" fill="#F5F3FF"/>
+    <text x="610" y="350" text-anchor="middle" font-size="12" font-weight="600" fill="#6D28D9">"Updated homepage..."</text>
 
     <!-- ⑦ GitSvc(535) → SQLite(840)  arrow y=435 -->
-    <text x="14" y="426" font-size="9" fill="#94A3B8" font-weight="700">⑦</text>
+    <text x="14" y="426" font-size="12" fill="#94A3B8" font-weight="700">⑦</text>
     <line x1="535" y1="435" x2="833" y2="435" stroke="#BE123C" stroke-width="1.5" marker-end="url(#b-red)"/>
-    <rect x="611" y="411" width="148" height="15" rx="3" fill="#FFF1F2"/>
-    <text x="685" y="422" text-anchor="middle" font-size="9.5" font-weight="600" fill="#9F1239">store(hash, summary, files)</text>
+    <rect x="590" y="410" width="190" height="18" rx="3" fill="#FFF1F2"/>
+    <text x="685" y="423" text-anchor="middle" font-size="12" font-weight="600" fill="#9F1239">store(hash, summary, files)</text>
 
     <!-- ⑧ SQLite(840) → GitSvc(535)  arrow y=478 -->
-    <text x="14" y="469" font-size="9" fill="#94A3B8" font-weight="700">⑧</text>
+    <text x="14" y="469" font-size="12" fill="#94A3B8" font-weight="700">⑧</text>
     <line x1="833" y1="478" x2="542" y2="478" stroke="#BE123C" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#b-red)"/>
-    <rect x="664" y="454" width="42"  height="15" rx="3" fill="#FFF1F2"/>
-    <text x="685" y="465" text-anchor="middle" font-size="9.5" font-weight="600" fill="#9F1239">ok</text>
+    <rect x="655" y="453" width="60"  height="18" rx="3" fill="#FFF1F2"/>
+    <text x="685" y="466" text-anchor="middle" font-size="12" font-weight="600" fill="#9F1239">ok</text>
 
     <!-- ⑨ GitSvc(535) → IPC(375)  arrow y=521 -->
-    <text x="14" y="512" font-size="9" fill="#94A3B8" font-weight="700">⑨</text>
+    <text x="14" y="512" font-size="12" fill="#94A3B8" font-weight="700">⑨</text>
     <line x1="528" y1="521" x2="382" y2="521" stroke="#EA580C" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#b-orange)"/>
-    <rect x="394" y="497" width="122" height="15" rx="3" fill="#FFF7ED"/>
-    <text x="455" y="508" text-anchor="middle" font-size="9.5" font-weight="600" fill="#C2410C">&#123; hash, message, files &#125;</text>
+    <rect x="375" y="496" width="160" height="18" rx="3" fill="#FFF7ED"/>
+    <text x="455" y="509" text-anchor="middle" font-size="12" font-weight="600" fill="#C2410C">&#123; hash, message, files &#125;</text>
 
     <!-- ⑩ IPC(375) → ReactUI(220)  arrow y=564 -->
-    <text x="14" y="555" font-size="9" fill="#94A3B8" font-weight="700">⑩</text>
+    <text x="14" y="555" font-size="12" fill="#94A3B8" font-weight="700">⑩</text>
     <line x1="368" y1="564" x2="227" y2="564" stroke="#16A34A" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#b-green)"/>
-    <rect x="237" y="540" width="106" height="15" rx="3" fill="#F0FDF4"/>
-    <text x="290" y="551" text-anchor="middle" font-size="9.5" font-weight="600" fill="#15803D">success response</text>
+    <rect x="230" y="539" width="120" height="18" rx="3" fill="#F0FDF4"/>
+    <text x="290" y="552" text-anchor="middle" font-size="12" font-weight="600" fill="#15803D">success response</text>
 
     <!-- ⑪ ReactUI(220) → User(70)  arrow y=607 -->
-    <text x="14" y="598" font-size="9" fill="#94A3B8" font-weight="700">⑪</text>
+    <text x="14" y="598" font-size="12" fill="#94A3B8" font-weight="700">⑪</text>
     <line x1="213" y1="607" x2="77"  y2="607" stroke="#6366F1" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#b-indigo)"/>
-    <rect x="85"  y="583" width="110" height="15" rx="3" fill="#EEF2FF"/>
-    <text x="140" y="594" text-anchor="middle" font-size="9.5" font-weight="600" fill="#4338CA">Show commit + message</text>
+    <rect x="65"  y="582" width="150" height="18" rx="3" fill="#EEF2FF"/>
+    <text x="140" y="595" text-anchor="middle" font-size="12" font-weight="600" fill="#4338CA">Show commit + message</text>
 
     <!-- ── Legend ── -->
     <rect x="14" y="652" width="872" height="44" rx="10" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="1.2"/>
     <line x1="36"  y1="674" x2="72"  y2="674" stroke="#6366F1" stroke-width="1.5" marker-end="url(#b-indigo)"/>
-    <text x="78"   y="678" font-size="10" fill="#475569" font-weight="500">Request</text>
+    <text x="78"   y="678" font-size="12" fill="#475569" font-weight="500">Request</text>
     <line x1="152" y1="674" x2="188" y2="674" stroke="#6366F1" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#b-indigo)"/>
-    <text x="194"  y="678" font-size="10" fill="#475569" font-weight="500">Response</text>
+    <text x="194"  y="678" font-size="12" fill="#475569" font-weight="500">Response</text>
     <line x1="282" y1="674" x2="318" y2="674" stroke="#7C3AED" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#b-purple)"/>
-    <text x="324"  y="678" font-size="10" fill="#475569" font-weight="500">AI path (opt-in)</text>
+    <text x="324"  y="678" font-size="12" fill="#475569" font-weight="500">AI path (opt-in)</text>
     <rect x="444" y="666" width="78" height="16" rx="4" fill="#FAFAFA" stroke="#E2E8F0" stroke-width="1" stroke-dasharray="4,3"/>
-    <text x="483"  y="677" text-anchor="middle" font-size="8.5" fill="#94A3B8" font-weight="700">alt [condition]</text>
-    <text x="528"  y="678" font-size="10" fill="#475569" font-weight="500">Conditional block</text>
-    <rect x="668" y="666" width="52" height="16" rx="7" fill="#FFF7ED" stroke="#FED7AA" stroke-width="1"/>
-    <text x="694"  y="677" text-anchor="middle" font-size="8.5" font-weight="600" fill="#C2410C">⏱ 3–5 s</text>
-    <text x="726"  y="678" font-size="10" fill="#475569" font-weight="500">AI timeout</text>
+    <text x="483"  y="678" text-anchor="middle" font-size="11" fill="#94A3B8" font-weight="700">alt [condition]</text>
+    <text x="528"  y="678" font-size="12" fill="#475569" font-weight="500">Conditional block</text>
+    <rect x="668" y="665" width="60" height="18" rx="7" fill="#FFF7ED" stroke="#FED7AA" stroke-width="1"/>
+    <text x="698"  y="678" text-anchor="middle" font-size="11" font-weight="600" fill="#C2410C">⏱ 3–5 s</text>
+    <text x="736"  y="678" font-size="12" fill="#475569" font-weight="500">AI timeout</text>
   </svg>
 
   <!-- Timeout fallback note -->
-  <div style="margin-top:16px;padding:12px 20px;background:#FFF7ED;border-radius:10px;border:1.5px solid #FED7AA;font-size:12px;color:#9A3412;">
+  <div style="margin-top:16px;padding:12px 20px;background:#FFF7ED;border-radius:10px;border:1.5px solid #FED7AA;font-size:15px;color:#9A3412;">
     <strong>Timeout fallback:</strong> If the AI API exceeds the 3–5 s window, the Git Service commits with a generic message (e.g. <code>"Saved changes"</code>) and the flow continues unblocked. The summary is back-filled later if the API recovers.
   </div>
-</div>
-
-
-<div class="guide">
-  5 diagrams total &nbsp;·&nbsp; Open in any browser and screenshot each white card individually<br>
-  Diagrams 1–4 are product/narrative; Diagram 5 is engineering-style<br>
-  Drop UI screenshots into Diagrams 2 &amp; 3 for extra visual context
 </div>
 
 </body>
